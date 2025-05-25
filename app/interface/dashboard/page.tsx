@@ -1,5 +1,12 @@
-import { DashboardContent } from "@/components/dashboard/DashboardContent"
+import { PDFViewer } from "@/components/document/PdfViewer"
 
 export default function DashboardPage() {
-  return <DashboardContent />
+  return (
+    <div className="h-full">
+      <PDFViewer
+        documentName="Research Paper.pdf"
+        documentUrl="/sample-research-paper.pdf"
+      />
+    </div>
+  )
 }

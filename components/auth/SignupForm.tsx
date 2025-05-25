@@ -1,17 +1,16 @@
 "use client"
 
 import type React from "react"
-import { useRouter, useSearchParams } from "next/navigation"
+import { useRouter } from "next/navigation"
 import { useState, useEffect, useCallback } from "react"
 import Link from "next/link"
 import { InputField } from "@/components/form/InputField"
 import { PasswordField } from "@/components/form/PasswordField"
 import { Checkbox } from "@/components/form/Checkbox"
 import { AUTH_CONSTANTS } from "@/constants/auth"
-import { login } from "@/lib/api"
-import type { LoginFormData } from "@/types/auth"
+import { signup } from "@/lib/api"
+import type { SignupFormData } from "@/types/auth"
 import SocialLogin from "./SocialLogin"
-import { useAuth } from "@/hooks/useAuth"
 
 const MouseGlitter = () => {
     const [particles, setParticles] = useState<Array<{ x: number; y: number; id: string }>>([])
@@ -55,39 +54,36 @@ const MouseGlitter = () => {
     )
 }
 
-export function LoginForm() {
-    const [formData, setFormData] = useState<LoginFormData>({
+export function SignupForm() {
+    const [formData, setFormData] = useState<SignupFormData>({
         email: "",
         password: "",
-        rememberMe: false,
+        confirmPassword: "",
+        agreeToTerms: false,
     })
 
-    const [errors, setErrors] = useState({ email: "", password: "" })
+    const [errors, setErrors] = useState({
+        email: "",
+        password: "",
+        confirmPassword: "",
+        agreeToTerms: ""
+    })
     const [showPassword, setShowPassword] = useState(false)
+    const [showConfirmPassword, setShowConfirmPassword] = useState(false)
     const [isLoading, setIsLoading] = useState(false)
-    const [sessionExpired, setSessionExpired] = useState(false)
-    const [signupSuccess, setSignupSuccess] = useState(false)
     const router = useRouter()
-    const searchParams = useSearchParams()
-    const { updateAuthState } = useAuth()
 
     /* ────────────────────────────────────────────────────────── */
     /*  Handlers                                                 */
     /* ────────────────────────────────────────────────────────── */
-    useEffect(() => {
-        if (searchParams.get("session") === "expired") setSessionExpired(true)
-        if (searchParams.get("signup") === "success") setSignupSuccess(true)
-    }, [searchParams])
-
     const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
         const { name, value, type, checked } = e.target
         setFormData((prev) => ({ ...prev, [name]: type === "checkbox" ? checked : value }))
         if (errors[name as keyof typeof errors]) setErrors((prev) => ({ ...prev, [name]: "" }))
-        if (sessionExpired) setSessionExpired(false)
-        if (signupSuccess) setSignupSuccess(false)
     }
 
     const toggleShowPassword = () => setShowPassword((prev) => !prev)
+    const toggleShowConfirmPassword = () => setShowConfirmPassword((prev) => !prev)
 
     const validateForm = (): boolean => {
         let valid = true
@@ -104,6 +100,22 @@ export function LoginForm() {
         if (!formData.password) {
             newErrors.password = "Password is required"
             valid = false
+        } else if (formData.password.length < 8) {
+            newErrors.password = "Password must be at least 8 characters"
+            valid = false
+        }
+
+        if (!formData.confirmPassword) {
+            newErrors.confirmPassword = "Please confirm your password"
+            valid = false
+        } else if (formData.password !== formData.confirmPassword) {
+            newErrors.confirmPassword = "Passwords do not match"
+            valid = false
+        }
+
+        if (!formData.agreeToTerms) {
+            newErrors.agreeToTerms = "You must agree to the terms and conditions"
+            valid = false
         }
 
         setErrors(newErrors)
@@ -115,36 +127,26 @@ export function LoginForm() {
         if (!validateForm()) return
 
         setIsLoading(true)
-        console.log('Form submission started')
-        console.log('Submitting with email:', formData.email)
-        console.log('Submitting with password length:', formData.password.length)
-
         try {
-            const response = await login(formData)
-            console.log('Login response received:', response)
-
-            if (response.success && response.token) {
-                console.log('Login successful, storing token and redirecting')
-                localStorage.setItem("scholarai_token", response.token)
-                // Store user data if available
-                if (response.user) {
-                    localStorage.setItem("scholarai_user", JSON.stringify(response.user))
-                }
-                // Update auth state
-                updateAuthState(response.token, response.user)
-                router.push("/interface/home")
+            const response = await signup(formData)
+            if (response.success) {
+                // Don't auto-login, redirect to login page with success message
+                router.push("/login?signup=success")
             } else {
-                console.error('Login failed:', response)
                 setErrors({
                     email: "",
-                    password: response.message || "Invalid email or password. Please check your credentials and try again."
+                    password: "",
+                    confirmPassword: "",
+                    agreeToTerms: response.message || "An error occurred during signup"
                 })
             }
         } catch (error) {
-            console.error("Login error:", error)
+            console.error("Signup error:", error)
             setErrors({
                 email: "",
-                password: "An error occurred. Please check your internet connection and try again."
+                password: "",
+                confirmPassword: "",
+                agreeToTerms: "An error occurred. Please try again."
             })
         } finally {
             setIsLoading(false)
@@ -160,24 +162,12 @@ export function LoginForm() {
             <div className="flex-1 flex items-center justify-center">
                 <div className="max-w-[450px] w-full">
                     <h1 className="text-2xl font-bold text-center text-white/70 mb-4 backdrop-blur-sm">
-                        {AUTH_CONSTANTS.loginTitle}
+                        {AUTH_CONSTANTS.signupTitle}
                     </h1>
 
-                    {sessionExpired && (
-                        <div className="mb-4 p-3 bg-yellow-500/20 border border-yellow-500/30 rounded-md text-white text-sm">
-                            Your session has expired. Please log in again to continue.
-                        </div>
-                    )}
-
-                    {signupSuccess && (
-                        <div className="mb-4 p-3 bg-green-500/20 border border-green-500/30 rounded-md text-white text-sm">
-                            Account created successfully! Please log in with your credentials.
-                        </div>
-                    )}
-
-                    {/* -------------  LOGIN CARD ------------- */}
+                    {/* -------------  SIGNUP CARD ------------- */}
                     <div
-                        className="backdrop-blur-xl rounded-2xl p-8 border w-[450px] min-h-[460px] flex flex-col shadow-2xl"
+                        className="backdrop-blur-xl rounded-2xl p-6 border w-[450px] min-h-[500px] flex flex-col shadow-2xl"
                         style={{
                             background: "rgba(255, 255, 255, 0.08)",
                             border: "1.5px solid rgba(255, 255, 255, 0.35)",
@@ -185,7 +175,7 @@ export function LoginForm() {
                         }}
                     >
                         <form onSubmit={handleSubmit} className="flex flex-col flex-grow">
-                            <div className="space-y-5">
+                            <div className="space-y-3">
                                 <InputField
                                     id="email"
                                     name="email"
@@ -211,21 +201,30 @@ export function LoginForm() {
                                     toggleShowPassword={toggleShowPassword}
                                 />
 
-                                <div className="flex items-center justify-between text-base text-white/70 mb-8">
+                                <PasswordField
+                                    id="confirmPassword"
+                                    name="confirmPassword"
+                                    label="Confirm Password"
+                                    placeholder="••••••••••••••••"
+                                    value={formData.confirmPassword}
+                                    onChange={handleChange}
+                                    error={errors.confirmPassword}
+                                    required
+                                    showPassword={showConfirmPassword}
+                                    toggleShowPassword={toggleShowConfirmPassword}
+                                />
+
+                                <div className="mb-3">
                                     <Checkbox
-                                        id="rememberMe"
-                                        name="rememberMe"
-                                        label={AUTH_CONSTANTS.rememberMe}
-                                        checked={formData.rememberMe}
+                                        id="agreeToTerms"
+                                        name="agreeToTerms"
+                                        label={AUTH_CONSTANTS.agreeToTerms}
+                                        checked={formData.agreeToTerms}
                                         onChange={handleChange}
                                     />
-
-                                    <Link
-                                        href="/forgot-password"
-                                        className="hover:text-green-400 transition-colors font-['Segoe_UI'] underline underline-offset-2"
-                                    >
-                                        {AUTH_CONSTANTS.forgotPassword}
-                                    </Link>
+                                    {errors.agreeToTerms && (
+                                        <p className="text-red-400 text-sm mt-1">{errors.agreeToTerms}</p>
+                                    )}
                                 </div>
                             </div>
 
@@ -234,10 +233,10 @@ export function LoginForm() {
                             <button
                                 type="submit"
                                 disabled={isLoading}
-                                className="w-full h-[70px] px-4 rounded-2xl font-['Segoe_UI'] font-medium transition-colors text-xl
+                                className="w-full h-[55px] px-4 rounded-2xl font-['Segoe_UI'] font-medium transition-colors text-xl
                                     bg-white/30 text-[#043434] hover:bg-white/50 border border-white/40 shadow-md
                                     disabled:opacity-50 disabled:cursor-not-allowed
-                                    flex items-center justify-center mt-4 backdrop-blur-md"
+                                    flex items-center justify-center mt-3 backdrop-blur-md"
                             >
                                 {isLoading ? (
                                     <>
@@ -261,17 +260,17 @@ export function LoginForm() {
                                                 d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
                                             ></path>
                                         </svg>
-                                        <span className="font-['Segoe_UI']">Logging in...</span>
+                                        <span className="font-['Segoe_UI']">Creating account...</span>
                                     </>
                                 ) : (
-                                    <span className="font-['Segoe_UI']">{AUTH_CONSTANTS.loginButton}</span>
+                                    <span className="font-['Segoe_UI']">{AUTH_CONSTANTS.signupButton}</span>
                                 )}
                             </button>
                         </form>
                     </div>
 
-                    <div className="mt-12 text-center">
-                        <div className="flex items-center justify-center gap-3 mb-8">
+                    <div className="mt-8 text-center">
+                        <div className="flex items-center justify-center gap-3 mb-6">
                             <div className="h-[1px] bg-white/20 w-40"></div>
                             <span className="text-shiny text-base font-['Segoe_UI'] whitespace-nowrap">or connect with</span>
                             <div className="h-[1px] bg-white/20 w-40"></div>
@@ -279,13 +278,13 @@ export function LoginForm() {
                         <SocialLogin />
                     </div>
 
-                    <p className="text-center text-shiny text-base mt-8 font-['Segoe_UI']">
-                        {AUTH_CONSTANTS.noAccount}{" "}
+                    <p className="text-center text-shiny text-base mt-6 font-['Segoe_UI']">
+                        {AUTH_CONSTANTS.haveAccount}{" "}
                         <Link
-                            href="/signup"
+                            href="/login"
                             className="relative inline-block text-[#7CE495] hover:text-[#6AD084] transition-colors glitery-text"
                         >
-                            {AUTH_CONSTANTS.signUpLink}
+                            {AUTH_CONSTANTS.loginLink}
                         </Link>
                     </p>
                 </div>
@@ -347,4 +346,4 @@ if (typeof document !== 'undefined') {
     const styleSheet = document.createElement('style')
     styleSheet.textContent = styles
     document.head.appendChild(styleSheet)
-}
+} 

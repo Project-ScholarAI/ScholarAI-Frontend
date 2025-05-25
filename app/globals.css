@@ -76,6 +76,7 @@
   * {
     @apply border-border;
   }
+
   body {
     @apply bg-background text-foreground;
   }
@@ -106,5 +107,10 @@
   .scrollbar {
     scrollbar-width: thin;
     scrollbar-color: hsl(var(--muted-foreground)) transparent;
+  }
+
+  /* Custom gradient utilities */
+  .bg-gradient-radial {
+    background: radial-gradient(ellipse at center, var(--tw-gradient-stops));
   }
 }
