@@ -1,9 +1,5 @@
-import { WelcomeScreen } from "@/components/layout/WelcomeScreen"
+import { LibraryContent } from "@/components/library/LibraryContent"
 
 export default function LibraryPage() {
-  return (
-    <div className="h-full">
-      <WelcomeScreen />
-    </div>
-  )
+  return <LibraryContent />
 }

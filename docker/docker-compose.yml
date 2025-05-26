@@ -1,0 +1,21 @@
+services:
+  scholar-ai-frontend:
+    build:
+      context: .. # repo root
+      dockerfile: docker/Dockerfile
+      args:
+        NODE_VERSION: 20 # keep in sync with Dockerfile default
+    container_name: scholar-ai-frontend
+    ports:
+      - "3000:3000"
+    environment:
+      NEXT_TELEMETRY_DISABLED: "1" # NODE_ENV already set inside image
+    restart: unless-stopped
+    # depends_on:                   # uncomment if you add backend services
+    #   - scholar-ai-backend
+    networks:
+      - scholar-ai-network
+
+networks:
+  scholar-ai-network:
+    driver: bridge

@@ -18,11 +18,13 @@ import {
   Bug,
   Zap,
   Brain,
-  Sparkles
+  Sparkles,
+  LogOut
 } from "lucide-react"
 import { cn } from "@/lib/utils/cn"
 import { Button } from "@/components/ui/button"
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip"
+import { LogoutButton } from "@/components/auth/LogoutButton"
 
 type Props = {
   collapsed: boolean
@@ -177,6 +179,24 @@ export function Sidebar({ collapsed, onToggle }: Props) {
           {BOTTOM_ITEMS.map((item) => (
             <SidebarItem key={item.name} item={item} isBottom />
           ))}
+          {/* Logout Button */}
+          {collapsed ? (
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <LogoutButton className="flex items-center justify-center gap-3 rounded-lg px-2 py-2.5 text-sm font-medium transition-all duration-200 group relative hover:bg-[#2a2d2e] hover:text-white text-[#cccccc]">
+                  <LogOut className="h-5 w-5 text-[#cccccc] group-hover:text-white" />
+                </LogoutButton>
+              </TooltipTrigger>
+              <TooltipContent side="right" className="bg-[#2d2d30] border-[#3e3e42] text-white">
+                <p className="font-medium">Logout</p>
+              </TooltipContent>
+            </Tooltip>
+          ) : (
+            <LogoutButton className="flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium transition-all duration-200 group relative hover:bg-[#2a2d2e] hover:text-white text-[#cccccc]">
+              <LogOut className="h-5 w-5 text-[#cccccc] group-hover:text-white" />
+              <span className="truncate">Logout</span>
+            </LogoutButton>
+          )}
         </div>
 
         {/* Status Bar */}
