@@ -1,5 +1,42 @@
 import { NextRequest, NextResponse } from 'next/server';
 
+/**
+ * @swagger
+ * /api/placeholder/{width}/{height}:
+ *   get:
+ *     summary: Generates an SVG placeholder image.
+ *     description: Creates a simple SVG image with the specified dimensions and a text label showing the dimensions.
+ *     parameters:
+ *       - in: path
+ *         name: width
+ *         required: true
+ *         description: The width of the placeholder image.
+ *         schema:
+ *           type: integer
+ *           minimum: 1
+ *       - in: path
+ *         name: height
+ *         required: true
+ *         description: The height of the placeholder image.
+ *         schema:
+ *           type: integer
+ *           minimum: 1
+ *     responses:
+ *       200:
+ *         description: An SVG placeholder image.
+ *         content:
+ *           image/svg+xml:
+ *             schema:
+ *               type: string
+ *               format: binary
+ *       400:
+ *         description: Invalid dimensions provided.
+ *         content:
+ *           text/plain:
+ *             schema:
+ *               type: string
+ *               example: Invalid dimensions
+ */
 export async function GET(
     request: NextRequest,
     { params }: { params: { width: string; height: string } }
