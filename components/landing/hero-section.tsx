@@ -6,7 +6,7 @@ import Link from "next/link"
 import { ArrowRight, Sparkles, BookOpen } from "lucide-react"
 import { motion } from "framer-motion"
 import { useEffect, useState } from "react"
-import { AnimatedBackground } from "./animated-background"
+import { HeroBackground } from "./hero-background"
 
 export function HeroSection() {
     const [text, setText] = useState("")
@@ -27,7 +27,7 @@ export function HeroSection() {
 
     return (
         <section className="relative min-h-screen flex items-center justify-center overflow-hidden">
-            <AnimatedBackground />
+            <HeroBackground />
 
             <div className="container mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
                 <motion.div
