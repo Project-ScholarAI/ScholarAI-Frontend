@@ -35,21 +35,71 @@ export const isAuthenticated = (): boolean => {
     return !!getAuthToken()
 }
 
+
+export const refreshAccessToken = async (): Promise<string | null> => {
+    try {
+        const response = await fetch('/api/v1/auth/refresh', {
+            method: 'POST',
+            credentials: 'include', // for cookie
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({ refreshToken: '' }) // backend expects this field in body
+        });
+
+        const data = await response.json();
+
+        if (response.ok && data.data?.accessToken) {
+            localStorage.setItem('scholarai_token', data.data.accessToken);
+            return data.data.accessToken;
+        } else {
+            console.warn('Refresh token invalid or expired');
+            clearAuthData();
+            return null;
+        }
+    } catch (error) {
+        console.error('Token refresh failed:', error);
+        clearAuthData();
+        return null;
+    }
+};
+
+
 // API request helper with authentication
 export const authenticatedFetch = async (url: string, options: RequestInit = {}) => {
-    const token = getAuthToken()
-    const headers = {
-        'Content-Type': 'application/json',
-        'Accept': 'application/json',
-        ...(token && { 'Authorization': `Bearer ${token}` }),
-        ...options.headers
+    let token = getAuthToken()
+    let headers = {
+      'Content-Type': 'application/json',
+      'Accept': 'application/json',
+      ...(token && { 'Authorization': `Bearer ${token}` }),
+      ...options.headers
     }
-
-    return fetch(url, {
-        ...options,
-        headers
+  
+    const response = await fetch(url, {
+      ...options,
+      headers
     })
-}
+  
+    if (response.status === 401) {
+      // Try to refresh token
+      const newAccessToken = await refreshAccessToken()
+      if (newAccessToken) {
+        const retryHeaders = {
+          ...headers,
+          'Authorization': `Bearer ${newAccessToken}`
+        }
+  
+        return fetch(url, {
+          ...options,
+          headers: retryHeaders
+        })
+      }
+    }
+  
+    return response;
+
+  }
+  
 
 export const login = async (formData: { email: string; password: string; rememberMe: boolean }) => {
     try {
@@ -66,7 +116,8 @@ export const login = async (formData: { email: string; password: string; remembe
             body: JSON.stringify({
                 email: formData.email.trim(),
                 password: formData.password.trim()
-            })
+            }),
+            credentials: 'include' //allows storing refresh token in cookies
         })
 
         const data = await response.json()
@@ -74,12 +125,19 @@ export const login = async (formData: { email: string; password: string; remembe
         if (!response.ok) {
             throw new Error(data.message || 'Login failed')
         }
+        else{
+            console.log("response:", data);
+        }
 
         const token = data.data?.accessToken;
-        const user = data.data;
+        const user = {
+            id: data.data?.userId,
+            email: data.data?.email,
+            roles: data.data?.roles
+        }
 
         if (!token) {
-            throw new Error('No authentication token received')
+            throw new Error('No access token received')
         }
 
         return {
@@ -105,6 +163,7 @@ export const login = async (formData: { email: string; password: string; remembe
     }
 }
 
+
 export const signup = async (formData: { email: string; password: string; confirmPassword: string; agreeToTerms: boolean }) => {
     try {
         const response = await fetch('/api/v1/auth/register', {
@@ -117,37 +176,36 @@ export const signup = async (formData: { email: string; password: string; confir
                 email: formData.email,
                 password: formData.password
             })
-        })
+           
+        });
 
-        const data = await response.json()
+        const data = await response.json();
 
         if (!response.ok) {
-            throw new Error(data.message || 'Registration failed')
+            throw new Error(data.message || 'Registration failed');
         }
 
         return {
-            success: data.success || true,
-            token: data.data?.jwtToken || data.data?.apiToken || data.token,
-            user: data.data,
-            message: data.message
-        }
+            success: true,
+            message: data.message || 'Registration successful'
+        };
     } catch (error) {
-        console.error('Signup API error:', error)
+        console.error('Signup API error:', error);
         return {
             success: false,
             message: error instanceof Error ? error.message : 'Network error occurred'
-        }
+        };
     }
-}
+};
+
+
 
 export const logout = async () => {
     try {
-        const token = getAuthToken()
-        if (token) {
-            await authenticatedFetch('/api/v1/auth/logout', {
-                method: 'POST'
-            })
-        }
+        await fetch('/api/v1/auth/logout', {
+            method: 'POST',
+            credentials: 'include' // include the refresh token cookie
+        })
     } catch (error) {
         console.error('Logout API error:', error)
     } finally {
@@ -157,3 +215,4 @@ export const logout = async () => {
         }
     }
 }
+
