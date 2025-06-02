@@ -75,8 +75,8 @@ export const login = async (formData: { email: string; password: string; remembe
             throw new Error(data.message || 'Login failed')
         }
 
-        const token = data.data?.jwtToken || data.data?.apiToken || data.token
-        const user = data.data || data.user
+        const token = data.data?.accessToken;
+        const user = data.data;
 
         if (!token) {
             throw new Error('No authentication token received')

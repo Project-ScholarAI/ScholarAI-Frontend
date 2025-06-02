@@ -67,6 +67,7 @@ export function LoginForm() {
     const [isLoading, setIsLoading] = useState(false)
     const [sessionExpired, setSessionExpired] = useState(false)
     const [signupSuccess, setSignupSuccess] = useState(false)
+    const [loginStatus, setLoginStatus] = useState<{ message: string; type: 'success' | 'error' } | null>(null)
     const router = useRouter()
     const searchParams = useSearchParams()
     const { updateAuthState } = useAuth()
@@ -85,6 +86,7 @@ export function LoginForm() {
         if (errors[name as keyof typeof errors]) setErrors((prev) => ({ ...prev, [name]: "" }))
         if (sessionExpired) setSessionExpired(false)
         if (signupSuccess) setSignupSuccess(false)
+        if (loginStatus) setLoginStatus(null)
     }
 
     const toggleShowPassword = () => setShowPassword((prev) => !prev)
@@ -112,6 +114,7 @@ export function LoginForm() {
 
     const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
         e.preventDefault()
+        setLoginStatus(null)
         if (!validateForm()) return
 
         setIsLoading(true)
@@ -124,7 +127,8 @@ export function LoginForm() {
             console.log('Login response received:', response)
 
             if (response.success && response.token) {
-                console.log('Login successful, storing token and redirecting')
+                console.log('Login successful, storing token and preparing to redirect')
+                setLoginStatus({ message: response.message || "Login successful! Redirecting...", type: 'success' })
                 localStorage.setItem("scholarai_token", response.token)
                 // Store user data if available
                 if (response.user) {
@@ -132,21 +136,17 @@ export function LoginForm() {
                 }
                 // Update auth state
                 updateAuthState(response.token, response.user)
-                router.push("/interface/home")
+                setTimeout(() => {
+                    router.push("/interface/home")
+                }, 2000)
             } else {
                 console.error('Login failed:', response)
-                setErrors({
-                    email: "",
-                    password: response.message || "Invalid email or password. Please check your credentials and try again."
-                })
+                setLoginStatus({ message: response.message || "Invalid email or password. Please check your credentials and try again.", type: 'error' })
+                setIsLoading(false)
             }
         } catch (error) {
             console.error("Login error:", error)
-            setErrors({
-                email: "",
-                password: "An error occurred. Please check your internet connection and try again."
-            })
-        } finally {
+            setLoginStatus({ message: "An error occurred. Please check your internet connection and try again.", type: 'error' })
             setIsLoading(false)
         }
     }
@@ -172,6 +172,15 @@ export function LoginForm() {
                     {signupSuccess && (
                         <div className="mb-4 p-3 bg-green-500/20 border border-green-500/30 rounded-md text-white text-sm">
                             Account created successfully! Please log in with your credentials.
+                        </div>
+                    )}
+
+                    {/* Display Login Status Message */}
+                    {loginStatus && (
+                        <div className={`mb-4 p-3 border rounded-md text-white text-sm ${
+                            loginStatus.type === 'success' ? 'bg-green-500/20 border-green-500/30' : 'bg-red-500/20 border-red-500/30'
+                        }`}>
+                            {loginStatus.message}
                         </div>
                     )}
 
