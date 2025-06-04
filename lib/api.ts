@@ -259,7 +259,7 @@ export interface SocialLoginResponse {
 
 export const handleGoogleSocialLogin = async (idToken: string): Promise<SocialLoginResponse> => {
     try {
-        const response = await fetch('/api/v1/auth/social-login', {
+        const response = await fetch('/api/v1/auth/social-google-login', {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json',
