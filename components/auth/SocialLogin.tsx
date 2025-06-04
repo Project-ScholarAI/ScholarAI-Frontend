@@ -66,7 +66,7 @@ export default function SocialLogin({ className = '', onLoginSuccess, onLoginErr
             if (googleButtonDiv.current && window.google) {
                 window.google.accounts.id.renderButton(
                     googleButtonDiv.current,
-                    { theme: "outline", size: "large", type: "standard", text: "signin_with" } 
+                    { theme: "outline", size: "large", type: "standard", text: "continue_with", width: "130" }
                 )
             }
             return
@@ -90,7 +90,7 @@ export default function SocialLogin({ className = '', onLoginSuccess, onLoginErr
             if (googleButtonDiv.current) {
                 window.google.accounts.id.renderButton(
                     googleButtonDiv.current,
-                    { theme: "outline", size: "large", type: "standard", text: "signin_with"} 
+                    { theme: "outline", size: "large", type: "standard", text: "continue_with", width: "130" }
                 )
             }
         }
@@ -112,23 +112,17 @@ export default function SocialLogin({ className = '', onLoginSuccess, onLoginErr
 
     return (
         <div className={`flex flex-col items-center gap-y-4 ${className}`}>
-            <div ref={googleButtonDiv} id="g_id_signin" className="g_id_signin"></div>
+            <div className="flex flex-row items-center justify-center gap-x-4">
+                <div ref={googleButtonDiv} id="g_id_signin" className="g_id_signin"></div>
             
-            <button
-                onClick={handleGithubLogin}
-                aria-label="Login with GitHub"
-                className="w-[260px] h-[40px] flex items-center justify-center rounded-lg bg-white/10 border border-white/40 shadow-md hover:bg-white/20 transition-all duration-200"
-            >
-                <GithubIcon /> <span className="ml-2">Sign in with GitHub</span>
-            </button>
-
-            <button
-                aria-label="Login with Email"
-                className="w-[260px] h-[40px] flex items-center justify-center rounded-lg bg-white/10 border border-white/40 shadow-md hover:bg-white/20 transition-all duration-200"
-                onClick={() => alert("Email login form should be shown.")}
-            >
-                <MailIcon /> <span className="ml-2">Sign in with Email</span>
-            </button>
+                <button
+                    onClick={handleGithubLogin}
+                    aria-label="Login with GitHub"
+                    className="w-[190px] h-[42px] flex items-center justify-center rounded-lg bg-white/10 border border-white/40 shadow-md hover:bg-white/20 transition-all duration-200"
+                >
+                    <GithubIcon /> <span className="ml-2">GitHub</span>
+                </button>
+            </div>
         </div>
     )
 }
