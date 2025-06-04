@@ -24,7 +24,7 @@ export default function CallbackPage() {
             setMessage(null);
             setIsProcessing(false); // Ensure processing stops
             // Optionally, redirect to login page with error
-            // router.push('/login?error=' + encodeURIComponent(errorDescription || githubError));
+            router.push('/login?error=' + encodeURIComponent(errorDescription || githubError));
             return;
         }
 
@@ -51,10 +51,7 @@ export default function CallbackPage() {
                     setError(err.message || 'An unexpected error occurred during GitHub login processing.');
                     setMessage(null);
                 })
-                .finally(() => {
-                    //setIsProcessing(false); // Reset processing state if you allow retries on this page, 
-                                          // but typically for OAuth, a fresh redirect is better for new attempts.
-                                          // For now, we don't reset it to prevent re-use of the same URL code.
+                .finally(() => {  
                 });
         } else if (!code && !githubError) {
             setMessage('Waiting for GitHub authorization code...');

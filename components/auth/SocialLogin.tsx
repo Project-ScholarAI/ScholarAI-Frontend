@@ -20,18 +20,18 @@ export default function SocialLogin({ className = '', onLoginSuccess, onLoginErr
             try {
                 const result = await handleGoogleSocialLogin(response.credential)
                 if (result.success) {
-                    console.log('✅ Google Login Success via API', result)
+                    console.log('Google Login Successful', result)
                     if (onLoginSuccess) {
                         onLoginSuccess(result)
                     }
                 } else {
-                    console.error('❌ Google Login Failed via API', result.message)
+                    console.error('Google Login Failed via API', result.message)
                     if (onLoginError) {
                         onLoginError(result.message || 'Google login failed')
                     }
                 }
             } catch (error: any) {
-                console.error('❌ Google Login Exception', error)
+                console.error('Google Login Exception', error)
                 if (onLoginError) {
                     onLoginError(error.message || 'An unexpected error occurred during Google login')
                 }
