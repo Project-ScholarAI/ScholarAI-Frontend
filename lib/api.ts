@@ -1,6 +1,6 @@
 export const initiateGoogleLogin = async () => {
     // TODO: Implement Google OAuth login
-    window.location.href = '/api/v1/auth/google'
+    window.location.href = 'https://accounts.google.com/gsi/client'
 }
 
 export const initiateGithubLogin = async () => {
@@ -28,6 +28,7 @@ export const clearAuthData = (): void => {
     if (typeof window !== 'undefined') {
         localStorage.removeItem('scholarai_token')
         localStorage.removeItem('scholarai_user')
+        localStorage.removeItem('scholarai_refresh_token')
     }
 }
 
@@ -81,6 +82,8 @@ export const authenticatedFetch = async (url: string, options: RequestInit = {})
     })
   
     if (response.status === 401) {
+
+        console.log('Access token expired, refreshing...');
       // Try to refresh token
       const newAccessToken = await refreshAccessToken()
       if (newAccessToken) {
@@ -215,4 +218,116 @@ export const logout = async () => {
         }
     }
 }
+
+export const sendResetCode = async (email: string) => {
+    const res = await fetch("/api/v1/auth/forgot-password", {
+        method: "POST",
+        headers: { "Content-Type": "application/x-www-form-urlencoded" },
+        body: new URLSearchParams({ email }),
+    })
+
+    if (!res.ok) {
+        const data = await res.json()
+        throw new Error(data.message || "Error sending code")
+    }
+}
+
+export const submitNewPassword = async (email: string, code: string, newPassword: string) => {
+    const res = await fetch("/api/v1/auth/reset-password", {
+        method: "POST",
+        headers: { "Content-Type": "application/x-www-form-urlencoded" },
+        body: new URLSearchParams({ email, code, newPassword }),
+    })
+
+    if (!res.ok) {
+        const data = await res.json()
+        throw new Error(data.message || "Error resetting password")
+    }
+}
+
+export interface SocialLoginResponse {
+    success: boolean;
+    message: string;
+    token?: string; // Corresponds to accessToken
+    refreshToken?: string; // Optional: if backend sends it in body
+    user?: {
+        id: string;
+        email: string;
+        roles: string[];
+    };
+}
+
+export const handleGoogleSocialLogin = async (idToken: string): Promise<SocialLoginResponse> => {
+    try {
+        const response = await fetch('/api/v1/auth/social-login', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'Accept': 'application/json'
+            },
+            body: JSON.stringify({ idToken })
+        });
+
+        const data = await response.json();
+
+        if (!response.ok) {
+            throw new Error(data.message || 'Social login failed');
+        }
+
+        const accessToken = data.data?.accessToken;
+        const refreshToken = data.data?.refreshToken; // Assuming backend might send this
+        const user = {
+            id: data.data?.userId,
+            email: data.data?.email,
+            roles: data.data?.roles
+        };
+
+        if (!accessToken) {
+            throw new Error('No access token received from social login');
+        }
+
+        // Store access token
+        localStorage.setItem('scholarai_token', accessToken);
+        
+        // Store user data
+        if (user && user.id) {
+            localStorage.setItem('scholarai_user', JSON.stringify(user));
+        }
+
+        // Store refresh token if provided in response body
+        if (refreshToken) {
+            localStorage.setItem('scholarai_refresh_token', refreshToken); // Using a new key for clarity
+        }
+
+
+        return {
+            success: true,
+            token: accessToken,
+            user: user,
+            message: data.message || 'Social login successful'
+        };
+
+    } catch (error) {
+        console.error('Social Login API error:', error);
+        // Clear any partial auth data if login failed
+        clearAuthData(); 
+        // Also clear the potential refresh token from local storage
+        if (typeof window !== 'undefined') {
+            localStorage.removeItem('scholarai_refresh_token');
+        }
+
+        if (error instanceof TypeError && error.message.includes('fetch')) {
+            return {
+                success: false,
+                message: 'Cannot connect to server. Please check if the backend is running.'
+            };
+        }
+
+        return {
+            success: false,
+            message: error instanceof Error ? error.message : 'Network error occurred during social login'
+        };
+    }
+};
+
 

@@ -8,7 +8,7 @@ import { InputField } from "@/components/form/InputField"
 import { PasswordField } from "@/components/form/PasswordField"
 import { Checkbox } from "@/components/form/Checkbox"
 import { AUTH_CONSTANTS } from "@/constants/auth"
-import { login } from "@/lib/api"
+import { login, type SocialLoginResponse } from "@/lib/api"
 import type { LoginFormData } from "@/types/auth"
 import SocialLogin from "./SocialLogin"
 import { useAuth } from "@/hooks/useAuth"
@@ -67,7 +67,7 @@ export function LoginForm() {
     const [isLoading, setIsLoading] = useState(false)
     const [sessionExpired, setSessionExpired] = useState(false)
     const [signupSuccess, setSignupSuccess] = useState(false)
-    const [loginStatus, setLoginStatus] = useState<{ message: string; type: 'success' | 'error' } | null>(null)
+    const [socialLoginSuccessMessage, setSocialLoginSuccessMessage] = useState<string | null>(null)
     const router = useRouter()
     const searchParams = useSearchParams()
     const { updateAuthState } = useAuth()
@@ -86,7 +86,7 @@ export function LoginForm() {
         if (errors[name as keyof typeof errors]) setErrors((prev) => ({ ...prev, [name]: "" }))
         if (sessionExpired) setSessionExpired(false)
         if (signupSuccess) setSignupSuccess(false)
-        if (loginStatus) setLoginStatus(null)
+        if (socialLoginSuccessMessage) setSocialLoginSuccessMessage(null)
     }
 
     const toggleShowPassword = () => setShowPassword((prev) => !prev)
@@ -114,7 +114,6 @@ export function LoginForm() {
 
     const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
         e.preventDefault()
-        setLoginStatus(null)
         if (!validateForm()) return
 
         setIsLoading(true)
@@ -126,29 +125,56 @@ export function LoginForm() {
             const response = await login(formData)
             console.log('Login response received:', response)
 
-            if (response.success && response.token) {
-                console.log('Login successful, storing token and preparing to redirect')
-                setLoginStatus({ message: response.message || "Login successful! Redirecting...", type: 'success' })
+            if (response.success && response.token && response.user) {
+                console.log('Login successful, storing token and redirecting')
+                
                 localStorage.setItem("scholarai_token", response.token)
-                // Store user data if available
-                if (response.user) {
-                    localStorage.setItem("scholarai_user", JSON.stringify(response.user))
-                }
+                localStorage.setItem("scholarai_user", JSON.stringify(response.user))
                 // Update auth state
                 updateAuthState(response.token, response.user)
-                setTimeout(() => {
-                    router.push("/interface/home")
-                }, 2000)
-            } else {
+                router.push("/interface/home")
+            } 
+            else {
                 console.error('Login failed:', response)
-                setLoginStatus({ message: response.message || "Invalid email or password. Please check your credentials and try again.", type: 'error' })
-                setIsLoading(false)
+                setErrors({
+                    email: "",
+                    password: response.message || "Invalid email or password. Please check your credentials and try again."
+                })
             }
         } catch (error) {
             console.error("Login error:", error)
-            setLoginStatus({ message: "An error occurred. Please check your internet connection and try again.", type: 'error' })
+            setErrors({
+                email: "",
+                password: "An error occurred. Please check your internet connection and try again."
+            })
+        } finally {
             setIsLoading(false)
         }
+    }
+
+    const handleSocialLoginSuccess = (data: SocialLoginResponse) => {
+        console.log("Social login success in LoginForm:", data)
+        if (data.success && data.token && data.user) {
+            localStorage.setItem("scholarai_token", data.token)
+            localStorage.setItem("scholarai_user", JSON.stringify(data.user))
+            updateAuthState(data.token, data.user)
+            setSocialLoginSuccessMessage("Login successful!..")
+            router.push('/interface/home')
+        } else {
+            // Handle cases where social login API might return success:false but was handled as success by SocialLogin
+            setErrors({
+                email: "",
+                password: data.message || "Social login failed. Please try again."
+            })
+        }
+    }
+
+    const handleSocialLoginError = (message: string) => {
+        console.error("Social login error in LoginForm:", message)
+        setErrors({
+            email: "", // Or a more generic error field
+            password: message || "An error occurred during social login. Please try again."
+        })
     }
 
     /* ────────────────────────────────────────────────────────── */
@@ -175,12 +201,9 @@ export function LoginForm() {
                         </div>
                     )}
 
-                    {/* Display Login Status Message */}
-                    {loginStatus && (
-                        <div className={`mb-4 p-3 border rounded-md text-white text-sm ${
-                            loginStatus.type === 'success' ? 'bg-green-500/20 border-green-500/30' : 'bg-red-500/20 border-red-500/30'
-                        }`}>
-                            {loginStatus.message}
+                    {socialLoginSuccessMessage && (
+                        <div className="mb-4 p-3 bg-green-500/20 border border-green-500/30 rounded-md text-white text-sm">
+                            {socialLoginSuccessMessage}
                         </div>
                     )}
 
@@ -285,7 +308,7 @@ export function LoginForm() {
                             <span className="text-shiny text-base font-['Segoe_UI'] whitespace-nowrap">or connect with</span>
                             <div className="h-[1px] bg-white/20 w-40"></div>
                         </div>
-                        <SocialLogin />
+                        <SocialLogin onLoginSuccess={handleSocialLoginSuccess} onLoginError={handleSocialLoginError} />
                     </div>
 
                     <p className="text-center text-shiny text-base mt-8 font-['Segoe_UI']">

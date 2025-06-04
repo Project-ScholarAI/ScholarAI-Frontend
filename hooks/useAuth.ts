@@ -28,6 +28,7 @@ export const useAuth = () => {
     useEffect(() => {
         const checkAuth = () => {
             try {
+                console.log('Checking auth state in useAuth hook...')
                 const token = getAuthToken()
                 const user = getUserData()
                 const authenticated = isAuthenticated()
