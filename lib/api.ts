@@ -3,10 +3,14 @@ export const initiateGoogleLogin = async () => {
     window.location.href = 'https://accounts.google.com/gsi/client'
 }
 
-export const initiateGithubLogin = async () => {
-    // TODO: Implement GitHub OAuth login
-    window.location.href = '/api/v1/auth/github'
-}
+export const initiateGithubLogin = () => {
+    const githubClientId = process.env.NEXT_PUBLIC_GITHUB_CLIENT_ID;
+    const redirectUri = `${window.location.origin}/callback`;
+
+    const githubAuthUrl = `https://github.com/login/oauth/authorize?client_id=${githubClientId}&redirect_uri=${redirectUri}&scope=read:user%20user:email`;
+    window.location.href = githubAuthUrl;
+};
+
 
 // Authentication utility functions
 export const getAuthToken = (): string | null => {
@@ -326,6 +330,80 @@ export const handleGoogleSocialLogin = async (idToken: string): Promise<SocialLo
         return {
             success: false,
             message: error instanceof Error ? error.message : 'Network error occurred during social login'
+        };
+    }
+};
+
+export const handleGitHubAuthCallback = async (code: string): Promise<SocialLoginResponse> => {
+    try {
+        const response = await fetch('/api/v1/auth/social/github-login', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'Accept': 'application/json'
+            },
+            body: JSON.stringify({ code })
+        });
+
+        const data = await response.json();
+
+        if (!response.ok) {
+            throw new Error(data.message || 'GitHub callback failed at backend');
+        }
+
+        const accessToken = data.data?.accessToken;
+        const refreshToken = data.data?.refreshToken;
+        const user = {
+            id: data.data?.userId,
+            email: data.data?.email,
+            roles: data.data?.roles
+        };
+
+        if (!accessToken) {
+            throw new Error('No access token received from GitHub login');
+        }
+
+        // Store access token
+        localStorage.setItem('scholarai_token', accessToken);
+        
+        // Store user data
+        if (user && user.id) {
+            localStorage.setItem('scholarai_user', JSON.stringify(user));
+        }
+
+        // Store refresh token if provided in response body
+        // Note: Your backend SocialAuthController for GitHub already sets refreshToken as HttpOnly cookie.
+        // So, this step of storing from response body might be redundant if backend doesn't also send it in body.
+        // However, including it for completeness based on SocialLoginResponse interface.
+        if (refreshToken) {
+            localStorage.setItem('scholarai_refresh_token', refreshToken);
+        }
+
+        return {
+            success: true,
+            token: accessToken,
+            user: user,
+            message: data.message || 'GitHub login successful'
+            // refreshToken field is part of SocialLoginResponse but Spring backend sets it as HttpOnly cookie
+        };
+
+    } catch (error) {
+        console.error('GitHub Auth Callback API error:', error);
+        clearAuthData(); 
+        if (typeof window !== 'undefined') {
+            localStorage.removeItem('scholarai_refresh_token');
+        }
+
+        if (error instanceof TypeError && error.message.includes('fetch')) {
+            return {
+                success: false,
+                message: 'Cannot connect to server. Please check if the backend is running.'
+            };
+        }
+
+        return {
+            success: false,
+            message: error instanceof Error ? error.message : 'Network error occurred during GitHub callback'
         };
     }
 };
