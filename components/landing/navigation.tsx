@@ -5,11 +5,13 @@ import Link from "next/link"
 import { Brain, ArrowRight, Menu, X, Sparkles } from "lucide-react"
 import { motion, AnimatePresence } from "framer-motion"
 import { useState, useEffect } from "react"
+import { useNavigationWithLoading } from "@/components/ui/RouteTransition"
 
 export function Navigation() {
     const [isScrolled, setIsScrolled] = useState(false)
     const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false)
     const [activeSection, setActiveSection] = useState("")
+    const { navigateWithLoading } = useNavigationWithLoading()
 
     useEffect(() => {
         const handleScroll = () => {
@@ -122,8 +124,8 @@ export function Navigation() {
                                 transition={{ delay: index * 0.1 + 0.3 }}
                                 onClick={() => handleNavClick(item.href)}
                                 className={`relative px-4 py-2 rounded-xl text-sm font-medium transition-all duration-300 group ${activeSection === item.id
-                                        ? 'text-primary bg-primary/10 border border-primary/20'
-                                        : 'text-muted-foreground hover:text-foreground hover:bg-primary/5'
+                                    ? 'text-primary bg-primary/10 border border-primary/20'
+                                    : 'text-muted-foreground hover:text-foreground hover:bg-primary/5'
                                     }`}
                             >
                                 {item.label}
@@ -157,35 +159,28 @@ export function Navigation() {
 
                     {/* Enhanced Desktop CTA */}
                     <div className="hidden md:flex items-center space-x-3">
-                        <Link href="/login">
-                            <Button
-                                variant="ghost"
-                                className="relative text-muted-foreground hover:text-foreground hover:bg-primary/5 border border-transparent hover:border-primary/20 transition-all duration-300"
-                            >
-                                Sign In
-                            </Button>
-                        </Link>
-                        <Link href="/login">
-                            <Button className="group relative overflow-hidden bg-gradient-to-r from-primary to-purple-600 hover:from-primary/90 hover:to-purple-700 border-0 shadow-2xl shadow-primary/25 transition-all duration-300 hover:shadow-primary/40 hover:scale-105">
-                                <span className="relative z-10 flex items-center">
-                                    Get Started
-                                    <ArrowRight className="ml-2 h-4 w-4 group-hover:translate-x-1 transition-transform duration-300" />
-                                </span>
+                        <Button
+                            onClick={() => navigateWithLoading("/login", "Preparing login interface...")}
+                            className="group relative overflow-hidden bg-gradient-to-r from-primary to-purple-600 hover:from-primary/90 hover:to-purple-700 border-0 shadow-2xl shadow-primary/25 transition-all duration-300 hover:shadow-primary/40 hover:scale-105"
+                        >
+                            <span className="relative z-10 flex items-center">
+                                Get Started
+                                <ArrowRight className="ml-2 h-4 w-4 group-hover:translate-x-1 transition-transform duration-300" />
+                            </span>
 
-                                {/* Animated shine effect */}
-                                <motion.div
-                                    className="absolute inset-0 bg-gradient-to-r from-transparent via-white/20 to-transparent -translate-x-full"
-                                    animate={{ translateX: ["0%", "200%"] }}
-                                    transition={{ duration: 2, repeat: Infinity, ease: "easeInOut" }}
-                                />
+                            {/* Animated shine effect */}
+                            <motion.div
+                                className="absolute inset-0 bg-gradient-to-r from-transparent via-white/20 to-transparent -translate-x-full"
+                                animate={{ translateX: ["0%", "200%"] }}
+                                transition={{ duration: 2, repeat: Infinity, ease: "easeInOut" }}
+                            />
 
-                                {/* Hover glow */}
-                                <motion.div
-                                    className="absolute inset-0 bg-gradient-to-r from-white/10 to-transparent opacity-0 group-hover:opacity-100"
-                                    transition={{ duration: 0.3 }}
-                                />
-                            </Button>
-                        </Link>
+                            {/* Hover glow */}
+                            <motion.div
+                                className="absolute inset-0 bg-gradient-to-r from-white/10 to-transparent opacity-0 group-hover:opacity-100"
+                                transition={{ duration: 0.3 }}
+                            />
+                        </Button>
                     </div>
 
                     {/* Enhanced Mobile Menu Button */}
@@ -229,8 +224,8 @@ export function Navigation() {
                                     transition={{ delay: index * 0.1 }}
                                     onClick={() => handleNavClick(item.href)}
                                     className={`block w-full text-left py-3 px-4 rounded-xl transition-all duration-300 ${activeSection === item.id
-                                            ? 'text-primary bg-primary/10 border border-primary/20'
-                                            : 'text-muted-foreground hover:text-foreground hover:bg-primary/5'
+                                        ? 'text-primary bg-primary/10 border border-primary/20'
+                                        : 'text-muted-foreground hover:text-foreground hover:bg-primary/5'
                                         }`}
                                 >
                                     <div className="flex items-center justify-between">
@@ -247,19 +242,15 @@ export function Navigation() {
                             ))}
 
                             <div className="pt-4 space-y-3 border-t border-primary/20">
-                                <Link href="/login" className="block">
-                                    <Button variant="outline" className="w-full border-primary/30 hover:bg-primary/5 hover:border-primary/50 transition-all duration-300">
-                                        Sign In
-                                    </Button>
-                                </Link>
-                                <Link href="/login" className="block">
-                                    <Button className="w-full bg-gradient-to-r from-primary to-purple-600 hover:from-primary/90 hover:to-purple-700 shadow-lg shadow-primary/25">
-                                        <span className="flex items-center justify-center">
-                                            Get Started
-                                            <ArrowRight className="ml-2 h-4 w-4" />
-                                        </span>
-                                    </Button>
-                                </Link>
+                                <Button
+                                    onClick={() => navigateWithLoading("/login", "Preparing login interface...")}
+                                    className="w-full bg-gradient-to-r from-primary to-purple-600 hover:from-primary/90 hover:to-purple-700 shadow-lg shadow-primary/25"
+                                >
+                                    <span className="flex items-center justify-center">
+                                        Get Started
+                                        <ArrowRight className="ml-2 h-4 w-4" />
+                                    </span>
+                                </Button>
                             </div>
                         </div>
                     </motion.div>

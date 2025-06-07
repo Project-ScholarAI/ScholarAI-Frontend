@@ -74,39 +74,39 @@ export const refreshAccessToken = async (): Promise<string | null> => {
 export const authenticatedFetch = async (url: string, options: RequestInit = {}) => {
     let token = getAuthToken()
     let headers = {
-      'Content-Type': 'application/json',
-      'Accept': 'application/json',
-      ...(token && { 'Authorization': `Bearer ${token}` }),
-      ...options.headers
+        'Content-Type': 'application/json',
+        'Accept': 'application/json',
+        ...(token && { 'Authorization': `Bearer ${token}` }),
+        ...options.headers
     }
-  
+
     const response = await fetch(url, {
-      ...options,
-      headers
+        ...options,
+        headers
     })
-  
+
     if (response.status === 401) {
 
         console.log('Access token expired, refreshing...');
-      // Try to refresh token
-      const newAccessToken = await refreshAccessToken()
-      if (newAccessToken) {
-        const retryHeaders = {
-          ...headers,
-          'Authorization': `Bearer ${newAccessToken}`
+        // Try to refresh token
+        const newAccessToken = await refreshAccessToken()
+        if (newAccessToken) {
+            const retryHeaders = {
+                ...headers,
+                'Authorization': `Bearer ${newAccessToken}`
+            }
+
+            return fetch(url, {
+                ...options,
+                headers: retryHeaders
+            })
         }
-  
-        return fetch(url, {
-          ...options,
-          headers: retryHeaders
-        })
-      }
     }
-  
+
     return response;
 
-  }
-  
+}
+
 
 export const login = async (formData: { email: string; password: string; rememberMe: boolean }) => {
     try {
@@ -127,12 +127,32 @@ export const login = async (formData: { email: string; password: string; remembe
             credentials: 'include' //allows storing refresh token in cookies
         })
 
-        const data = await response.json()
+        // Check if response is JSON
+        const contentType = response.headers.get('content-type');
+        const isJson = contentType && contentType.includes('application/json');
+
+        let data;
+        if (isJson) {
+            data = await response.json();
+        } else {
+            // If it's not JSON, get the text content (likely an error page)
+            const text = await response.text();
+            data = { message: text || 'Server error' };
+        }
 
         if (!response.ok) {
-            throw new Error(data.message || 'Login failed')
+            // Handle specific HTTP status codes
+            if (response.status === 500) {
+                throw new Error('Internal server error. Please try again later.');
+            } else if (response.status === 401) {
+                throw new Error(data.message || 'Invalid email or password');
+            } else if (response.status === 400) {
+                throw new Error(data.message || 'Invalid request data');
+            } else {
+                throw new Error(data.message || `Login failed (${response.status})`);
+            }
         }
-        else{
+        else {
             console.log("response:", data);
         }
 
@@ -183,13 +203,33 @@ export const signup = async (formData: { email: string; password: string; confir
                 email: formData.email,
                 password: formData.password
             })
-           
+
         });
 
-        const data = await response.json();
+        // Check if response is JSON
+        const contentType = response.headers.get('content-type');
+        const isJson = contentType && contentType.includes('application/json');
+
+        let data;
+        if (isJson) {
+            data = await response.json();
+        } else {
+            // If it's not JSON, get the text content (likely an error page)
+            const text = await response.text();
+            data = { message: text || 'Server error' };
+        }
 
         if (!response.ok) {
-            throw new Error(data.message || 'Registration failed');
+            // Handle specific HTTP status codes
+            if (response.status === 500) {
+                throw new Error('Internal server error. Please try again later.');
+            } else if (response.status === 400) {
+                throw new Error(data.message || 'Invalid request data');
+            } else if (response.status === 409) {
+                throw new Error(data.message || 'Email already exists');
+            } else {
+                throw new Error(data.message || `Registration failed (${response.status})`);
+            }
         }
 
         return {
@@ -198,6 +238,15 @@ export const signup = async (formData: { email: string; password: string; confir
         };
     } catch (error) {
         console.error('Signup API error:', error);
+
+        // Handle network errors
+        if (error instanceof TypeError && error.message.includes('fetch')) {
+            return {
+                success: false,
+                message: 'Cannot connect to server. Please check your internet connection.'
+            };
+        }
+
         return {
             success: false,
             message: error instanceof Error ? error.message : 'Network error occurred'
@@ -231,7 +280,19 @@ export const sendResetCode = async (email: string) => {
     })
 
     if (!res.ok) {
-        const data = await res.json()
+        // Check if response is JSON
+        const contentType = res.headers.get('content-type');
+        const isJson = contentType && contentType.includes('application/json');
+
+        let data;
+        if (isJson) {
+            data = await res.json();
+        } else {
+            // If it's not JSON, get the text content (likely an error page)
+            const text = await res.text();
+            data = { message: text || 'Server error' };
+        }
+
         throw new Error(data.message || "Error sending code")
     }
 }
@@ -244,7 +305,19 @@ export const submitNewPassword = async (email: string, code: string, newPassword
     })
 
     if (!res.ok) {
-        const data = await res.json()
+        // Check if response is JSON
+        const contentType = res.headers.get('content-type');
+        const isJson = contentType && contentType.includes('application/json');
+
+        let data;
+        if (isJson) {
+            data = await res.json();
+        } else {
+            // If it's not JSON, get the text content (likely an error page)
+            const text = await res.text();
+            data = { message: text || 'Server error' };
+        }
+
         throw new Error(data.message || "Error resetting password")
     }
 }
@@ -272,10 +345,30 @@ export const handleGoogleSocialLogin = async (idToken: string): Promise<SocialLo
             body: JSON.stringify({ idToken })
         });
 
-        const data = await response.json();
+        // Check if response is JSON
+        const contentType = response.headers.get('content-type');
+        const isJson = contentType && contentType.includes('application/json');
+
+        let data;
+        if (isJson) {
+            data = await response.json();
+        } else {
+            // If it's not JSON, get the text content (likely an error page)
+            const text = await response.text();
+            data = { message: text || 'Server error' };
+        }
 
         if (!response.ok) {
-            throw new Error(data.message || 'Social login failed');
+            // Handle specific HTTP status codes
+            if (response.status === 500) {
+                throw new Error('Internal server error. Please try again later.');
+            } else if (response.status === 401) {
+                throw new Error(data.message || 'Social login authentication failed');
+            } else if (response.status === 400) {
+                throw new Error(data.message || 'Invalid social login data');
+            } else {
+                throw new Error(data.message || 'Social login failed');
+            }
         }
 
         const accessToken = data.data?.accessToken;
@@ -292,7 +385,7 @@ export const handleGoogleSocialLogin = async (idToken: string): Promise<SocialLo
 
         // Store access token
         localStorage.setItem('scholarai_token', accessToken);
-        
+
         // Store user data
         if (user && user.id) {
             localStorage.setItem('scholarai_user', JSON.stringify(user));
@@ -314,7 +407,7 @@ export const handleGoogleSocialLogin = async (idToken: string): Promise<SocialLo
     } catch (error) {
         console.error('Social Login API error:', error);
         // Clear any partial auth data if login failed
-        clearAuthData(); 
+        clearAuthData();
         // Also clear the potential refresh token from local storage
         if (typeof window !== 'undefined') {
             localStorage.removeItem('scholarai_refresh_token');
@@ -345,10 +438,30 @@ export const handleGitHubAuthCallback = async (code: string): Promise<SocialLogi
             body: JSON.stringify({ code })
         });
 
-        const data = await response.json();
+        // Check if response is JSON
+        const contentType = response.headers.get('content-type');
+        const isJson = contentType && contentType.includes('application/json');
+
+        let data;
+        if (isJson) {
+            data = await response.json();
+        } else {
+            // If it's not JSON, get the text content (likely an error page)
+            const text = await response.text();
+            data = { message: text || 'Server error' };
+        }
 
         if (!response.ok) {
-            throw new Error(data.message || 'GitHub callback failed at backend');
+            // Handle specific HTTP status codes
+            if (response.status === 500) {
+                throw new Error('Internal server error. Please try again later.');
+            } else if (response.status === 401) {
+                throw new Error(data.message || 'GitHub authentication failed');
+            } else if (response.status === 400) {
+                throw new Error(data.message || 'Invalid GitHub callback data');
+            } else {
+                throw new Error(data.message || 'GitHub callback failed at backend');
+            }
         }
 
         const accessToken = data.data?.accessToken;
@@ -365,7 +478,7 @@ export const handleGitHubAuthCallback = async (code: string): Promise<SocialLogi
 
         // Store access token
         localStorage.setItem('scholarai_token', accessToken);
-        
+
         // Store user data
         if (user && user.id) {
             localStorage.setItem('scholarai_user', JSON.stringify(user));
@@ -389,7 +502,7 @@ export const handleGitHubAuthCallback = async (code: string): Promise<SocialLogi
 
     } catch (error) {
         console.error('GitHub Auth Callback API error:', error);
-        clearAuthData(); 
+        clearAuthData();
         if (typeof window !== 'undefined') {
             localStorage.removeItem('scholarai_refresh_token');
         }

@@ -14,7 +14,14 @@ import {
     Link,
     Zap,
     Shield,
-    ArrowUpRight
+    ArrowUpRight,
+    Search,
+    Microscope,
+    GraduationCap,
+    Brain,
+    Network,
+    Cpu,
+    Dna
 } from "lucide-react"
 
 const integrations = [
@@ -24,9 +31,10 @@ const integrations = [
         logo: "/api/placeholder/100/100",
         category: "Preprint Server",
         papers: "2.3M+",
-        domains: ["Physics", "Mathematics", "Computer Science", "Biology"],
+        domains: ["Physics", "Mathematics", "+2"],
         color: "from-red-500/20 to-orange-500/20",
         iconColor: "text-red-500",
+        icon: FileText,
         isPopular: true
     },
     {
@@ -35,9 +43,10 @@ const integrations = [
         logo: "/api/placeholder/100/100",
         category: "Medical Database",
         papers: "34M+",
-        domains: ["Medicine", "Life Sciences", "Biology", "Chemistry"],
+        domains: ["Medicine", "Life Sciences", "+2"],
         color: "from-blue-500/20 to-cyan-500/20",
         iconColor: "text-blue-500",
+        icon: Microscope,
         isPopular: true
     },
     {
@@ -46,10 +55,11 @@ const integrations = [
         logo: "/api/placeholder/100/100",
         category: "Engineering Database",
         papers: "5.5M+",
-        domains: ["Engineering", "Computer Science", "Electronics"],
+        domains: ["Engineering", "Computer Science", "+1"],
         color: "from-indigo-500/20 to-purple-500/20",
         iconColor: "text-indigo-500",
-        isPopular: false
+        icon: Zap,
+        isPopular: true
     },
     {
         name: "Google Scholar",
@@ -60,6 +70,7 @@ const integrations = [
         domains: ["All Disciplines"],
         color: "from-green-500/20 to-emerald-500/20",
         iconColor: "text-green-500",
+        icon: Search,
         isPopular: true
     },
     {
@@ -68,9 +79,10 @@ const integrations = [
         logo: "/api/placeholder/100/100",
         category: "AI-Powered Search",
         papers: "200M+",
-        domains: ["Computer Science", "Biomedicine", "Physics"],
+        domains: ["Computer Science", "Biomedicine", "+1"],
         color: "from-purple-500/20 to-pink-500/20",
         iconColor: "text-purple-500",
+        icon: Brain,
         isPopular: true
     },
     {
@@ -82,6 +94,7 @@ const integrations = [
         domains: ["All Disciplines"],
         color: "from-yellow-500/20 to-orange-500/20",
         iconColor: "text-yellow-600",
+        icon: Network,
         isPopular: false
     },
     {
@@ -93,6 +106,7 @@ const integrations = [
         domains: ["Computer Science"],
         color: "from-teal-500/20 to-cyan-500/20",
         iconColor: "text-teal-500",
+        icon: Cpu,
         isPopular: false
     },
     {
@@ -104,6 +118,7 @@ const integrations = [
         domains: ["Biology", "Life Sciences"],
         color: "from-emerald-500/20 to-green-500/20",
         iconColor: "text-emerald-500",
+        icon: Dna,
         isPopular: false
     }
 ]
@@ -196,94 +211,89 @@ export function IntegrationsSection() {
                     transition={{ duration: 0.8, delay: 0.6 }}
                     className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-16"
                 >
-                    {integrations.map((integration, index) => (
-                        <motion.div
-                            key={integration.name}
-                            initial={{ opacity: 0, y: 50 }}
-                            animate={isInView ? { opacity: 1, y: 0 } : { opacity: 0, y: 50 }}
-                            transition={{
-                                duration: 0.5,
-                                delay: index * 0.1 + 0.8,
-                                ease: "easeOut"
-                            }}
-                            whileHover={{ y: -5 }}
-                            className="group relative"
-                        >
-                            <Card className="h-full border-border/50 bg-gradient-to-br from-background to-muted/20 hover:border-primary/30 transition-all duration-300 hover:shadow-xl hover:shadow-primary/10 overflow-hidden">
-                                {integration.isPopular && (
-                                    <div className="absolute top-3 right-3 z-10">
-                                        <Badge variant="secondary" className="bg-gradient-to-r from-primary/20 to-purple-500/20 text-primary border-primary/30">
-                                            Popular
-                                        </Badge>
-                                    </div>
-                                )}
-
-                                <div className={`absolute inset-0 bg-gradient-to-br ${integration.color} opacity-0 group-hover:opacity-100 transition-opacity duration-500`} />
-
-                                <CardContent className="p-6 relative z-10">
-                                    {/* Logo placeholder with icon */}
-                                    <div className="flex items-center justify-center w-16 h-16 mx-auto mb-4 rounded-xl bg-gradient-to-br from-background to-muted/50 border border-border/50 group-hover:border-primary/30 transition-colors">
-                                        <BookOpen className={`h-8 w-8 ${integration.iconColor}`} />
-                                    </div>
-
-                                    <h3 className="text-lg font-semibold text-foreground mb-2 group-hover:text-primary transition-colors">
-                                        {integration.name}
-                                    </h3>
-
-                                    <p className="text-sm text-muted-foreground mb-3 leading-relaxed">
-                                        {integration.description}
-                                    </p>
-
-                                    <div className="space-y-2 mb-4">
-                                        <div className="flex items-center justify-between text-xs">
-                                            <span className="text-muted-foreground">Papers:</span>
-                                            <span className="font-semibold text-primary">{integration.papers}</span>
-                                        </div>
-                                        <div className="text-xs text-muted-foreground">
-                                            <span className="font-medium">Category:</span> {integration.category}
-                                        </div>
-                                    </div>
-
-                                    {/* Domains */}
-                                    <div className="flex flex-wrap gap-1">
-                                        {integration.domains.slice(0, 2).map((domain, domainIndex) => (
-                                            <Badge
-                                                key={domainIndex}
-                                                variant="outline"
-                                                className="text-xs border-border/50 hover:border-primary/30 transition-colors"
-                                            >
-                                                {domain}
+                    {integrations.map((integration, index) => {
+                        const IconComponent = integration.icon
+                        return (
+                            <motion.div
+                                key={integration.name}
+                                initial={{ opacity: 0, y: 50 }}
+                                animate={isInView ? { opacity: 1, y: 0 } : { opacity: 0, y: 50 }}
+                                transition={{
+                                    duration: 0.5,
+                                    delay: index * 0.1 + 0.8,
+                                    ease: "easeOut"
+                                }}
+                                whileHover={{ y: -5 }}
+                                className="group relative"
+                            >
+                                <Card className="h-full border-border/50 bg-gradient-to-br from-background to-muted/20 hover:border-primary/30 transition-all duration-300 hover:shadow-xl hover:shadow-primary/10 overflow-hidden relative">
+                                    {integration.isPopular && (
+                                        <div className="absolute top-3 right-3 z-10">
+                                            <Badge variant="secondary" className="bg-gradient-to-r from-primary/20 to-purple-500/20 text-primary border-primary/30">
+                                                Popular
                                             </Badge>
-                                        ))}
-                                        {integration.domains.length > 2 && (
-                                            <Badge
-                                                variant="outline"
-                                                className="text-xs border-border/50 hover:border-primary/30 transition-colors"
-                                            >
-                                                +{integration.domains.length - 2}
-                                            </Badge>
-                                        )}
-                                    </div>
-                                </CardContent>
+                                        </div>
+                                    )}
 
-                                {/* Connection indicator */}
-                                <motion.div
-                                    initial={{ scale: 0 }}
-                                    animate={{ scale: 1 }}
-                                    transition={{ delay: index * 0.1 + 1 }}
-                                    className="absolute bottom-3 right-3"
-                                >
-                                    <div className="w-3 h-3 bg-green-500 rounded-full animate-pulse" />
-                                </motion.div>
+                                    <div className={`absolute inset-0 bg-gradient-to-br ${integration.color} opacity-0 group-hover:opacity-100 transition-opacity duration-500`} />
 
-                                {/* Shine effect */}
-                                <motion.div
-                                    className="absolute inset-0 bg-gradient-to-r from-transparent via-white/5 to-transparent -translate-x-full group-hover:translate-x-full transition-transform duration-1000"
-                                    style={{ transform: "skewX(-20deg)" }}
-                                />
-                            </Card>
-                        </motion.div>
-                    ))}
+                                    <CardContent className="p-6 relative z-10">
+                                        {/* Logo placeholder with custom icon */}
+                                        <div className="flex items-center justify-center w-16 h-16 mx-auto mb-4 rounded-xl bg-gradient-to-br from-background to-muted/50 border border-border/50 group-hover:border-primary/30 transition-colors">
+                                            <IconComponent className={`h-8 w-8 ${integration.iconColor}`} />
+                                        </div>
+
+                                        <h3 className="text-lg font-semibold text-foreground mb-2 group-hover:text-primary transition-colors">
+                                            {integration.name}
+                                        </h3>
+
+                                        <p className="text-sm text-muted-foreground mb-3 leading-relaxed">
+                                            {integration.description}
+                                        </p>
+
+                                        <div className="space-y-2 mb-4">
+                                            <div className="flex items-center justify-between text-xs">
+                                                <span className="text-muted-foreground">Papers:</span>
+                                                <span className="font-semibold text-primary">{integration.papers}</span>
+                                            </div>
+                                            <div className="text-xs text-muted-foreground">
+                                                <span className="font-medium">Category:</span> {integration.category}
+                                            </div>
+                                        </div>
+
+                                        {/* Domains */}
+                                        <div className="flex flex-wrap gap-1">
+                                            {integration.domains.map((domain, domainIndex) => (
+                                                <Badge
+                                                    key={domainIndex}
+                                                    variant="outline"
+                                                    className="text-xs border-border/50 hover:border-primary/30 transition-colors"
+                                                >
+                                                    {domain}
+                                                </Badge>
+                                            ))}
+                                        </div>
+                                    </CardContent>
+
+                                    {/* Connection indicator */}
+                                    <motion.div
+                                        initial={{ scale: 0 }}
+                                        animate={{ scale: 1 }}
+                                        transition={{ delay: index * 0.1 + 1 }}
+                                        className="absolute bottom-3 right-3"
+                                    >
+                                        <div className="w-3 h-3 bg-green-500 rounded-full animate-pulse" />
+                                    </motion.div>
+
+                                    {/* Shine effect */}
+                                    <motion.div
+                                        className="absolute inset-0 bg-gradient-to-r from-transparent via-white/5 to-transparent -translate-x-full group-hover:translate-x-full transition-transform duration-1000"
+                                        style={{ transform: "skewX(-20deg)" }}
+                                    />
+                                </Card>
+                            </motion.div>
+                        )
+                    })}
                 </motion.div>
 
                 {/* Features Row */}

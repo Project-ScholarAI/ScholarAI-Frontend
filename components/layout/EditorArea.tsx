@@ -14,208 +14,99 @@ import {
     Code,
     Search,
     Settings,
-    Command
+    Command,
+    Brain,
+    Zap,
+    BookOpen
 } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { cn } from "@/lib/utils/cn"
-import { WelcomeScreen } from "@/components/layout/WelcomeScreen"
-
-type Tab = {
-    id: string
-    name: string
-    type: 'pdf' | 'doc' | 'md' | 'txt' | 'code'
-    path: string
-    isActive: boolean
-    isDirty: boolean
-}
 
 type Props = {
     children: React.ReactNode
     onChatToggle: () => void
 }
 
-const getFileIcon = (type: Tab['type']) => {
-    switch (type) {
-        case 'pdf':
-            return <FileText className="h-4 w-4 text-red-400" />
-        case 'doc':
-            return <File className="h-4 w-4 text-blue-400" />
-        case 'md':
-            return <FileText className="h-4 w-4 text-green-400" />
-        case 'code':
-            return <Code className="h-4 w-4 text-yellow-400" />
-        default:
-            return <File className="h-4 w-4 text-gray-400" />
-    }
-}
-
 export function EditorArea({ children, onChatToggle }: Props) {
-    const [tabs, setTabs] = useState<Tab[]>([])
     const pathname = usePathname()
 
-    const closeTab = (tabId: string) => {
-        setTabs(tabs.filter(tab => tab.id !== tabId))
+    // Get current page title based on route
+    const getPageTitle = () => {
+        if (pathname.includes('/home')) return 'Research Projects'
+        if (pathname.includes('/projects/')) return 'Project Workspace'
+        if (pathname.includes('/library')) return 'Paper Library'
+        if (pathname.includes('/ai')) return 'AI Assistant'
+        if (pathname.includes('/workflows')) return 'Workflows'
+        if (pathname.includes('/search')) return 'Search'
+        if (pathname.includes('/notifications')) return 'Notifications'
+        if (pathname.includes('/settings')) return 'Settings'
+        if (pathname.includes('/account')) return 'Account'
+        return 'ScholarAI'
     }
 
-    const setActiveTab = (tabId: string) => {
-        setTabs(tabs.map(tab => ({ ...tab, isActive: tab.id === tabId })))
-    }
-
-    const addSampleTabs = () => {
-        setTabs([
-            {
-                id: '1',
-                name: 'Research Paper.pdf',
-                type: 'pdf',
-                path: '/documents/research-paper.pdf',
-                isActive: true,
-                isDirty: false
-            },
-            {
-                id: '2',
-                name: 'Notes.md',
-                type: 'md',
-                path: '/documents/notes.md',
-                isActive: false,
-                isDirty: true
-            },
-            {
-                id: '3',
-                name: 'Analysis.doc',
-                type: 'doc',
-                path: '/documents/analysis.doc',
-                isActive: false,
-                isDirty: false
-            }
-        ])
-    }
-
-    // Show WelcomeScreen from EditorArea only if no tabs are open AND current path is the base /interface path
-    if (tabs.length === 0 && pathname === '/interface') {
-        return (
-            <div className="flex flex-col h-full bg-[#1e1e1e]">
-                {/* Top Toolbar */}
-                <div className="flex items-center justify-between h-12 px-4 bg-[#2d2d30] border-b border-[#3e3e42]">
-                    <div className="flex items-center gap-2">
-                        <Button variant="ghost" size="sm" className="h-8 px-2 text-gray-300 hover:bg-[#3e3e42]">
-                            <Command className="h-4 w-4 mr-1" />
-                            <span className="text-xs">Cmd+P</span>
-                        </Button>
-                        <Button variant="ghost" size="sm" className="h-8 px-2 text-gray-300 hover:bg-[#3e3e42]">
-                            <Search className="h-4 w-4 mr-1" />
-                            <span className="text-xs">Search</span>
-                        </Button>
-                        <Button
-                            variant="ghost"
-                            size="sm"
-                            className="h-8 px-2 text-gray-300 hover:bg-[#3e3e42]"
-                            onClick={addSampleTabs}
-                        >
-                            <Plus className="h-4 w-4 mr-1" />
-                            <span className="text-xs">Open Sample</span>
-                        </Button>
-                    </div>
-
-                    <div className="flex items-center gap-2">
-                        <Button
-                            variant="ghost"
-                            size="sm"
-                            className="h-8 px-2 text-gray-300 hover:bg-[#3e3e42]"
-                            onClick={onChatToggle}
-                        >
-                            <MessageSquare className="h-4 w-4 mr-1" />
-                            <span className="text-xs">Chat</span>
-                        </Button>
-                        <Button variant="ghost" size="sm" className="h-8 px-2 text-gray-300 hover:bg-[#3e3e42]">
-                            <Settings className="h-4 w-4" />
-                        </Button>
-                    </div>
-                </div>
-
-                {/* Welcome Screen */}
-                <WelcomeScreen />
-            </div>
-        )
+    const getPageIcon = () => {
+        if (pathname.includes('/home')) return <BookOpen className="h-4 w-4" />
+        if (pathname.includes('/projects/')) return <Zap className="h-4 w-4" />
+        if (pathname.includes('/library')) return <BookOpen className="h-4 w-4" />
+        if (pathname.includes('/ai')) return <Brain className="h-4 w-4" />
+        if (pathname.includes('/workflows')) return <Zap className="h-4 w-4" />
+        if (pathname.includes('/search')) return <Search className="h-4 w-4" />
+        if (pathname.includes('/notifications')) return <MessageSquare className="h-4 w-4" />
+        if (pathname.includes('/settings')) return <Settings className="h-4 w-4" />
+        if (pathname.includes('/account')) return <Settings className="h-4 w-4" />
+        return <BookOpen className="h-4 w-4" />
     }
 
     return (
-        <div className="flex flex-col h-full bg-[#1e1e1e]">
-            {/* Top Toolbar */}
-            <div className="flex items-center justify-between h-12 px-4 bg-[#2d2d30] border-b border-[#3e3e42]">
-                <div className="flex items-center gap-2">
-                    <Button variant="ghost" size="sm" className="h-8 px-2 text-gray-300 hover:bg-[#3e3e42]">
-                        <Command className="h-4 w-4 mr-1" />
-                        <span className="text-xs">Cmd+P</span>
-                    </Button>
-                    <Button variant="ghost" size="sm" className="h-8 px-2 text-gray-300 hover:bg-[#3e3e42]">
-                        <Search className="h-4 w-4 mr-1" />
-                        <span className="text-xs">Search</span>
-                    </Button>
+        <div className="flex flex-col h-full relative">
+            {/* Top Header Bar */}
+            <div className="flex items-center justify-between h-14 px-6 bg-background/60 backdrop-blur-xl border-b border-primary/10 relative z-10">
+                <div className="flex items-center gap-3">
+                    <div className="flex items-center gap-2 text-foreground/80">
+                        {getPageIcon()}
+                        <h2 className="font-semibold text-lg">{getPageTitle()}</h2>
+                    </div>
                 </div>
 
                 <div className="flex items-center gap-2">
                     <Button
                         variant="ghost"
                         size="sm"
-                        className="h-8 px-2 text-gray-300 hover:bg-[#3e3e42]"
+                        className="h-8 px-3 text-foreground/70 hover:bg-primary/10 hover:text-primary transition-all duration-300 rounded-lg"
+                        onClick={() => {
+                            // Quick search functionality
+                            console.log("Quick search")
+                        }}
+                    >
+                        <Search className="h-4 w-4 mr-2" />
+                        <span className="text-sm">Search</span>
+                        <kbd className="ml-2 pointer-events-none inline-flex h-5 select-none items-center gap-1 rounded border border-primary/20 bg-primary/10 px-1.5 font-mono text-[10px] font-medium text-primary opacity-100">
+                            ⌘K
+                        </kbd>
+                    </Button>
+
+                    <Button
+                        variant="ghost"
+                        size="sm"
+                        className="h-8 px-3 text-foreground/70 hover:bg-primary/10 hover:text-primary transition-all duration-300 rounded-lg"
                         onClick={onChatToggle}
                     >
-                        <MessageSquare className="h-4 w-4 mr-1" />
-                        <span className="text-xs">Chat</span>
+                        <MessageSquare className="h-4 w-4 mr-2" />
+                        <span className="text-sm">AI Chat</span>
                     </Button>
-                    <Button variant="ghost" size="sm" className="h-8 px-2 text-gray-300 hover:bg-[#3e3e42]">
+
+                    <Button
+                        variant="ghost"
+                        size="sm"
+                        className="h-8 w-8 p-0 text-foreground/70 hover:bg-primary/10 hover:text-primary transition-all duration-300 rounded-lg"
+                    >
                         <Settings className="h-4 w-4" />
                     </Button>
                 </div>
             </div>
 
-            {/* Tab Bar - only show if we have tabs */}
-            {tabs.length > 0 && (
-                <div className="flex items-center bg-[#252526] border-b border-[#3e3e42] min-h-[35px]">
-                    <div className="flex items-center flex-1 overflow-x-auto">
-                        {tabs.map((tab) => (
-                            <div
-                                key={tab.id}
-                                className={cn(
-                                    "flex items-center gap-2 px-3 py-2 border-r border-[#3e3e42] cursor-pointer group min-w-0 max-w-[200px]",
-                                    tab.isActive
-                                        ? "bg-[#1e1e1e] text-white border-t-2 border-t-[#007acc]"
-                                        : "bg-[#252526] text-gray-300 hover:bg-[#2d2d30]"
-                                )}
-                                onClick={() => setActiveTab(tab.id)}
-                            >
-                                {getFileIcon(tab.type)}
-                                <span className="text-sm truncate flex-1">
-                                    {tab.name}
-                                    {tab.isDirty && <span className="text-orange-400 ml-1">●</span>}
-                                </span>
-                                <Button
-                                    variant="ghost"
-                                    size="sm"
-                                    className="h-4 w-4 p-0 opacity-0 group-hover:opacity-100 hover:bg-[#3e3e42] rounded-sm"
-                                    onClick={(e) => {
-                                        e.stopPropagation()
-                                        closeTab(tab.id)
-                                    }}
-                                >
-                                    <X className="h-3 w-3" />
-                                </Button>
-                            </div>
-                        ))}
-                        <Button
-                            variant="ghost"
-                            size="sm"
-                            className="h-8 w-8 p-0 ml-2 text-gray-400 hover:bg-[#3e3e42] hover:text-white"
-                            onClick={addSampleTabs}
-                        >
-                            <Plus className="h-4 w-4" />
-                        </Button>
-                    </div>
-                </div>
-            )}
-
-            {/* Content Area */}
-            <div className="flex-1 bg-[#1e1e1e] overflow-hidden">
+            {/* Main Content Area */}
+            <div className="flex-1 relative overflow-hidden">
                 {children}
             </div>
         </div>

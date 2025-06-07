@@ -11,6 +11,7 @@ import { AUTH_CONSTANTS } from "@/constants/auth"
 import { signup } from "@/lib/api"
 import type { SignupFormData } from "@/types/auth"
 import SocialLogin from "./SocialLogin"
+import { useNavigationWithLoading } from "@/components/ui/RouteTransition"
 
 const MouseGlitter = () => {
     const [particles, setParticles] = useState<Array<{ x: number; y: number; id: string }>>([])
@@ -40,13 +41,13 @@ const MouseGlitter = () => {
             {particles.map((particle) => (
                 <div
                     key={particle.id}
-                    className="absolute w-2 h-2 rounded-full bg-white/80"
+                    className="absolute w-2 h-2 rounded-full bg-gradient-to-r from-blue-400 to-purple-600"
                     style={{
                         left: particle.x,
                         top: particle.y,
                         transform: 'translate(-50%, -50%)',
                         animation: 'fadeOut 1s forwards',
-                        boxShadow: '0 0 8px rgba(255, 255, 255, 0.8)',
+                        boxShadow: '0 0 12px hsl(var(--primary) / 0.6), 0 0 24px hsl(var(--primary) / 0.3)',
                     }}
                 />
             ))}
@@ -72,6 +73,7 @@ export function SignupForm() {
     const [showConfirmPassword, setShowConfirmPassword] = useState(false)
     const [isLoading, setIsLoading] = useState(false)
     const router = useRouter()
+    const { navigateWithLoading } = useNavigationWithLoading()
 
     /* ────────────────────────────────────────────────────────── */
     /*  Handlers                                                 */
@@ -131,7 +133,7 @@ export function SignupForm() {
             const response = await signup(formData)
             if (response.success) {
                 // Don't auto-login, redirect to login page with success message
-                router.push("/login?signup=success")
+                navigateWithLoading("/login?signup=success", "Redirecting to login...")
             } else {
                 setErrors({
                     email: "",
@@ -161,21 +163,16 @@ export function SignupForm() {
             <MouseGlitter />
             <div className="flex-1 flex items-center justify-center">
                 <div className="max-w-[450px] w-full">
-                    <h1 className="text-2xl font-bold text-center text-white/70 mb-4 backdrop-blur-sm">
-                        {AUTH_CONSTANTS.signupTitle}
+                    <h1 className="text-3xl font-extrabold text-center mb-8 bg-gradient-to-r from-primary via-purple-500 to-primary bg-clip-text text-transparent drop-shadow-lg">
+                        Sign up
                     </h1>
 
-                    {/* -------------  SIGNUP CARD ------------- */}
+                    {/* ----------  THEMED GLASS CARD ---------- */}
                     <div
-                        className="backdrop-blur-xl rounded-2xl p-6 border w-[450px] min-h-[500px] flex flex-col shadow-2xl"
-                        style={{
-                            background: "rgba(255, 255, 255, 0.08)",
-                            border: "1.5px solid rgba(255, 255, 255, 0.35)",
-                            boxShadow: "0 8px 32px 0 rgba(31, 38, 135, 0.18)",
-                        }}
+                        className="rounded-2xl p-8 w-[450px] flex flex-col shadow-2xl backdrop-blur-2xl border border-primary/30 bg-gradient-to-br from-background/20 via-background/10 to-primary/5 hover:shadow-primary/30 transition-shadow duration-300"
                     >
                         <form onSubmit={handleSubmit} className="flex flex-col flex-grow">
-                            <div className="space-y-3">
+                            <div className="space-y-4">
                                 <InputField
                                     id="email"
                                     name="email"
@@ -214,7 +211,7 @@ export function SignupForm() {
                                     toggleShowPassword={toggleShowConfirmPassword}
                                 />
 
-                                <div className="mb-3">
+                                <div className="flex items-center justify-between text-base text-white/70 mb-4">
                                     <Checkbox
                                         id="agreeToTerms"
                                         name="agreeToTerms"
@@ -222,26 +219,21 @@ export function SignupForm() {
                                         checked={formData.agreeToTerms}
                                         onChange={handleChange}
                                     />
-                                    {errors.agreeToTerms && (
-                                        <p className="text-red-400 text-sm mt-1">{errors.agreeToTerms}</p>
-                                    )}
                                 </div>
+                                {errors.agreeToTerms && (
+                                    <p className="text-red-400 text-sm mt-1">{errors.agreeToTerms}</p>
+                                )}
                             </div>
-
-                            <div className="flex-grow"></div>
 
                             <button
                                 type="submit"
                                 disabled={isLoading}
-                                className="w-full h-[55px] px-4 rounded-2xl font-['Segoe_UI'] font-medium transition-colors text-xl
-                                    bg-white/30 text-[#043434] hover:bg-white/50 border border-white/40 shadow-md
-                                    disabled:opacity-50 disabled:cursor-not-allowed
-                                    flex items-center justify-center mt-3 backdrop-blur-md"
+                                className="w-full h-[60px] px-4 rounded-2xl font-['Segoe_UI'] font-semibold text-lg text-white shadow-lg shadow-primary/25 bg-gradient-to-r from-primary to-purple-600 hover:from-primary/90 hover:to-purple-700 border border-primary/40 transition-all duration-300 disabled:opacity-60 disabled:cursor-not-allowed flex items-center justify-center mt-6"
                             >
                                 {isLoading ? (
                                     <>
                                         <svg
-                                            className="animate-spin -ml-1 mr-2 h-6 w-6 text-[#043434]"
+                                            className="animate-spin -ml-1 mr-2 h-6 w-6 text-white"
                                             xmlns="http://www.w3.org/2000/svg"
                                             fill="none"
                                             viewBox="0 0 24 24"
@@ -263,7 +255,7 @@ export function SignupForm() {
                                         <span className="font-['Segoe_UI']">Creating account...</span>
                                     </>
                                 ) : (
-                                    <span className="font-['Segoe_UI']">{AUTH_CONSTANTS.signupButton}</span>
+                                    <span className="font-['Segoe_UI']">Sign up</span>
                                 )}
                             </button>
                         </form>
@@ -271,21 +263,21 @@ export function SignupForm() {
 
                     <div className="mt-8 text-center">
                         <div className="flex items-center justify-center gap-3 mb-6">
-                            <div className="h-[1px] bg-white/20 w-40"></div>
-                            <span className="text-shiny text-base font-['Segoe_UI'] whitespace-nowrap">or connect with</span>
-                            <div className="h-[1px] bg-white/20 w-40"></div>
+                            <div className="h-[1px] bg-primary/30 w-40"></div>
+                            <span className="text-primary/50 text-base font-['Segoe_UI'] whitespace-nowrap">or connect with</span>
+                            <div className="h-[1px] bg-primary/30 w-40"></div>
                         </div>
                         <SocialLogin />
                     </div>
 
-                    <p className="text-center text-shiny text-base mt-6 font-['Segoe_UI']">
-                        {AUTH_CONSTANTS.haveAccount}{" "}
-                        <Link
-                            href="/login"
-                            className="relative inline-block text-[#7CE495] hover:text-[#6AD084] transition-colors glitery-text"
+                    <p className="text-center text-primary/50 text-base mt-6 font-['Segoe_UI']">
+                        Already have an account?{" "}
+                        <button
+                            onClick={() => navigateWithLoading("/login", "Preparing login interface...")}
+                            className="relative inline-block text-primary/80 hover:text-primary transition-colors font-medium cursor-pointer underline decoration-primary/50 hover:decoration-primary underline-offset-2"
                         >
-                            {AUTH_CONSTANTS.loginLink}
-                        </Link>
+                            Log in
+                        </button>
                     </p>
                 </div>
             </div>
@@ -294,42 +286,6 @@ export function SignupForm() {
 }
 
 const styles = `
-@keyframes glitery {
-    0% {
-        text-shadow: 0 0 4px #7CE495, 0 0 8px #7CE495;
-    }
-    25% {
-        text-shadow: 0 0 8px #7CE495, 0 0 16px #7CE495;
-    }
-    50% {
-        text-shadow: 0 0 4px #7CE495, 0 0 8px #7CE495;
-    }
-    75% {
-        text-shadow: 0 0 8px #7CE495, 0 0 16px #7CE495;
-    }
-    100% {
-        text-shadow: 0 0 4px #7CE495, 0 0 8px #7CE495;
-    }
-}
-
-.glitery-text {
-    animation: glitery 2s infinite;
-    position: relative;
-}
-
-.glitery-text::before {
-    content: '';
-    position: absolute;
-    top: -2px;
-    left: -2px;
-    right: -2px;
-    bottom: -2px;
-    background: linear-gradient(45deg, transparent, rgba(124, 228, 149, 0.2), transparent);
-    animation: glitery 2s infinite;
-    z-index: -1;
-    border-radius: 4px;
-}
-
 @keyframes fadeOut {
     0% {
         opacity: 1;

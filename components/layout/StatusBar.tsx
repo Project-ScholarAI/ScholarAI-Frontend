@@ -2,7 +2,6 @@
 
 import { useState, useEffect } from "react"
 import {
-    GitBranch,
     Wifi,
     WifiOff,
     CheckCircle,
@@ -10,7 +9,9 @@ import {
     Clock,
     Zap,
     Brain,
-    FileText
+    FileText,
+    Database,
+    Activity
 } from "lucide-react"
 import { cn } from "@/lib/utils/cn"
 
@@ -21,7 +22,9 @@ type Props = {
 export function StatusBar({ className }: Props) {
     const [isOnline, setIsOnline] = useState(true)
     const [aiStatus, setAiStatus] = useState<'ready' | 'processing' | 'offline'>('ready')
-    const [documentsCount, setDocumentsCount] = useState(3)
+    const [papersCount, setPapersCount] = useState(159)
+    const [projectsCount, setProjectsCount] = useState(3)
+    const [currentTime, setCurrentTime] = useState(new Date())
 
     useEffect(() => {
         const handleOnline = () => setIsOnline(true)
@@ -30,20 +33,26 @@ export function StatusBar({ className }: Props) {
         window.addEventListener('online', handleOnline)
         window.addEventListener('offline', handleOffline)
 
+        // Update time every minute
+        const timer = setInterval(() => {
+            setCurrentTime(new Date())
+        }, 60000)
+
         return () => {
             window.removeEventListener('online', handleOnline)
             window.removeEventListener('offline', handleOffline)
+            clearInterval(timer)
         }
     }, [])
 
     const getAiStatusIcon = () => {
         switch (aiStatus) {
             case 'ready':
-                return <CheckCircle className="h-3 w-3 text-green-400" />
+                return <CheckCircle className="h-3 w-3 text-green-500" />
             case 'processing':
-                return <Zap className="h-3 w-3 text-yellow-400 animate-pulse" />
+                return <Zap className="h-3 w-3 text-yellow-500 animate-pulse" />
             case 'offline':
-                return <AlertCircle className="h-3 w-3 text-red-400" />
+                return <AlertCircle className="h-3 w-3 text-red-500" />
         }
     }
 
@@ -60,51 +69,62 @@ export function StatusBar({ className }: Props) {
 
     return (
         <div className={cn(
-            "flex items-center justify-between h-6 px-3 bg-[#007acc] text-white text-xs border-t border-[#005a9e]",
+            "flex items-center justify-between h-8 px-4 bg-background/60 backdrop-blur-xl border-t border-primary/10 text-xs relative",
             className
         )}>
+            {/* Background gradient */}
+            <div className="absolute inset-0 bg-gradient-to-r from-primary/5 via-background/50 to-purple-500/5" />
+
             {/* Left side */}
-            <div className="flex items-center gap-4">
+            <div className="flex items-center gap-6 relative z-10">
                 {/* Connection Status */}
-                <div className="flex items-center gap-1">
+                <div className="flex items-center gap-1.5 text-foreground/70">
                     {isOnline ? (
-                        <Wifi className="h-3 w-3" />
+                        <Wifi className="h-3 w-3 text-green-500" />
                     ) : (
-                        <WifiOff className="h-3 w-3" />
+                        <WifiOff className="h-3 w-3 text-red-500" />
                     )}
-                    <span>{isOnline ? 'Connected' : 'Offline'}</span>
+                    <span className="font-medium">{isOnline ? 'Online' : 'Offline'}</span>
                 </div>
 
                 {/* AI Status */}
-                <div className="flex items-center gap-1">
-                    <Brain className="h-3 w-3" />
+                <div className="flex items-center gap-1.5 text-foreground/70">
+                    <Brain className="h-3 w-3 text-primary" />
                     {getAiStatusIcon()}
-                    <span>{getAiStatusText()}</span>
+                    <span className="font-medium">{getAiStatusText()}</span>
                 </div>
 
-                {/* Document Count */}
-                <div className="flex items-center gap-1">
-                    <FileText className="h-3 w-3" />
-                    <span>{documentsCount} documents</span>
+                {/* Activity indicator */}
+                <div className="flex items-center gap-1.5 text-foreground/70">
+                    <Activity className="h-3 w-3 text-blue-500" />
+                    <span className="font-medium">Active</span>
                 </div>
             </div>
 
             {/* Right side */}
-            <div className="flex items-center gap-4">
-                {/* Git Branch */}
-                <div className="flex items-center gap-1">
-                    <GitBranch className="h-3 w-3" />
-                    <span>main</span>
+            <div className="flex items-center gap-6 relative z-10">
+                {/* Papers Count */}
+                <div className="flex items-center gap-1.5 text-foreground/70">
+                    <FileText className="h-3 w-3 text-blue-500" />
+                    <span className="font-medium">{papersCount} papers</span>
+                </div>
+
+                {/* Projects Count */}
+                <div className="flex items-center gap-1.5 text-foreground/70">
+                    <Database className="h-3 w-3 text-purple-500" />
+                    <span className="font-medium">{projectsCount} projects</span>
                 </div>
 
                 {/* Current Time */}
-                <div className="flex items-center gap-1">
-                    <Clock className="h-3 w-3" />
-                    <span>{new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</span>
+                <div className="flex items-center gap-1.5 text-foreground/70">
+                    <Clock className="h-3 w-3 text-green-500" />
+                    <span className="font-medium">
+                        {currentTime.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                    </span>
                 </div>
 
                 {/* Version */}
-                <div className="text-white/70">
+                <div className="text-foreground/50 font-medium">
                     ScholarAI v1.0.0
                 </div>
             </div>

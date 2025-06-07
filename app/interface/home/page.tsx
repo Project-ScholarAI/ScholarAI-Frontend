@@ -1,9 +1,9 @@
-import { WelcomeScreen } from "@/components/layout/WelcomeScreen"
+import { ProjectsDashboard } from "@/components/interface/ProjectsDashboard"
 
 export default function HomePage() {
     return (
         <div className="h-full">
-            <WelcomeScreen />
+            <ProjectsDashboard />
         </div>
     )
 }

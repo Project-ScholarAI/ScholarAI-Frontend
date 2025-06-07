@@ -24,6 +24,13 @@ interface CitationNode {
     opacity: number
     scale: number
     movePhase: number
+    baseX: number // base position for large movements
+    baseY: number // base position for large movements
+    flowDirection: number // direction of flow (0-2π)
+    flowSpeed: number // speed of flow movement
+    orbitRadius: number // radius of orbital movement
+    currentAngle: number // current angle in orbit
+    windResistance: number // how much it resists wind
 }
 
 export function HeroBackground() {
@@ -33,9 +40,12 @@ export function HeroBackground() {
     const mouseY = useMotionValue(0)
     const springX = useSpring(mouseX, { stiffness: 100, damping: 30 })
     const springY = useSpring(mouseY, { stiffness: 100, damping: 30 })
+    const animationFrameRef = useRef<number>()
+    const startTimeRef = useRef<number>(Date.now())
 
     const [citationNodes, setCitationNodes] = useState<CitationNode[]>([])
     const [dimensions, setDimensions] = useState({ width: 0, height: 0 })
+    const [animationTick, setAnimationTick] = useState(0)
 
     // Sample research papers/citations for floating elements
     const sampleCitations = [
@@ -48,17 +58,35 @@ export function HeroBackground() {
     ]
 
     useEffect(() => {
-        // Generate citation nodes
-        const nodes: CitationNode[] = sampleCitations.map((citation, index) => ({
-            x: Math.random() * 100,
-            y: 20 + Math.random() * 60,
-            title: citation.title,
-            citations: citation.citations,
-            field: citation.field,
-            opacity: 0.3 + Math.random() * 0.4,
-            scale: 0.8 + Math.random() * 0.4,
-            movePhase: Math.random() * Math.PI * 2
-        }))
+        // Generate citation nodes with underwater floating patterns
+        const nodes: CitationNode[] = sampleCitations.map((citation, index) => {
+            // Start positions distributed but not grid-locked
+            const angle = (index / sampleCitations.length) * Math.PI * 2
+            const radius = 0.2 + Math.random() * 0.5 // 20-70% from center
+            const centerX = 50
+            const centerY = 50
+
+            const baseX = centerX + Math.cos(angle) * radius * 35
+            const baseY = centerY + Math.sin(angle) * radius * 25
+
+            return {
+                x: baseX,
+                y: baseY,
+                baseX,
+                baseY,
+                title: citation.title,
+                citations: citation.citations,
+                field: citation.field,
+                opacity: 0.4 + Math.random() * 0.3,
+                scale: 0.85 + Math.random() * 0.3,
+                movePhase: Math.random() * Math.PI * 2,
+                flowDirection: Math.random() * Math.PI * 2, // random initial direction
+                flowSpeed: 0.3 + Math.random() * 0.4, // slower, more fluid speeds
+                orbitRadius: 8 + Math.random() * 15, // smaller, gentler orbits
+                currentAngle: Math.random() * Math.PI * 2,
+                windResistance: 0.6 + Math.random() * 0.3 // higher resistance like water
+            }
+        })
         setCitationNodes(nodes)
     }, [])
 
@@ -195,6 +223,22 @@ export function HeroBackground() {
         }
     }, [dimensions.width, dimensions.height, springX, springY])
 
+    // Animation loop for smooth position updates
+    useEffect(() => {
+        const animate = () => {
+            setAnimationTick(tick => tick + 1)
+            animationFrameRef.current = requestAnimationFrame(animate)
+        }
+
+        animationFrameRef.current = requestAnimationFrame(animate)
+
+        return () => {
+            if (animationFrameRef.current) {
+                cancelAnimationFrame(animationFrameRef.current)
+            }
+        }
+    }, [])
+
     const handleMouseMove = (e: React.MouseEvent) => {
         const rect = containerRef.current?.getBoundingClientRect()
         if (rect) {
@@ -243,131 +287,186 @@ export function HeroBackground() {
 
             {/* Floating citation nodes */}
             <div className="absolute inset-0">
-                {citationNodes.map((node, index) => (
-                    <motion.div
-                        key={index}
-                        className="absolute pointer-events-none"
-                        style={{
-                            left: `${node.x}%`,
-                            top: `${node.y}%`,
-                        }}
-                        animate={{
-                            y: [0, -25, 5, -15, 0],
-                            x: [0, 15, -10, 8, -5, 0],
-                            rotate: [0, 2, -1, 1.5, 0],
-                            opacity: [node.opacity, node.opacity * 1.8, node.opacity * 0.6, node.opacity * 1.4, node.opacity],
-                            scale: [node.scale, node.scale * 1.15, node.scale * 0.95, node.scale * 1.05, node.scale],
-                        }}
-                        transition={{
-                            duration: 12 + Math.random() * 6,
-                            repeat: Infinity,
-                            ease: [0.25, 0.46, 0.45, 0.94],
-                            delay: index * 0.8
-                        }}
-                        whileHover={{
-                            scale: node.scale * 1.2,
-                            rotate: 0,
-                            transition: { duration: 0.3 }
-                        }}
-                    >
+                {citationNodes.map((node, index) => {
+                    // Create underwater floating movement
+                    const currentTime = (Date.now() - startTimeRef.current) * 0.001 // convert to seconds
+                    const timeOffset = index * 3.5
+
+                    // Gentle swaying like underwater plants
+                    const swayX = Math.sin(currentTime * 0.08 * node.flowSpeed + timeOffset) * node.orbitRadius * 1.5
+                    const swayY = Math.cos(currentTime * 0.06 * node.flowSpeed + timeOffset) * (node.orbitRadius * 0.8)
+
+                    // Slow water current drift
+                    const currentDriftX = Math.sin(currentTime * 0.04 + node.flowDirection) * 12
+                    const currentDriftY = Math.cos(currentTime * 0.03 + node.flowDirection + Math.PI / 6) * 8
+
+                    // Buoyancy effect - gentle rising and falling like in water
+                    const buoyancyY = Math.sin(currentTime * 0.25 + node.movePhase) * 6
+
+                    // Very gentle micro movements (less jittery, more fluid)
+                    const fluidX = Math.sin(currentTime * 0.7 + node.movePhase) * 2
+                    const fluidY = Math.cos(currentTime * 0.5 + node.movePhase + Math.PI / 4) * 1.5
+
+                    // Underwater thermal-like vertical movement
+                    const thermalY = Math.sin(currentTime * 0.15 + index * 0.8) * 4
+
+                    // Gentle figure-8 motion like floating debris
+                    const floatX = Math.sin(currentTime * 0.12 + timeOffset) * 8
+                    const floatY = Math.sin(currentTime * 0.24 + timeOffset) * 4
+
+                    // Calculate final position with water-like damping
+                    const finalX = node.baseX + swayX + currentDriftX + fluidX + floatX
+                    const finalY = node.baseY + swayY + currentDriftY + buoyancyY + thermalY + floatY
+
+                    // Ensure cards stay within bounds but allow fluid movement
+                    const boundedX = Math.max(3, Math.min(97, finalX))
+                    const boundedY = Math.max(8, Math.min(85, finalY))
+
+                    return (
                         <motion.div
-                            className="relative group"
+                            key={index}
+                            className="absolute pointer-events-none"
+                            style={{
+                                left: `${boundedX}%`,
+                                top: `${boundedY}%`,
+                                willChange: 'transform',
+                            }}
                             animate={{
-                                rotateY: [0, 5, -5, 0],
+                                // Gentle underwater swaying animation
+                                rotate: [
+                                    -1.5 + Math.sin(index) * 1.5,
+                                    1.5 + Math.cos(index) * 1.5,
+                                    -1 + Math.sin(index + 1) * 1.5
+                                ],
+                                scale: [
+                                    node.scale * 0.97,
+                                    node.scale * 1.03,
+                                    node.scale * 0.99
+                                ],
+                                opacity: [
+                                    node.opacity * 0.8,
+                                    node.opacity * 1.0,
+                                    node.opacity * 0.9
+                                ],
                             }}
                             transition={{
-                                duration: 8,
+                                duration: 35 + index * 5, // Much slower, more fluid
                                 repeat: Infinity,
-                                ease: "easeInOut",
-                                delay: index * 0.4
+                                ease: [0.25, 0.25, 0.75, 0.75], // More linear, water-like easing
+                                delay: index * 3,
+                                repeatType: "mirror"
+                            }}
+                            whileHover={{
+                                scale: node.scale * 1.15,
+                                rotate: 0,
+                                transition: {
+                                    duration: 0.8, // Slower hover response like in water
+                                    ease: [0.25, 0.46, 0.45, 0.94]
+                                }
                             }}
                         >
-                            {/* Enhanced citation card */}
-                            <div className="relative bg-gradient-to-br from-background/10 via-background/5 to-transparent backdrop-blur-md border border-primary/20 rounded-xl p-4 max-w-xs shadow-2xl shadow-primary/10 group-hover:shadow-primary/20 transition-all duration-500">
-                                {/* Top gradient border */}
-                                <div className="absolute inset-0 rounded-xl bg-gradient-to-r from-primary/30 via-purple-500/20 to-primary/30 opacity-0 group-hover:opacity-100 transition-opacity duration-500 blur-sm"></div>
-                                <div className="absolute inset-[1px] rounded-xl bg-background/10 backdrop-blur-md"></div>
+                            <motion.div
+                                className="relative group"
+                                animate={{
+                                    // Gentle 3D rotation like floating underwater
+                                    rotateY: [0, 4, -4, 0],
+                                    rotateX: [0, 2, -2, 0],
+                                    rotateZ: [-0.5, 0.5, -0.5]
+                                }}
+                                transition={{
+                                    duration: 40 + index * 3, // Very slow rotation
+                                    repeat: Infinity,
+                                    ease: "easeInOut",
+                                    delay: index * 2
+                                }}
+                            >
+                                {/* Enhanced citation card */}
+                                <div className="relative bg-gradient-to-br from-background/10 via-background/5 to-transparent backdrop-blur-md border border-primary/20 rounded-xl p-4 max-w-xs shadow-2xl shadow-primary/10 group-hover:shadow-primary/20 transition-all duration-500">
+                                    {/* Top gradient border */}
+                                    <div className="absolute inset-0 rounded-xl bg-gradient-to-r from-primary/30 via-purple-500/20 to-primary/30 opacity-0 group-hover:opacity-100 transition-opacity duration-500 blur-sm"></div>
+                                    <div className="absolute inset-[1px] rounded-xl bg-background/10 backdrop-blur-md"></div>
 
-                                {/* Content */}
-                                <div className="relative z-10">
-                                    {/* Header with field badge */}
-                                    <div className="flex items-center justify-between mb-3">
-                                        <div className="px-2 py-1 rounded-full bg-gradient-to-r from-primary/20 to-purple-500/20 border border-primary/30">
-                                            <span className="text-xs text-primary font-semibold tracking-wide">{node.field}</span>
+                                    {/* Content */}
+                                    <div className="relative z-10">
+                                        {/* Header with field badge */}
+                                        <div className="flex items-center justify-between mb-3">
+                                            <div className="px-2 py-1 rounded-full bg-gradient-to-r from-primary/20 to-purple-500/20 border border-primary/30">
+                                                <span className="text-xs text-primary font-semibold tracking-wide">{node.field}</span>
+                                            </div>
+                                            <div className="flex items-center space-x-1">
+                                                <div className="w-1.5 h-1.5 bg-green-400 rounded-full animate-pulse"></div>
+                                                <div className="w-1 h-1 bg-green-400/60 rounded-full animate-pulse" style={{ animationDelay: '0.5s' }}></div>
+                                            </div>
                                         </div>
-                                        <div className="flex items-center space-x-1">
-                                            <div className="w-1.5 h-1.5 bg-green-400 rounded-full animate-pulse"></div>
-                                            <div className="w-1 h-1 bg-green-400/60 rounded-full animate-pulse" style={{ animationDelay: '0.5s' }}></div>
-                                        </div>
-                                    </div>
 
-                                    {/* Title */}
-                                    <div className="text-sm text-foreground/80 font-medium leading-snug mb-3 line-clamp-2">
-                                        {node.title}
-                                    </div>
+                                        {/* Title */}
+                                        <div className="text-sm text-foreground/80 font-medium leading-snug mb-3 line-clamp-2">
+                                            {node.title}
+                                        </div>
 
-                                    {/* Citations and metrics */}
-                                    <div className="flex items-center justify-between">
-                                        <div className="flex items-center space-x-2">
-                                            <svg className="w-3 h-3 text-primary/70" fill="currentColor" viewBox="0 0 20 20">
-                                                <path fillRule="evenodd" d="M3 4a1 1 0 011-1h12a1 1 0 110 2H4a1 1 0 01-1-1zm0 4a1 1 0 011-1h12a1 1 0 110 2H4a1 1 0 01-1-1zm0 4a1 1 0 011-1h12a1 1 0 110 2H4a1 1 0 01-1-1z" clipRule="evenodd" />
-                                            </svg>
-                                            <span className="text-xs text-muted-foreground/80 font-medium">
-                                                {node.citations.toLocaleString()}
-                                            </span>
+                                        {/* Citations and metrics */}
+                                        <div className="flex items-center justify-between">
+                                            <div className="flex items-center space-x-2">
+                                                <svg className="w-3 h-3 text-primary/70" fill="currentColor" viewBox="0 0 20 20">
+                                                    <path fillRule="evenodd" d="M3 4a1 1 0 011-1h12a1 1 0 110 2H4a1 1 0 01-1-1zm0 4a1 1 0 011-1h12a1 1 0 110 2H4a1 1 0 01-1-1zm0 4a1 1 0 011-1h12a1 1 0 110 2H4a1 1 0 01-1-1z" clipRule="evenodd" />
+                                                </svg>
+                                                <span className="text-xs text-muted-foreground/80 font-medium">
+                                                    {node.citations.toLocaleString()}
+                                                </span>
+                                            </div>
+                                            <div className="text-xs text-primary/60 font-mono">
+                                                h-index: {Math.floor(node.citations / 1000) + 50}
+                                            </div>
                                         </div>
-                                        <div className="text-xs text-primary/60 font-mono">
-                                            h-index: {Math.floor(node.citations / 1000) + 50}
-                                        </div>
-                                    </div>
 
-                                    {/* Impact indicator */}
-                                    <div className="mt-3 flex items-center space-x-2">
-                                        <div className="flex-1 h-1.5 bg-muted/30 rounded-full overflow-hidden">
-                                            <motion.div
-                                                className="h-full bg-gradient-to-r from-primary to-purple-500 rounded-full"
-                                                initial={{ width: 0 }}
-                                                animate={{ width: `${Math.min((node.citations / 70000) * 100, 100)}%` }}
-                                                transition={{ duration: 2, delay: index * 0.2 }}
-                                            />
+                                        {/* Impact indicator */}
+                                        <div className="mt-3 flex items-center space-x-2">
+                                            <div className="flex-1 h-1.5 bg-muted/30 rounded-full overflow-hidden">
+                                                <motion.div
+                                                    className="h-full bg-gradient-to-r from-primary to-purple-500 rounded-full"
+                                                    initial={{ width: 0 }}
+                                                    animate={{ width: `${Math.min((node.citations / 70000) * 100, 100)}%` }}
+                                                    transition={{ duration: 2, delay: index * 0.2 }}
+                                                />
+                                            </div>
+                                            <span className="text-xs text-primary/70 font-medium">Impact</span>
                                         </div>
-                                        <span className="text-xs text-primary/70 font-medium">Impact</span>
                                     </div>
                                 </div>
-                            </div>
 
-                            {/* Enhanced glow effects */}
-                            <div className="absolute inset-0 bg-gradient-to-r from-primary/15 via-purple-500/10 to-primary/15 rounded-xl blur-xl -z-10 opacity-60 group-hover:opacity-100 transition-opacity duration-500" />
-                            <div className="absolute inset-0 bg-primary/5 rounded-xl blur-2xl -z-20 opacity-40" />
+                                {/* Enhanced glow effects */}
+                                <div className="absolute inset-0 bg-gradient-to-r from-primary/15 via-purple-500/10 to-primary/15 rounded-xl blur-xl -z-10 opacity-60 group-hover:opacity-100 transition-opacity duration-500" />
+                                <div className="absolute inset-0 bg-primary/5 rounded-xl blur-2xl -z-20 opacity-40" />
 
-                            {/* Floating particles around card */}
-                            <motion.div
-                                className="absolute -top-2 -right-2 w-2 h-2 bg-primary/60 rounded-full"
-                                animate={{
-                                    scale: [0, 1, 0],
-                                    opacity: [0, 1, 0],
-                                }}
-                                transition={{
-                                    duration: 3,
-                                    repeat: Infinity,
-                                    delay: index * 0.5
-                                }}
-                            />
-                            <motion.div
-                                className="absolute -bottom-1 -left-1 w-1.5 h-1.5 bg-purple-500/60 rounded-full"
-                                animate={{
-                                    scale: [0, 1, 0],
-                                    opacity: [0, 0.8, 0],
-                                }}
-                                transition={{
-                                    duration: 4,
-                                    repeat: Infinity,
-                                    delay: index * 0.3 + 1
-                                }}
-                            />
+                                {/* Floating particles around card */}
+                                <motion.div
+                                    className="absolute -top-2 -right-2 w-2 h-2 bg-primary/60 rounded-full"
+                                    animate={{
+                                        scale: [0, 1, 0],
+                                        opacity: [0, 1, 0],
+                                    }}
+                                    transition={{
+                                        duration: 3,
+                                        repeat: Infinity,
+                                        delay: index * 0.5
+                                    }}
+                                />
+                                <motion.div
+                                    className="absolute -bottom-1 -left-1 w-1.5 h-1.5 bg-purple-500/60 rounded-full"
+                                    animate={{
+                                        scale: [0, 1, 0],
+                                        opacity: [0, 0.8, 0],
+                                    }}
+                                    transition={{
+                                        duration: 4,
+                                        repeat: Infinity,
+                                        delay: index * 0.3 + 1
+                                    }}
+                                />
+                            </motion.div>
                         </motion.div>
-                    </motion.div>
-                ))}
+                    )
+                })}
             </div>
 
             {/* Depth layers */}

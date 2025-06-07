@@ -7,6 +7,7 @@ import { useInView } from "framer-motion"
 import { useRef, useState, useEffect } from "react"
 import { Quote, Star, ChevronLeft, ChevronRight, Sparkles } from "lucide-react"
 import { Button } from "@/components/ui/button"
+import Link from "next/link"
 
 const testimonials = [
     {
@@ -331,12 +332,14 @@ export function TestimonialsSection() {
                     <p className="text-muted-foreground mb-6">
                         Join the community of researchers accelerating discovery
                     </p>
-                    <Button
-                        size="lg"
-                        className="bg-gradient-to-r from-primary to-purple-600 hover:from-primary/90 hover:to-purple-700"
-                    >
-                        Start Your Free Trial
-                    </Button>
+                    <Link href="/login">
+                        <Button
+                            size="lg"
+                            className="bg-gradient-to-r from-primary to-purple-600 hover:from-primary/90 hover:to-purple-700"
+                        >
+                            Start Your Free Trial
+                        </Button>
+                    </Link>
                 </motion.div>
             </div>
         </section>

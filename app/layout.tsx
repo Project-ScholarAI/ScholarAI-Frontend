@@ -4,6 +4,8 @@ import { Inter } from "next/font/google"
 import "./globals.css"
 import { ThemeProvider } from "@/lib/context/ThemeContext"
 import { GoogleOAuthProvider } from '@react-oauth/google'
+import { LoadingProvider } from "@/contexts/LoadingContext"
+import { RouteTransition } from "@/components/ui/RouteTransition"
 
 const inter = Inter({ subsets: ["latin"] })
 
@@ -31,7 +33,11 @@ export default function RootLayout({
       <body className={inter.className} suppressHydrationWarning>
         <GoogleOAuthProvider clientId={googleClientId || "YOUR_FALLBACK_CLIENT_ID_IF_ANY"}>
           <ThemeProvider attribute="class" defaultTheme="system" enableSystem disableTransitionOnChange>
-            {children}
+            <LoadingProvider>
+              <RouteTransition>
+                {children}
+              </RouteTransition>
+            </LoadingProvider>
           </ThemeProvider>
         </GoogleOAuthProvider>
       </body>

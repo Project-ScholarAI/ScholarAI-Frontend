@@ -3,7 +3,7 @@ export const backgroundOptions = [
     id: 'scholarai-image',
     label: 'ScholarAI Background',
     type: 'image',
-    className: 'bg-cover bg-center bg-no-repeat',
+    className: 'bg-contain bg-center bg-no-repeat',
     backgroundImage: '/assets/bg2.png',
   },
   {
@@ -48,26 +48,54 @@ export const defaultBackground = backgroundOptions[0];
 // CSS animations and patterns
 export const backgroundStyles = `
   @keyframes float {
-    0%, 100% { transform: translateY(0px) rotate(0deg); }
-    33% { transform: translateY(-10px) rotate(1deg); }
-    66% { transform: translateY(5px) rotate(-1deg); }
+    0% { transform: translateX(0px) translateY(0px) rotate(0deg); }
+    25% { transform: translateX(30px) translateY(-20px) rotate(90deg); }
+    50% { transform: translateX(-20px) translateY(-40px) rotate(180deg); }
+    75% { transform: translateX(-40px) translateY(-10px) rotate(270deg); }
+    100% { transform: translateX(0px) translateY(0px) rotate(360deg); }
   }
 
   @keyframes pulse-glow {
-    0%, 100% { opacity: 0.3; transform: scale(1); }
-    50% { opacity: 0.6; transform: scale(1.05); }
+    0%, 100% { opacity: 0.4; transform: scale(1) rotate(0deg); }
+    25% { opacity: 0.8; transform: scale(1.2) rotate(90deg); }
+    50% { opacity: 1; transform: scale(1.4) rotate(180deg); }
+    75% { opacity: 0.8; transform: scale(1.2) rotate(270deg); }
   }
 
   @keyframes drift {
-    0% { transform: translateX(-100px) translateY(0px); }
-    100% { transform: translateX(calc(100vw + 100px)) translateY(-50px); }
+    0% { transform: translateX(-100px) translateY(0px) rotate(0deg); }
+    25% { transform: translateX(25vw) translateY(-30px) rotate(90deg); }
+    50% { transform: translateX(50vw) translateY(-60px) rotate(180deg); }
+    75% { transform: translateX(75vw) translateY(-30px) rotate(270deg); }
+    100% { transform: translateX(calc(100vw + 100px)) translateY(-50px) rotate(360deg); }
   }
 
   @keyframes wave {
     0%, 100% { transform: translateX(0) translateY(0) rotate(0deg); }
-    25% { transform: translateX(5px) translateY(-5px) rotate(1deg); }
-    50% { transform: translateX(-5px) translateY(-10px) rotate(-1deg); }
-    75% { transform: translateX(-5px) translateY(-5px) rotate(0.5deg); }
+    25% { transform: translateX(20px) translateY(-15px) rotate(45deg); }
+    50% { transform: translateX(-25px) translateY(-30px) rotate(90deg); }
+    75% { transform: translateX(-15px) translateY(-15px) rotate(135deg); }
+  }
+
+  @keyframes orbit {
+    0% { transform: translateX(0px) translateY(0px) rotate(0deg); }
+    25% { transform: translateX(50px) translateY(-50px) rotate(90deg); }
+    50% { transform: translateX(0px) translateY(-100px) rotate(180deg); }
+    75% { transform: translateX(-50px) translateY(-50px) rotate(270deg); }
+    100% { transform: translateX(0px) translateY(0px) rotate(360deg); }
+  }
+
+  @keyframes zigzag {
+    0%, 100% { transform: translateX(0px) translateY(0px); }
+    10% { transform: translateX(40px) translateY(-20px); }
+    20% { transform: translateX(-30px) translateY(-40px); }
+    30% { transform: translateX(60px) translateY(-60px); }
+    40% { transform: translateX(-20px) translateY(-80px); }
+    50% { transform: translateX(50px) translateY(-100px); }
+    60% { transform: translateX(-40px) translateY(-80px); }
+    70% { transform: translateX(30px) translateY(-60px); }
+    80% { transform: translateX(-50px) translateY(-40px); }
+    90% { transform: translateX(20px) translateY(-20px); }
   }
 
   .neural-dots::before {
@@ -182,7 +210,14 @@ export const backgroundStyles = `
   .floating-element {
     position: absolute;
     border-radius: 50%;
-    background: hsl(var(--primary) / 0.05);
+    background: radial-gradient(circle, hsl(var(--primary) / 0.3) 0%, hsl(var(--primary) / 0.15) 40%, transparent 80%);
+    box-shadow: 
+      0 0 20px hsl(var(--primary) / 0.4),
+      0 0 40px hsl(var(--primary) / 0.2),
+      0 0 60px hsl(var(--primary) / 0.1),
+      inset 0 0 20px hsl(var(--primary) / 0.2);
+    filter: blur(0.5px);
+    border: 1px solid hsl(var(--primary) / 0.3);
     animation: float 20s ease-in-out infinite;
   }
 
@@ -192,6 +227,7 @@ export const backgroundStyles = `
     top: 10%;
     left: 10%;
     animation-delay: 0s;
+    animation: orbit 25s ease-in-out infinite;
   }
 
   .floating-element:nth-child(2) {
@@ -200,6 +236,7 @@ export const backgroundStyles = `
     top: 20%;
     right: 15%;
     animation-delay: 5s;
+    animation: zigzag 18s ease-in-out infinite;
   }
 
   .floating-element:nth-child(3) {
@@ -208,6 +245,7 @@ export const backgroundStyles = `
     bottom: 15%;
     left: 20%;
     animation-delay: 10s;
+    animation: float 22s ease-in-out infinite;
   }
 
   .floating-element:nth-child(4) {
@@ -216,13 +254,20 @@ export const backgroundStyles = `
     bottom: 25%;
     right: 10%;
     animation-delay: 15s;
+    animation: wave 20s ease-in-out infinite;
   }
 
   /* Subtle glow effect */
   .glow-element {
     position: absolute;
     border-radius: 50%;
-    background: radial-gradient(circle, hsl(var(--primary) / 0.1) 0%, transparent 70%);
+    background: radial-gradient(circle, hsl(var(--primary) / 0.4) 0%, hsl(var(--primary) / 0.2) 30%, transparent 70%);
+    box-shadow: 
+      0 0 40px hsl(var(--primary) / 0.5),
+      0 0 80px hsl(var(--primary) / 0.3),
+      0 0 120px hsl(var(--primary) / 0.15),
+      0 0 160px hsl(var(--primary) / 0.05);
+    filter: blur(1px);
     animation: pulse-glow 8s ease-in-out infinite;
   }
 
@@ -232,6 +277,7 @@ export const backgroundStyles = `
     top: 5%;
     right: 5%;
     animation-delay: 0s;
+    animation: orbit 35s ease-in-out infinite;
   }
 
   .glow-element:nth-child(2) {
@@ -240,5 +286,6 @@ export const backgroundStyles = `
     bottom: 10%;
     left: 5%;
     animation-delay: 4s;
+    animation: float 30s ease-in-out infinite;
   }
 `;

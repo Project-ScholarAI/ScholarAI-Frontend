@@ -1,6 +1,5 @@
 import { GoogleIcon } from '@/components/icons/GoogleIcon'
 import { GithubIcon } from '@/components/icons/GithubIcon'
-import { MailIcon } from '@/components/icons/MailIcon'
 import { initiateGithubLogin, handleGoogleSocialLogin, type SocialLoginResponse } from '@/lib/api'
 import { useEffect, useRef } from 'react'
 
@@ -11,7 +10,7 @@ interface SocialLoginProps {
 }
 
 export default function SocialLogin({ className = '', onLoginSuccess, onLoginError }: SocialLoginProps) {
-    const googleButtonDiv = useRef<HTMLDivElement>(null)
+    const googleButtonRef = useRef<HTMLDivElement>(null)
     const scriptLoaded = useRef(false)
 
     const handleGoogleCallback = async (response: any) => {
@@ -43,15 +42,6 @@ export default function SocialLogin({ className = '', onLoginSuccess, onLoginErr
             }
         }
     }
-    
-    useEffect(() => {
-        // @ts-ignore
-        window.handleGoogleCredentialResponse = handleGoogleCallback
-        return () => {
-            // @ts-ignore
-            delete window.handleGoogleCredentialResponse
-        }
-    }, [onLoginSuccess, onLoginError])
 
     useEffect(() => {
         const googleClientId = process.env.NEXT_PUBLIC_GOOGLE_CLIENT_ID
@@ -63,35 +53,40 @@ export default function SocialLogin({ className = '', onLoginSuccess, onLoginErr
         }
 
         if (scriptLoaded.current) {
-            if (googleButtonDiv.current && window.google) {
-                window.google.accounts.id.renderButton(
-                    googleButtonDiv.current,
-                    { theme: "outline", size: "large", type: "standard", text: "continue_with", width: "130" }
-                )
-            }
             return
         }
-        
+
         const script = document.createElement('script')
         script.src = 'https://accounts.google.com/gsi/client'
         script.async = true
         script.defer = true
         script.onload = () => {
             scriptLoaded.current = true
-            if (!window.google || !window.google.accounts || !window.google.accounts.id) {
+            if (window.google && window.google.accounts && window.google.accounts.id) {
+                try {
+                    window.google.accounts.id.initialize({
+                        client_id: googleClientId,
+                        callback: handleGoogleCallback
+                    })
+
+                    // Render the hidden Google button
+                    if (googleButtonRef.current) {
+                        window.google.accounts.id.renderButton(googleButtonRef.current, {
+                            theme: 'outline',
+                            size: 'large',
+                            type: 'standard',
+                            shape: 'rectangular',
+                            text: 'continue_with',
+                            logo_alignment: 'left'
+                        })
+                    }
+                } catch (error) {
+                    console.error('Error initializing Google Sign-In:', error)
+                    if (onLoginError) onLoginError("Failed to initialize Google Sign-In")
+                }
+            } else {
                 console.error('Google GSI script loaded but window.google.accounts.id not available.')
                 if (onLoginError) onLoginError("Failed to initialize Google Login.")
-                return
-            }
-            window.google.accounts.id.initialize({
-                client_id: googleClientId,
-                callback: handleGoogleCallback
-            })
-            if (googleButtonDiv.current) {
-                window.google.accounts.id.renderButton(
-                    googleButtonDiv.current,
-                    { theme: "outline", size: "large", type: "standard", text: "continue_with", width: "130" }
-                )
             }
         }
         script.onerror = () => {
@@ -99,28 +94,64 @@ export default function SocialLogin({ className = '', onLoginSuccess, onLoginErr
             if (onLoginError) onLoginError("Failed to load Google Sign-In script.")
         }
         document.head.appendChild(script)
-
-        return () => {
-            // Optional: Clean up script if component unmounts, though GSI script is usually loaded once.
-            // document.head.removeChild(script); // Be cautious with this if other components might use it.
-        }
     }, [onLoginError])
 
     const handleGithubLogin = async () => {
         await initiateGithubLogin()
     }
 
+    const handleCustomGoogleLogin = () => {
+        if (googleButtonRef.current) {
+            // Find and click the hidden Google button
+            const googleButton = googleButtonRef.current.querySelector('div[role="button"]') as HTMLElement
+            if (googleButton) {
+                googleButton.click()
+            } else {
+                console.error('Google button not found')
+                if (onLoginError) onLoginError("Google Sign-In button not available")
+            }
+        } else {
+            console.error('Google Sign-In not initialized')
+            if (onLoginError) onLoginError("Google Sign-In not available")
+        }
+    }
+
     return (
         <div className={`flex flex-col items-center gap-y-4 ${className}`}>
+            {/* Hidden Google button */}
+            <div ref={googleButtonRef} className="hidden" />
+
             <div className="flex flex-row items-center justify-center gap-x-4">
-                <div ref={googleButtonDiv} id="g_id_signin" className="g_id_signin"></div>
-            
+                {/* Custom Google Button */}
+                <button
+                    onClick={handleCustomGoogleLogin}
+                    aria-label="Continue with Google"
+                    className="group relative w-[190px] h-[46px] flex items-center justify-center gap-3 rounded-xl bg-gradient-to-r from-primary to-purple-600 hover:from-primary/90 hover:to-purple-700 border border-primary/40 shadow-lg shadow-primary/25 hover:shadow-xl text-white transition-all duration-300 overflow-hidden"
+                >
+                    {/* Subtle hover gradient */}
+                    <div className="absolute inset-0 bg-gradient-to-r from-primary/10 to-purple-500/10 opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
+
+                    <GoogleIcon className="w-5 h-5 text-white relative z-10" />
+                    <span className="font-semibold text-sm relative z-10">Google</span>
+
+                    {/* Shine effect */}
+                    <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/10 to-transparent -translate-x-full group-hover:translate-x-full transition-transform duration-700 ease-out" />
+                </button>
+
+                {/* GitHub Button */}
                 <button
                     onClick={handleGithubLogin}
-                    aria-label="Login with GitHub"
-                    className="w-[190px] h-[42px] flex items-center justify-center rounded-lg bg-white/10 border border-white/40 shadow-md hover:bg-white/20 transition-all duration-200"
+                    aria-label="Continue with GitHub"
+                    className="group relative w-[190px] h-[46px] flex items-center justify-center gap-3 rounded-xl bg-gradient-to-r from-primary to-purple-600 hover:from-primary/90 hover:to-purple-700 border border-primary/40 shadow-lg shadow-primary/25 hover:shadow-xl text-white transition-all duration-300 overflow-hidden"
                 >
-                    <GithubIcon /> <span className="ml-2">GitHub</span>
+                    {/* Subtle hover gradient */}
+                    <div className="absolute inset-0 bg-gradient-to-r from-primary/10 to-purple-500/10 opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
+
+                    <GithubIcon className="w-5 h-5 text-white relative z-10" />
+                    <span className="font-semibold text-sm relative z-10">GitHub</span>
+
+                    {/* Shine effect */}
+                    <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/10 to-transparent -translate-x-full group-hover:translate-x-full transition-transform duration-700 ease-out" />
                 </button>
             </div>
         </div>

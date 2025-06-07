@@ -4,6 +4,7 @@ import { motion } from "framer-motion"
 import { useInView } from "framer-motion"
 import { useRef, useState } from "react"
 import { Button } from "@/components/ui/button"
+import Link from "next/link"
 import {
     FolderPlus,
     Search,
@@ -182,10 +183,10 @@ export function WorkflowSection() {
                                                     }}
                                                     transition={{ duration: 2, repeat: isActive ? Infinity : 0 }}
                                                     className={`w-16 h-16 rounded-full border-2 flex items-center justify-center relative ${isCompleted
-                                                            ? 'bg-gradient-to-r from-primary to-purple-600 border-primary'
-                                                            : isActive
-                                                                ? 'bg-gradient-to-r from-primary/20 to-purple-600/20 border-primary'
-                                                                : 'bg-background border-border hover:border-primary/50'
+                                                        ? 'bg-gradient-to-r from-primary to-purple-600 border-primary'
+                                                        : isActive
+                                                            ? 'bg-gradient-to-r from-primary/20 to-purple-600/20 border-primary'
+                                                            : 'bg-background border-border hover:border-primary/50'
                                                         } transition-all duration-300`}
                                                 >
                                                     {isCompleted ? (
@@ -215,8 +216,8 @@ export function WorkflowSection() {
                                                 }}
                                                 transition={{ duration: 0.3 }}
                                                 className={`p-6 rounded-2xl border transition-all duration-300 ${isActive
-                                                        ? 'border-primary/30 bg-gradient-to-br ' + step.bgColor + ' shadow-lg shadow-primary/10'
-                                                        : 'border-border/50 bg-background/50 hover:border-primary/20'
+                                                    ? 'border-primary/30 bg-gradient-to-br ' + step.bgColor + ' shadow-lg shadow-primary/10'
+                                                    : 'border-border/50 bg-background/50 hover:border-primary/20'
                                                     }`}
                                             >
                                                 <h3 className={`text-lg font-semibold mb-2 transition-colors duration-300 ${isActive ? 'text-primary' : 'text-foreground'
@@ -306,10 +307,10 @@ export function WorkflowSection() {
                                             }}
                                             transition={{ duration: 2, repeat: isActive ? Infinity : 0 }}
                                             className={`w-12 h-12 rounded-full border-2 flex items-center justify-center ${isCompleted
-                                                    ? 'bg-gradient-to-r from-primary to-purple-600 border-primary'
-                                                    : isActive
-                                                        ? 'bg-gradient-to-r from-primary/20 to-purple-600/20 border-primary'
-                                                        : 'bg-background border-border'
+                                                ? 'bg-gradient-to-r from-primary to-purple-600 border-primary'
+                                                : isActive
+                                                    ? 'bg-gradient-to-r from-primary/20 to-purple-600/20 border-primary'
+                                                    : 'bg-background border-border'
                                                 } transition-all duration-300`}
                                         >
                                             {isCompleted ? (
@@ -331,8 +332,8 @@ export function WorkflowSection() {
                                         }}
                                         transition={{ duration: 0.3 }}
                                         className={`flex-1 p-4 rounded-xl border transition-all duration-300 ${isActive
-                                                ? 'border-primary/30 bg-gradient-to-br ' + step.bgColor
-                                                : 'border-border/50 bg-background/50'
+                                            ? 'border-primary/30 bg-gradient-to-br ' + step.bgColor
+                                            : 'border-border/50 bg-background/50'
                                             }`}
                                     >
                                         <h3 className={`text-lg font-semibold mb-2 ${isActive ? 'text-primary' : 'text-foreground'
@@ -359,13 +360,15 @@ export function WorkflowSection() {
                     <p className="text-muted-foreground mb-6">
                         Ready to experience this intelligent workflow?
                     </p>
-                    <Button
-                        size="lg"
-                        className="bg-gradient-to-r from-primary to-purple-600 hover:from-primary/90 hover:to-purple-700"
-                    >
-                        Start Your Research Journey
-                        <ArrowRight className="ml-2 h-5 w-5" />
-                    </Button>
+                    <Link href="/login">
+                        <Button
+                            size="lg"
+                            className="bg-gradient-to-r from-primary to-purple-600 hover:from-primary/90 hover:to-purple-700"
+                        >
+                            Start Your Research Journey
+                            <ArrowRight className="ml-2 h-5 w-5" />
+                        </Button>
+                    </Link>
                 </motion.div>
             </div>
         </section>
