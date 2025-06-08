@@ -24,6 +24,21 @@ RUN --mount=type=cache,target=/root/.cache \
 # ---------- 3️⃣ Build ----------
 FROM base AS builder
 WORKDIR /app
+
+# Accept build arguments for environment variables
+ARG NEXT_PUBLIC_GOOGLE_CLIENT_ID
+ARG NEXT_PUBLIC_GITHUB_CLIENT_ID
+ARG NEXT_PUBLIC_API_BASE_URL
+ARG NEXT_PUBLIC_DOCKER_BACKEND_URL
+ARG ENV
+
+# Set environment variables for the build
+ENV NEXT_PUBLIC_GOOGLE_CLIENT_ID=$NEXT_PUBLIC_GOOGLE_CLIENT_ID
+ENV NEXT_PUBLIC_GITHUB_CLIENT_ID=$NEXT_PUBLIC_GITHUB_CLIENT_ID
+ENV NEXT_PUBLIC_API_BASE_URL=$NEXT_PUBLIC_API_BASE_URL
+ENV NEXT_PUBLIC_DOCKER_BACKEND_URL=$NEXT_PUBLIC_DOCKER_BACKEND_URL
+ENV ENV=$ENV
+
 COPY --from=deps /app/node_modules ./node_modules
 COPY . .
 
@@ -52,10 +67,11 @@ COPY --from=builder --chown=nextjs:nodejs /app/.next/static ./.next/static
 USER nextjs
 
 EXPOSE 3000
-ENV PORT=3000                      
+ENV PORT=3000
+ENV HOSTNAME=0.0.0.0
 
 # simple health-check for Docker/K8s
 HEALTHCHECK --interval=30s --timeout=5s --start-period=5s \
-    CMD wget -qO- http://localhost:3000/ || exit 1
+    CMD wget -qO- http://0.0.0.0:3000/ || exit 1
 
 CMD ["node", "server.js"]

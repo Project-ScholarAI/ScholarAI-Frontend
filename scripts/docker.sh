@@ -57,6 +57,25 @@ build() {
     fi
 }
 
+# Rebuild the Docker image without cache
+rebuild_nocache() {
+    print_info "Rebuilding Scholar AI Frontend Docker image without cache..."
+    check_docker
+    
+    # Remove existing image first
+    docker-compose -f $COMPOSE_FILE down --rmi all
+    
+    # Build fresh image without cache
+    docker-compose -f $COMPOSE_FILE build --no-cache --pull
+    
+    if [ $? -eq 0 ]; then
+        print_success "Docker image rebuilt successfully without cache!"
+    else
+        print_error "Failed to rebuild Docker image"
+        exit 1
+    fi
+}
+
 # Start the application
 start() {
     print_info "Starting Scholar AI Frontend..."
@@ -147,15 +166,16 @@ help() {
     echo "Usage: ./docker.sh [command]"
     echo ""
     echo "Commands:"
-    echo "  build     Build the Docker image"
-    echo "  start     Start the application"
-    echo "  stop      Stop the application"
-    echo "  restart   Restart the application"
-    echo "  up        Build and start the application"
-    echo "  logs      Show application logs"
-    echo "  status    Show container status"
-    echo "  clean     Remove containers and images"
-    echo "  help      Show this help message"
+    echo "  build           Build the Docker image"
+    echo "  rebuild-nocache Rebuild the Docker image without cache"
+    echo "  start           Start the application"
+    echo "  stop            Stop the application"
+    echo "  restart         Restart the application"
+    echo "  up              Build and start the application"
+    echo "  logs            Show application logs"
+    echo "  status          Show container status"
+    echo "  clean           Remove containers and images"
+    echo "  help            Show this help message"
     echo ""
     echo "Examples:"
     echo "  ./docker.sh build"
@@ -168,6 +188,9 @@ help() {
 case "${1:-help}" in
     build)
         build
+        ;;
+    rebuild-nocache)
+        rebuild_nocache
         ;;
     start)
         start

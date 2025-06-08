@@ -1,3 +1,39 @@
+// Environment-based API configuration
+const getApiBaseUrl = (): string => {
+    const env = process.env.NEXT_PUBLIC_ENV || process.env.ENV || 'dev';
+
+    console.log('Current environment:', env);
+    console.log('Available env vars:', {
+        NEXT_PUBLIC_ENV: process.env.NEXT_PUBLIC_ENV,
+        ENV: process.env.ENV,
+        NEXT_PUBLIC_API_BASE_URL: process.env.NEXT_PUBLIC_API_BASE_URL,
+        NEXT_PUBLIC_DOCKER_BACKEND_URL: process.env.NEXT_PUBLIC_DOCKER_BACKEND_URL
+    });
+
+    switch (env.toLowerCase()) {
+        case 'docker':
+            // Use configurable Docker backend URL from environment
+            const dockerUrl = process.env.NEXT_PUBLIC_DOCKER_BACKEND_URL || 'http://docker-core-app-1:8080';
+            console.log('Using Docker API URL:', dockerUrl);
+            return dockerUrl;
+        case 'prod':
+            const prodUrl = process.env.NEXT_PUBLIC_API_BASE_URL || 'https://your-production-api.com';
+            console.log('Using Production API URL:', prodUrl);
+            return prodUrl;
+        case 'dev':
+        default:
+            const devUrl = process.env.NEXT_PUBLIC_DEV_API_URL || 'http://localhost:8080';
+            console.log('Using Dev API URL:', devUrl);
+            return devUrl;
+    }
+};
+
+// Helper function to construct full API URLs
+const getApiUrl = (endpoint: string): string => {
+    const baseUrl = getApiBaseUrl();
+    return `${baseUrl}${endpoint}`;
+};
+
 export const initiateGoogleLogin = async () => {
     // TODO: Implement Google OAuth login
     window.location.href = 'https://accounts.google.com/gsi/client'
@@ -43,7 +79,7 @@ export const isAuthenticated = (): boolean => {
 
 export const refreshAccessToken = async (): Promise<string | null> => {
     try {
-        const response = await fetch('/api/v1/auth/refresh', {
+        const response = await fetch(getApiUrl('/api/v1/auth/refresh'), {
             method: 'POST',
             credentials: 'include', // for cookie
             headers: {
@@ -114,7 +150,7 @@ export const login = async (formData: { email: string; password: string; remembe
             throw new Error('Email and password are required')
         }
 
-        const response = await fetch('/api/v1/auth/login', {
+        const response = await fetch(getApiUrl('/api/v1/auth/login'), {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json',
@@ -193,7 +229,7 @@ export const login = async (formData: { email: string; password: string; remembe
 
 export const signup = async (formData: { email: string; password: string; confirmPassword: string; agreeToTerms: boolean }) => {
     try {
-        const response = await fetch('/api/v1/auth/register', {
+        const response = await fetch(getApiUrl('/api/v1/auth/register'), {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json',
@@ -258,7 +294,7 @@ export const signup = async (formData: { email: string; password: string; confir
 
 export const logout = async () => {
     try {
-        await fetch('/api/v1/auth/logout', {
+        await fetch(getApiUrl('/api/v1/auth/logout'), {
             method: 'POST',
             credentials: 'include' // include the refresh token cookie
         })
@@ -273,7 +309,7 @@ export const logout = async () => {
 }
 
 export const sendResetCode = async (email: string) => {
-    const res = await fetch("/api/v1/auth/forgot-password", {
+    const res = await fetch(getApiUrl("/api/v1/auth/forgot-password"), {
         method: "POST",
         headers: { "Content-Type": "application/x-www-form-urlencoded" },
         body: new URLSearchParams({ email }),
@@ -298,7 +334,7 @@ export const sendResetCode = async (email: string) => {
 }
 
 export const submitNewPassword = async (email: string, code: string, newPassword: string) => {
-    const res = await fetch("/api/v1/auth/reset-password", {
+    const res = await fetch(getApiUrl("/api/v1/auth/reset-password"), {
         method: "POST",
         headers: { "Content-Type": "application/x-www-form-urlencoded" },
         body: new URLSearchParams({ email, code, newPassword }),
@@ -336,7 +372,7 @@ export interface SocialLoginResponse {
 
 export const handleGoogleSocialLogin = async (idToken: string): Promise<SocialLoginResponse> => {
     try {
-        const response = await fetch('/api/v1/auth/social/google-login', {
+        const response = await fetch(getApiUrl('/api/v1/auth/social/google-login'), {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json',
@@ -429,7 +465,7 @@ export const handleGoogleSocialLogin = async (idToken: string): Promise<SocialLo
 
 export const handleGitHubAuthCallback = async (code: string): Promise<SocialLoginResponse> => {
     try {
-        const response = await fetch('/api/v1/auth/social/github-login', {
+        const response = await fetch(getApiUrl('/api/v1/auth/social/github-login'), {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json',

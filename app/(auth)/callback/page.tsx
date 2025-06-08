@@ -1,11 +1,11 @@
 "use client";
 
-import { useEffect, useState } from 'react';
+import { useEffect, useState, Suspense } from 'react';
 import { useSearchParams, useRouter } from 'next/navigation';
 import { handleGitHubAuthCallback, type SocialLoginResponse } from '@/lib/api';
 import { useAuth } from '@/hooks/useAuth';
 
-export default function CallbackPage() {
+function CallbackPageContent() {
     const router = useRouter();
     const searchParams = useSearchParams();
     const { updateAuthState } = useAuth();
@@ -51,7 +51,7 @@ export default function CallbackPage() {
                     setError(err.message || 'An unexpected error occurred during GitHub login processing.');
                     setMessage(null);
                 })
-                .finally(() => {  
+                .finally(() => {
                 });
         } else if (!code && !githubError) {
             setMessage('Waiting for GitHub authorization code...');
@@ -75,13 +75,30 @@ export default function CallbackPage() {
     return (
         <div className="flex flex-col items-center justify-center min-h-screen py-2">
             <p>{message || "Loading..."}</p>
-            {/* Basic loading spinner */} 
+            {/* Basic loading spinner */}
             {isProcessing && (
-                 <div className="mt-4 border-gray-300 h-12 w-12 animate-spin rounded-full border-4 border-t-blue-600" />
+                <div className="mt-4 border-gray-300 h-12 w-12 animate-spin rounded-full border-4 border-t-blue-600" />
             )}
             {!isProcessing && !error && message === 'Waiting for GitHub authorization code...' && (
-                 <p className="mt-2 text-sm text-gray-500">If you are not redirected automatically, please <a href="/login" className="text-blue-500 hover:underline">try logging in again</a>.</p>
+                <p className="mt-2 text-sm text-gray-500">If you are not redirected automatically, please <a href="/login" className="text-blue-500 hover:underline">try logging in again</a>.</p>
             )}
         </div>
+    );
+}
+
+function LoadingFallback() {
+    return (
+        <div className="flex flex-col items-center justify-center min-h-screen py-2">
+            <p>Loading...</p>
+            <div className="mt-4 border-gray-300 h-12 w-12 animate-spin rounded-full border-4 border-t-blue-600" />
+        </div>
+    );
+}
+
+export default function CallbackPage() {
+    return (
+        <Suspense fallback={<LoadingFallback />}>
+            <CallbackPageContent />
+        </Suspense>
     );
 } 
