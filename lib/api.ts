@@ -68,7 +68,7 @@ export const clearAuthData = (): void => {
     if (typeof window !== 'undefined') {
         localStorage.removeItem('scholarai_token')
         localStorage.removeItem('scholarai_user')
-        localStorage.removeItem('scholarai_refresh_token')
+        // Note: Refresh token is stored in HttpOnly cookies, managed by backend
     }
 }
 
@@ -79,22 +79,34 @@ export const isAuthenticated = (): boolean => {
 
 export const refreshAccessToken = async (): Promise<string | null> => {
     try {
+        // Get user data to retrieve email for refresh request
+        const userData = getUserData();
+        if (!userData?.email) {
+            console.warn('No user email found for refresh token request');
+            clearAuthData();
+            return null;
+        }
+
         const response = await fetch(getApiUrl('/api/v1/auth/refresh'), {
             method: 'POST',
-            credentials: 'include', // for cookie
+            credentials: 'include', // This sends the HttpOnly refresh token cookie
             headers: {
                 'Content-Type': 'application/json'
             },
-            body: JSON.stringify({ refreshToken: '' }) // backend expects this field in body
+            body: JSON.stringify({
+                email: userData.email
+                // refreshToken omitted - backend should use HttpOnly cookie
+            })
         });
 
         const data = await response.json();
 
         if (response.ok && data.data?.accessToken) {
             localStorage.setItem('scholarai_token', data.data.accessToken);
+            console.log('✅ Access token refreshed successfully');
             return data.data.accessToken;
         } else {
-            console.warn('Refresh token invalid or expired');
+            console.warn('Refresh token invalid or expired:', data.message || 'Unknown error');
             clearAuthData();
             return null;
         }
@@ -427,10 +439,8 @@ export const handleGoogleSocialLogin = async (idToken: string): Promise<SocialLo
             localStorage.setItem('scholarai_user', JSON.stringify(user));
         }
 
-        // Store refresh token if provided in response body
-        if (refreshToken) {
-            localStorage.setItem('scholarai_refresh_token', refreshToken); // Using a new key for clarity
-        }
+        // Note: Refresh token is now handled via HttpOnly cookies by the backend
+        // No need to store refresh token in localStorage for security reasons
 
 
         return {
@@ -444,10 +454,7 @@ export const handleGoogleSocialLogin = async (idToken: string): Promise<SocialLo
         console.error('Social Login API error:', error);
         // Clear any partial auth data if login failed
         clearAuthData();
-        // Also clear the potential refresh token from local storage
-        if (typeof window !== 'undefined') {
-            localStorage.removeItem('scholarai_refresh_token');
-        }
+        // Note: Refresh token is handled via HttpOnly cookies, cleared automatically on logout
 
         if (error instanceof TypeError && error.message.includes('fetch')) {
             return {
@@ -520,13 +527,8 @@ export const handleGitHubAuthCallback = async (code: string): Promise<SocialLogi
             localStorage.setItem('scholarai_user', JSON.stringify(user));
         }
 
-        // Store refresh token if provided in response body
-        // Note: Your backend SocialAuthController for GitHub already sets refreshToken as HttpOnly cookie.
-        // So, this step of storing from response body might be redundant if backend doesn't also send it in body.
-        // However, including it for completeness based on SocialLoginResponse interface.
-        if (refreshToken) {
-            localStorage.setItem('scholarai_refresh_token', refreshToken);
-        }
+        // Note: Refresh token is handled via HttpOnly cookies by the backend
+        // No need to store refresh token in localStorage for security reasons
 
         return {
             success: true,
@@ -539,9 +541,7 @@ export const handleGitHubAuthCallback = async (code: string): Promise<SocialLogi
     } catch (error) {
         console.error('GitHub Auth Callback API error:', error);
         clearAuthData();
-        if (typeof window !== 'undefined') {
-            localStorage.removeItem('scholarai_refresh_token');
-        }
+        // Note: Refresh token is handled via HttpOnly cookies, cleared automatically on logout
 
         if (error instanceof TypeError && error.message.includes('fetch')) {
             return {

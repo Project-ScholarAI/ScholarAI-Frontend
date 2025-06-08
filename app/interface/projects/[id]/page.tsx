@@ -1,15 +1,17 @@
 import { ProjectWorkspace } from "@/components/interface/ProjectWorkspace"
 
 interface ProjectPageProps {
-    params: {
+    params: Promise<{
         id: string
-    }
+    }>
 }
 
-export default function ProjectPage({ params }: ProjectPageProps) {
+export default async function ProjectPage({ params }: ProjectPageProps) {
+    const { id } = await params
+
     return (
         <div className="h-full">
-            <ProjectWorkspace projectId={params.id} />
+            <ProjectWorkspace projectId={id} />
         </div>
     )
 } 

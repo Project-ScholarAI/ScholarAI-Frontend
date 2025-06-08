@@ -74,70 +74,18 @@ interface Paper {
     status: 'new' | 'processing' | 'ready' | 'failed'
 }
 
-interface ProjectData {
-    id: string
-    name: string
-    domain: string
-    description: string
-    topics: string[]
-    papers: Paper[]
-    totalPapers: number
-    activeTasks: number
-    insights: number
-}
-
-const mockPaper: Paper = {
-    id: "1",
-    title: "Deep Learning Approaches for Medical Image Segmentation: A Comprehensive Survey",
-    doi: "10.1016/j.media.2021.102190",
-    publicationDate: "2021-10-15",
-    venue: "Medical Image Analysis",
-    publisher: "Elsevier",
-    isPeerReviewed: true,
-    authors: [
-        { name: "John Smith", affiliation: "Stanford University" },
-        { name: "Jane Doe", affiliation: "MIT" }
-    ],
-    citationCount: 342,
-    codeRepositoryUrl: "https://github.com/example/medical-segmentation",
-    datasetUrl: "https://dataset.example.com",
-    paperUrl: "https://doi.org/10.1016/j.media.2021.102190",
-    pdfAvailable: true,
-    hasBeenSummarized: true,
-    hasBeenScored: true,
-    score: 8.7,
-    tags: ["medical-imaging", "deep-learning", "segmentation"],
-    status: "ready"
-}
-
-const mockProject: ProjectData = {
-    id: "1",
-    name: "Computer Vision in Healthcare",
-    domain: "Computer Vision",
-    description: "Analyzing recent developments in medical imaging with deep learning",
-    topics: ["medical-imaging", "deep-learning", "cnn", "segmentation"],
-    papers: Array(12).fill(null).map((_, i) => ({
-        ...mockPaper,
-        id: `${i + 1}`,
-        title: `${mockPaper.title} ${i + 1}`,
-        score: Math.random() * 10,
-        hasBeenScored: Math.random() > 0.3,
-        hasBeenSummarized: Math.random() > 0.4,
-        pdfAvailable: Math.random() > 0.2,
-        status: ['new', 'processing', 'ready', 'failed'][Math.floor(Math.random() * 4)] as Paper['status']
-    })),
-    totalPapers: 47,
-    activeTasks: 3,
-    insights: 12
-}
+import { projectsApi } from "@/lib/api/projects"
+import { Project } from "@/types/project"
 
 interface ProjectWorkspaceProps {
     projectId: string
 }
 
 export function ProjectWorkspace({ projectId }: ProjectWorkspaceProps) {
-    const [project, setProject] = useState<ProjectData>(mockProject)
-    const [papers, setPapers] = useState<Paper[]>(project.papers)
+    const [project, setProject] = useState<Project | null>(null)
+    const [papers, setPapers] = useState<Paper[]>([])
+    const [isLoading, setIsLoading] = useState(true)
+    const [error, setError] = useState<string | null>(null)
     const [searchQuery, setSearchQuery] = useState("")
     const [sortBy, setSortBy] = useState<'score' | 'date' | 'citations'>('score')
     const [sortDirection, setSortDirection] = useState<'asc' | 'desc'>('desc')
@@ -146,6 +94,32 @@ export function ProjectWorkspace({ projectId }: ProjectWorkspaceProps) {
     const [activeTab, setActiveTab] = useState("library")
     const [isRetrieving, setIsRetrieving] = useState(false)
     const [isChatOpen, setIsChatOpen] = useState(false)
+
+    // Load project data on mount
+    useEffect(() => {
+        loadProject()
+    }, [projectId])
+
+    const loadProject = async () => {
+        try {
+            setIsLoading(true)
+            setError(null)
+            const projectData = await projectsApi.getProject(projectId)
+            setProject(projectData)
+            // TODO: Load papers for this project when papers API is ready
+            setPapers([])
+        } catch (error) {
+            console.error('Error loading project:', error)
+            setError('Failed to load project. Please try again.')
+        } finally {
+            setIsLoading(false)
+        }
+    }
+
+    const parseProjectTopics = (project: Project): string[] => {
+        // Backend now sends arrays, so just return them or empty array
+        return project.topics || []
+    }
 
     const filteredAndSortedPapers = papers
         .filter(paper => {
@@ -181,17 +155,11 @@ export function ProjectWorkspace({ projectId }: ProjectWorkspaceProps) {
 
     const handleRetrievePapers = async () => {
         setIsRetrieving(true)
-        // Simulate API call - implement UC-03: Automated Paper Retrieval
+        // TODO: Implement UC-03: Automated Paper Retrieval
+        // This would call the papers API to retrieve papers for this project
         setTimeout(() => {
-            const newPapers = Array(5).fill(null).map((_, i) => ({
-                ...mockPaper,
-                id: `new-${Date.now()}-${i}`,
-                title: `New Retrieved Paper ${i + 1}`,
-                status: 'new' as Paper['status'],
-                hasBeenScored: false,
-                hasBeenSummarized: false
-            }))
-            setPapers(prev => [...newPapers, ...prev])
+            // Placeholder implementation
+            console.log('Retrieving papers for project:', projectId)
             setIsRetrieving(false)
         }, 3000)
     }
@@ -243,6 +211,44 @@ export function ProjectWorkspace({ projectId }: ProjectWorkspaceProps) {
         }
     }
 
+    // Loading state
+    if (isLoading) {
+        return (
+            <div className="min-h-screen bg-gradient-to-br from-background via-background/95 to-primary/5 relative overflow-hidden">
+                <div className="absolute inset-0 bg-grid-pattern opacity-5" />
+                <div className="flex items-center justify-center min-h-screen">
+                    <div className="text-center">
+                        <RefreshCw className="h-8 w-8 animate-spin text-primary mx-auto mb-4" />
+                        <p className="text-muted-foreground">Loading project...</p>
+                    </div>
+                </div>
+            </div>
+        )
+    }
+
+    // Error state
+    if (error || !project) {
+        return (
+            <div className="min-h-screen bg-gradient-to-br from-background via-background/95 to-primary/5 relative overflow-hidden">
+                <div className="absolute inset-0 bg-grid-pattern opacity-5" />
+                <div className="flex items-center justify-center min-h-screen">
+                    <div className="text-center">
+                        <div className="bg-red-500/10 border border-red-500/20 rounded-lg p-4 mb-4 max-w-md">
+                            <p className="text-red-500">{error || 'Project not found'}</p>
+                        </div>
+                        <Button
+                            onClick={loadProject}
+                            variant="outline"
+                            className="bg-background/40 backdrop-blur-xl border-primary/20"
+                        >
+                            Try Again
+                        </Button>
+                    </div>
+                </div>
+            </div>
+        )
+    }
+
     return (
         <div className="min-h-screen bg-gradient-to-br from-background via-background/95 to-primary/5 relative overflow-hidden">
             {/* Background Effects */}
@@ -263,9 +269,9 @@ export function ProjectWorkspace({ projectId }: ProjectWorkspaceProps) {
                             <h1 className="text-3xl font-bold bg-gradient-to-r from-primary via-blue-500 to-purple-500 bg-clip-text text-transparent">
                                 {project.name}
                             </h1>
-                            <p className="text-muted-foreground mt-1">{project.description}</p>
+                            <p className="text-muted-foreground mt-1">{project.description || "No description provided"}</p>
                             <div className="flex flex-wrap gap-2 mt-2">
-                                {project.topics.map((topic) => (
+                                {parseProjectTopics(project).map((topic) => (
                                     <Badge key={topic} variant="outline" className="text-xs border-primary/20">
                                         {topic}
                                     </Badge>
@@ -293,8 +299,8 @@ export function ProjectWorkspace({ projectId }: ProjectWorkspaceProps) {
                         {[
                             { label: "Total Papers", value: project.totalPapers.toString(), icon: BookOpen, color: "text-blue-500" },
                             { label: "Active Tasks", value: project.activeTasks.toString(), icon: Zap, color: "text-yellow-500" },
-                            { label: "AI Insights", value: project.insights.toString(), icon: Brain, color: "text-purple-500" },
-                            { label: "Progress", value: "75%", icon: TrendingUp, color: "text-green-500" }
+                            { label: "Papers", value: papers.length.toString(), icon: Database, color: "text-purple-500" },
+                            { label: "Progress", value: `${project.progress}%`, icon: TrendingUp, color: "text-green-500" }
                         ].map((stat, index) => (
                             <motion.div
                                 key={stat.label}

@@ -106,7 +106,7 @@ export function EditorArea({ children, onChatToggle }: Props) {
             </div>
 
             {/* Main Content Area */}
-            <div className="flex-1 relative overflow-hidden">
+            <div className="flex-1 relative overflow-y-auto">
                 {children}
             </div>
         </div>
