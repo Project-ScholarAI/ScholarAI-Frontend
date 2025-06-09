@@ -41,8 +41,9 @@ export async function GET(
     request: NextRequest,
     { params }: { params: { width: string; height: string } }
 ) {
-    const width = parseInt(params.width, 10);
-    const height = parseInt(params.height, 10);
+    const resolvedParams = await params;
+    const width = parseInt(resolvedParams.width, 10);
+    const height = parseInt(resolvedParams.height, 10);
 
     if (isNaN(width) || isNaN(height) || width <= 0 || height <= 0) {
         return new NextResponse('Invalid dimensions', { status: 400 });
