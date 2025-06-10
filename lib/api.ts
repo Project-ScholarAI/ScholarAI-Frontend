@@ -1,3 +1,6 @@
+import type { WebSearchRequest, WebSearchResponse } from '@/types/websearch';
+import type { APIResponse } from '@/types/project';
+
 // Environment-based API configuration
 const getApiBaseUrl = (): string => {
     const env = process.env.NEXT_PUBLIC_ENV || process.env.ENV || 'dev';
@@ -556,5 +559,281 @@ export const handleGitHubAuthCallback = async (code: string): Promise<SocialLogi
         };
     }
 };
+
+/**
+ * Web Search API Functions
+ */
+
+export const initiateWebSearch = async (searchRequest: WebSearchRequest): Promise<{ correlationId: string }> => {
+    try {
+        const response = await authenticatedFetch(getApiUrl('/api/v1/websearch'), {
+            method: 'POST',
+            body: JSON.stringify(searchRequest)
+        });
+
+        if (!response.ok) {
+            const error = await response.json();
+            throw new Error(error.message || 'Failed to initiate web search');
+        }
+
+        const result: APIResponse<WebSearchResponse> = await response.json();
+        return { correlationId: result.data.correlationId };
+    } catch (error) {
+        console.error('Web search initiation error:', error);
+        throw error instanceof Error ? error : new Error('Failed to initiate web search');
+    }
+};
+
+export const pollSearchResults = async (correlationId: string): Promise<WebSearchResponse> => {
+    try {
+        const response = await authenticatedFetch(getApiUrl(`/api/v1/websearch/${correlationId}`));
+
+        if (!response.ok) {
+            const error = await response.json();
+            throw new Error(error.message || 'Failed to get search results');
+        }
+
+        const result: APIResponse<WebSearchResponse> = await response.json();
+        return result.data;
+    } catch (error) {
+        console.error('Search results polling error:', error);
+        throw error instanceof Error ? error : new Error('Failed to get search results');
+    }
+};
+
+export const pollUntilComplete = async (
+    correlationId: string,
+    maxAttempts: number = 30,
+    onProgress?: (attempt: number, status: string) => void
+): Promise<WebSearchResponse> => {
+    for (let attempt = 1; attempt <= maxAttempts; attempt++) {
+        const result = await pollSearchResults(correlationId);
+
+        onProgress?.(attempt, result.status);
+
+        if (result.status === 'COMPLETED') {
+            return result;
+        } else if (result.status === 'FAILED') {
+            throw new Error(`Search failed: ${result.message}`);
+        }
+
+        // Wait before next poll (exponential backoff)
+        await new Promise(resolve => setTimeout(resolve, Math.min(1000 * attempt, 10000)));
+    }
+
+    throw new Error('Search timeout - taking too long');
+};
+
+export const getAllSearchHistory = async (): Promise<WebSearchResponse[]> => {
+    try {
+        const response = await authenticatedFetch(getApiUrl('/api/v1/websearch'));
+
+        if (!response.ok) {
+            const error = await response.json();
+            throw new Error(error.message || 'Failed to get search history');
+        }
+
+        const result: APIResponse<WebSearchResponse[]> = await response.json();
+        return result.data;
+    } catch (error) {
+        console.error('Search history error:', error);
+        throw error instanceof Error ? error : new Error('Failed to get search history');
+    }
+};
+
+export const checkWebSearchHealth = async (): Promise<boolean> => {
+    try {
+        const response = await fetch(getApiUrl('/api/v1/websearch/health'));
+        const result = await response.json();
+        return result.data?.status === 'UP';
+    } catch (error) {
+        console.error('Web search health check error:', error);
+        return false;
+    }
+};
+
+/**
+ * Library API Functions
+ */
+
+export interface LibraryStats {
+    projectId: string;
+    correlationIds: string[];
+    totalPapers: number;
+    completedSearchOperations: number;
+    retrievedAt: string;
+    message: string;
+}
+
+export interface LibraryResponse {
+    timestamp: string;
+    status: number;
+    message: string;
+    data: LibraryStats & {
+        papers: any[]; // Empty array for /stats endpoint
+    };
+}
+
+export const getProjectLibrary = async (projectId: string): Promise<LibraryResponse> => {
+    try {
+        const response = await authenticatedFetch(getApiUrl(`/api/v1/library/project/${projectId}`))
+
+        if (!response.ok) {
+            const errorData = await response.json().catch(() => ({}))
+            throw new Error(errorData.message || `HTTP error! status: ${response.status}`)
+        }
+
+        const data: LibraryResponse = await response.json()
+        return data
+    } catch (error) {
+        console.error('Error fetching project library:', error)
+        throw error
+    }
+}
+
+export const getProjectLibraryStats = async (projectId: string): Promise<LibraryResponse> => {
+    try {
+        const response = await authenticatedFetch(getApiUrl(`/api/v1/library/project/${projectId}/stats`))
+
+        if (!response.ok) {
+            const errorData = await response.json().catch(() => ({}))
+            throw new Error(errorData.message || `HTTP error! status: ${response.status}`)
+        }
+
+        const data: LibraryResponse = await response.json()
+        return data
+    } catch (error) {
+        console.error('Error fetching project library stats:', error)
+        throw error
+    }
+}
+
+/**
+ * PDF-related API functions
+ */
+
+import { getAuthenticatedB2Url, isB2Url } from './b2'
+
+// Create authenticated PDF URL for viewing/downloading
+export const getAuthenticatedPdfUrl = async (pdfUrl: string): Promise<string> => {
+    try {
+        // If the URL is already a blob or data URL, return as is
+        if (pdfUrl.startsWith('blob:') || pdfUrl.startsWith('data:')) {
+            return pdfUrl
+        }
+
+        // If no PDF URL provided, return empty string
+        if (!pdfUrl) {
+            return ''
+        }
+
+        // Check if this is a B2 URL and handle authentication via server
+        if (isB2Url(pdfUrl)) {
+            // For B2 URLs, we'll need to create a blob URL via our server API
+            // This is more complex for viewing, so for now return the original URL
+            // TODO: Implement server-side PDF streaming for viewer
+            console.warn('B2 PDF viewing requires server-side streaming - using direct URL for now')
+            return pdfUrl
+        }
+
+        // For non-B2 URLs, return the original URL for direct access
+        return pdfUrl
+    } catch (error) {
+        console.error('Error getting authenticated PDF URL:', error)
+        // Fallback to original URL if authentication fails
+        return pdfUrl
+    }
+}
+
+// Download PDF with authentication
+export const downloadPdfWithAuth = async (pdfUrl: string, filename: string): Promise<void> => {
+    try {
+        if (!pdfUrl) {
+            throw new Error('No PDF URL provided')
+        }
+
+        // Check if this is a B2 URL and use server-side B2 authentication
+        if (isB2Url(pdfUrl)) {
+            const { downloadPdfViaServer } = await import('./b2')
+            await downloadPdfViaServer(pdfUrl, filename)
+            return
+        }
+
+        // For non-B2 URLs, try direct download first
+        const response = await fetch(pdfUrl)
+
+        if (!response.ok) {
+            // If direct download fails, try with auth headers
+            const authResponse = await authenticatedFetch(pdfUrl)
+            if (!authResponse.ok) {
+                throw new Error(`Failed to download PDF: ${response.status}`)
+            }
+
+            const blob = await authResponse.blob()
+            const url = window.URL.createObjectURL(blob)
+
+            // Create temporary download link
+            const link = document.createElement('a')
+            link.href = url
+            link.download = filename.endsWith('.pdf') ? filename : `${filename}.pdf`
+            document.body.appendChild(link)
+            link.click()
+
+            // Cleanup
+            document.body.removeChild(link)
+            window.URL.revokeObjectURL(url)
+            return
+        }
+
+        const blob = await response.blob()
+        const url = window.URL.createObjectURL(blob)
+
+        // Create temporary download link
+        const link = document.createElement('a')
+        link.href = url
+        link.download = filename.endsWith('.pdf') ? filename : `${filename}.pdf`
+        document.body.appendChild(link)
+        link.click()
+
+        // Cleanup
+        document.body.removeChild(link)
+        window.URL.revokeObjectURL(url)
+    } catch (error) {
+        console.error('Error downloading PDF:', error)
+        throw new Error('Failed to download PDF. The file might not be available or require authentication.')
+    }
+}
+
+// Generate thumbnail from PDF first page
+export const generatePdfThumbnail = async (pdfUrl: string): Promise<string | null> => {
+    try {
+        if (!pdfUrl) {
+            return null
+        }
+
+        // For now, return null to use gradient fallbacks
+        // since the backend thumbnail generation endpoint doesn't exist yet
+        // TODO: Implement when backend endpoint is ready
+
+        // Future implementation:
+        // const authenticatedUrl = await getAuthenticatedPdfUrl(pdfUrl)
+        // const response = await authenticatedFetch(getApiUrl('/api/v1/papers/pdf/thumbnail'), {
+        //     method: 'POST',
+        //     body: JSON.stringify({ pdfUrl: authenticatedUrl })
+        // })
+
+        // if (!response.ok) {
+        //     return null
+        // }
+
+        // const result = await response.json()
+        // return result.data?.thumbnailUrl || null
+
+        return null // Always use gradient thumbnails for now
+    } catch (error) {
+        console.error('Error generating PDF thumbnail:', error)
+        return null // Fallback to gradient thumbnail
+    }
+}
 
 

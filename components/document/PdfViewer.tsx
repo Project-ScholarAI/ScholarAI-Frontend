@@ -1,7 +1,7 @@
 "use client"
 
 import type React from "react"
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import {
   ZoomIn,
   ZoomOut,
@@ -19,11 +19,14 @@ import {
   Edit3,
   Highlighter,
   MessageSquare,
-  Settings
+  Settings,
+  AlertCircle,
+  RefreshCw
 } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { cn } from "@/lib/utils/cn"
+import { getAuthenticatedPdfUrl, downloadPdfWithAuth } from "@/lib/api"
 
 type Props = {
   documentUrl?: string
@@ -33,12 +36,53 @@ type Props = {
 export function PDFViewer({ documentUrl, documentName = "Document" }: Props) {
   const [zoom, setZoom] = useState(100)
   const [currentPage, setCurrentPage] = useState(1)
-  const [totalPages] = useState(24) // Mock data
+  const [totalPages, setTotalPages] = useState(1)
   const [isFullscreen, setIsFullscreen] = useState(false)
   const [viewMode, setViewMode] = useState<'read' | 'edit'>('read')
+  const [authenticatedUrl, setAuthenticatedUrl] = useState<string | null>(null)
+  const [isLoading, setIsLoading] = useState(false)
+  const [error, setError] = useState<string | null>(null)
 
   const zoomIn = () => setZoom(prev => Math.min(prev + 25, 300))
   const zoomOut = () => setZoom(prev => Math.max(prev - 25, 25))
+
+  // Load authenticated PDF URL
+  useEffect(() => {
+    const loadPdf = async () => {
+      if (!documentUrl) return
+
+      setIsLoading(true)
+      setError(null)
+
+      try {
+        const authUrl = await getAuthenticatedPdfUrl(documentUrl)
+        if (authUrl) {
+          setAuthenticatedUrl(authUrl)
+        } else {
+          setError('PDF URL not available')
+        }
+      } catch (error) {
+        console.error('Failed to load PDF:', error)
+        setError(error instanceof Error ? error.message : 'Failed to load PDF')
+      } finally {
+        setIsLoading(false)
+      }
+    }
+
+    loadPdf()
+  }, [documentUrl])
+
+  // Handle PDF download
+  const handleDownload = async () => {
+    if (!documentUrl) return
+
+    try {
+      await downloadPdfWithAuth(documentUrl, documentName)
+    } catch (error) {
+      console.error('Download failed:', error)
+      setError(error instanceof Error ? error.message : 'Download failed. Please try again.')
+    }
+  }
 
   return (
     <div className="flex flex-col h-full bg-[#1e1e1e]">
@@ -161,6 +205,7 @@ export function PDFViewer({ documentUrl, documentName = "Document" }: Props) {
             <Button
               variant="ghost"
               size="sm"
+              onClick={handleDownload}
               className="h-8 w-8 p-0 text-[#cccccc] hover:bg-[#3e3e42] hover:text-white"
             >
               <Download className="h-4 w-4" />
@@ -210,58 +255,62 @@ export function PDFViewer({ documentUrl, documentName = "Document" }: Props) {
       {/* Document Viewer */}
       <div className="flex-1 overflow-auto bg-[#1e1e1e] p-4">
         <div className="flex justify-center">
-          <div
-            className="bg-white shadow-2xl rounded-lg overflow-hidden"
-            style={{
-              transform: `scale(${zoom / 100})`,
-              transformOrigin: 'top center',
-              width: '210mm', // A4 width
-              minHeight: '297mm' // A4 height
-            }}
-          >
-            {/* Mock PDF Content */}
-            <div className="p-8 text-black">
-              <div className="text-center mb-8">
-                <h1 className="text-2xl font-bold mb-2">Research Paper Title</h1>
-                <p className="text-gray-600">Authors: John Doe, Jane Smith</p>
-                <p className="text-gray-600">Published: 2024</p>
-              </div>
-
-              <div className="space-y-4 text-sm leading-relaxed">
-                <h2 className="text-lg font-semibold">Abstract</h2>
-                <p>
-                  This research paper explores the innovative applications of artificial intelligence
-                  in academic research and document analysis. Our findings demonstrate significant
-                  improvements in research efficiency and accuracy when AI tools are properly
-                  integrated into scholarly workflows.
-                </p>
-
-                <h2 className="text-lg font-semibold">Introduction</h2>
-                <p>
-                  The landscape of academic research has been transformed by the advent of
-                  artificial intelligence technologies. Traditional methods of literature review,
-                  data analysis, and hypothesis generation are being augmented by sophisticated
-                  AI systems that can process vast amounts of information at unprecedented speeds.
-                </p>
-
-                <p>
-                  In this study, we examine the practical applications of AI in research
-                  environments, focusing on document analysis, pattern recognition, and
-                  automated insight generation. Our methodology combines quantitative analysis
-                  with qualitative assessments to provide a comprehensive view of AI's impact
-                  on research productivity.
-                </p>
-
-                <h2 className="text-lg font-semibold">Methodology</h2>
-                <p>
-                  Our research methodology employed a mixed-methods approach, incorporating
-                  both experimental and observational studies. We analyzed data from over
-                  1,000 research projects across multiple disciplines to identify patterns
-                  and trends in AI adoption and effectiveness.
-                </p>
+          {isLoading ? (
+            /* Loading State */
+            <div className="flex items-center justify-center h-96 w-full">
+              <div className="text-center text-white">
+                <RefreshCw className="h-8 w-8 animate-spin mx-auto mb-4" />
+                <p className="text-sm text-gray-400">Loading PDF...</p>
               </div>
             </div>
-          </div>
+          ) : error ? (
+            /* Error State */
+            <div className="flex items-center justify-center h-96 w-full">
+              <div className="text-center text-white max-w-md">
+                <AlertCircle className="h-12 w-12 text-red-500 mx-auto mb-4" />
+                <h3 className="text-lg font-semibold mb-2">Failed to Load PDF</h3>
+                <p className="text-sm text-gray-400 mb-4">{error}</p>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => window.location.reload()}
+                  className="text-white border-gray-600"
+                >
+                  <RefreshCw className="h-4 w-4 mr-2" />
+                  Retry
+                </Button>
+              </div>
+            </div>
+          ) : authenticatedUrl ? (
+            /* PDF Iframe */
+            <div
+              className="w-full max-w-4xl bg-white shadow-2xl rounded-lg overflow-hidden"
+              style={{
+                transform: `scale(${zoom / 100})`,
+                transformOrigin: 'top center',
+                height: '80vh'
+              }}
+            >
+              <iframe
+                src={`${authenticatedUrl}#page=${currentPage}&zoom=${zoom}`}
+                className="w-full h-full border-0"
+                title={documentName}
+                onLoad={() => {
+                  // You can implement page detection here if needed
+                  // For now, we'll use a reasonable default
+                  setTotalPages(24)
+                }}
+              />
+            </div>
+          ) : (
+            /* No Document State */
+            <div className="flex items-center justify-center h-96 w-full">
+              <div className="text-center text-white">
+                <FileText className="h-12 w-12 text-gray-500 mx-auto mb-4" />
+                <p className="text-sm text-gray-400">No PDF document available</p>
+              </div>
+            </div>
+          )}
         </div>
       </div>
     </div>

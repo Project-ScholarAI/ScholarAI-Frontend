@@ -45,6 +45,7 @@ export function ProjectsDashboard() {
     const [selectedStatus, setSelectedStatus] = useState<string>("all")
     const [isLoading, setIsLoading] = useState(true)
     const [error, setError] = useState<string | null>(null)
+    const [openingProjectId, setOpeningProjectId] = useState<string | null>(null)
 
     // Load projects on component mount
     useEffect(() => {
@@ -151,8 +152,17 @@ export function ProjectsDashboard() {
         return date.toLocaleDateString()
     }
 
-    const handleOpenProject = (projectId: string) => {
-        router.push(`/interface/projects/${projectId}`)
+    const handleOpenProject = async (projectId: string) => {
+        try {
+            setOpeningProjectId(projectId)
+            // Add a slight delay to show the loading state
+            await new Promise(resolve => setTimeout(resolve, 500))
+            router.push(`/interface/projects/${projectId}`)
+        } catch (error) {
+            console.error('Error opening project:', error)
+        } finally {
+            setOpeningProjectId(null)
+        }
     }
 
     const calculateStats = () => {
@@ -430,14 +440,25 @@ export function ProjectsDashboard() {
                                                 <div className="flex gap-2">
                                                     <Button
                                                         size="sm"
-                                                        className="flex-1 bg-gradient-to-r from-primary/80 to-purple-600/80 hover:from-primary hover:to-purple-600 text-white transition-all duration-300"
+                                                        disabled={openingProjectId === project.id}
+                                                        className="flex-1 bg-gradient-to-r from-primary/80 to-purple-600/80 hover:from-primary hover:to-purple-600 text-white transition-all duration-300 disabled:opacity-60 disabled:cursor-not-allowed relative overflow-hidden"
                                                         onClick={(e) => {
                                                             e.stopPropagation()
                                                             handleOpenProject(project.id)
                                                         }}
                                                     >
-                                                        <PlayCircle className="mr-1 h-3 w-3" />
-                                                        Open
+                                                        {openingProjectId === project.id ? (
+                                                            <>
+                                                                <div className="absolute inset-0 bg-gradient-to-r from-primary/20 to-purple-600/20 animate-pulse" />
+                                                                <Loader2 className="mr-1 h-3 w-3 animate-spin relative z-10" />
+                                                                <span className="relative z-10">Opening...</span>
+                                                            </>
+                                                        ) : (
+                                                            <>
+                                                                <PlayCircle className="mr-1 h-3 w-3" />
+                                                                Open
+                                                            </>
+                                                        )}
                                                     </Button>
                                                     <Button
                                                         size="sm"

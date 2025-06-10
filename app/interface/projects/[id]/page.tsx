@@ -1,4 +1,5 @@
-import { ProjectWorkspace } from "@/components/interface/ProjectWorkspace"
+import { ProjectLayout } from "@/components/interface/ProjectLayout"
+import { redirect } from "next/navigation"
 
 interface ProjectPageProps {
     params: Promise<{
@@ -9,9 +10,6 @@ interface ProjectPageProps {
 export default async function ProjectPage({ params }: ProjectPageProps) {
     const { id } = await params
 
-    return (
-        <div className="h-full">
-            <ProjectWorkspace projectId={id} />
-        </div>
-    )
+    // Redirect to overview by default when project is opened
+    redirect(`/interface/projects/${id}/overview`)
 } 
