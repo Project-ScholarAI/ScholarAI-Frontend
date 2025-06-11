@@ -199,13 +199,69 @@ export function ProjectSidebar({ projectId, collapsed, onToggle }: Props) {
                 )}>
                     {!collapsed && (
                         <div className="flex items-center gap-3 min-w-0 flex-1">
-                            <div className="flex items-center justify-center w-10 h-10 bg-gradient-to-br from-amber-500 via-orange-500 to-red-500 rounded-xl shadow-lg shadow-amber-500/30 transition-all duration-300">
-                                <GraduationCap className="h-6 w-6 text-white drop-shadow-glow" />
+                            <div className="flex items-center justify-center w-10 h-10 bg-gradient-to-br from-blue-500 via-purple-500 to-pink-500 rounded-xl shadow-lg shadow-blue-500/30 transition-all duration-300 relative overflow-hidden">
+                                {/* Background shimmer effect */}
+                                <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/20 to-transparent -translate-x-full animate-pulse duration-2000" />
+
+                                {/* Custom Research Icon */}
+                                <svg
+                                    className="h-6 w-6 text-white drop-shadow-glow relative z-10"
+                                    viewBox="0 0 24 24"
+                                    fill="none"
+                                    xmlns="http://www.w3.org/2000/svg"
+                                >
+                                    {/* Book/Document base */}
+                                    <path
+                                        d="M4 6c0-1.1.9-2 2-2h12c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H6c-1.1 0-2-.9-2-2V6z"
+                                        fill="currentColor"
+                                        fillOpacity="0.3"
+                                    />
+                                    <path
+                                        d="M4 6c0-1.1.9-2 2-2h12c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H6c-1.1 0-2-.9-2-2V6z"
+                                        stroke="currentColor"
+                                        strokeWidth="1.5"
+                                        fill="none"
+                                    />
+
+                                    {/* Inner content lines */}
+                                    <path
+                                        d="M8 10h8M8 14h6"
+                                        stroke="currentColor"
+                                        strokeWidth="1.5"
+                                        strokeLinecap="round"
+                                    />
+
+                                    {/* Sparkle/Star element for innovation */}
+                                    <g transform="translate(15, 3)">
+                                        <path
+                                            d="M3 0l1 2h2l-1.5 1.5L5.5 6 3 4.5 0.5 6l1-2.5L0 2h2l1-2z"
+                                            fill="currentColor"
+                                            className="animate-pulse"
+                                        />
+                                    </g>
+
+                                    {/* Small research molecule/network element */}
+                                    <g transform="translate(2, 2)" opacity="0.7">
+                                        <circle cx="1" cy="1" r="0.5" fill="currentColor" />
+                                        <circle cx="3" cy="0.5" r="0.5" fill="currentColor" />
+                                        <circle cx="2.5" cy="2.5" r="0.5" fill="currentColor" />
+                                        <path d="M1.5 1.5L2.5 0.5M1.5 1.5L2 2" stroke="currentColor" strokeWidth="0.5" />
+                                    </g>
+                                </svg>
                             </div>
                             <div className="flex flex-col min-w-0 flex-1">
-                                <span className="font-bold text-sm bg-gradient-to-r from-amber-500 via-orange-500 to-red-500 bg-clip-text text-transparent truncate">
+                                <div
+                                    className="font-bold text-sm bg-gradient-to-r from-blue-500 via-purple-500 to-pink-500 bg-clip-text text-transparent leading-tight max-h-12 overflow-hidden"
+                                    style={{
+                                        display: '-webkit-box',
+                                        WebkitLineClamp: 2,
+                                        WebkitBoxOrient: 'vertical',
+                                        wordBreak: 'break-word'
+                                    }}
+                                    title={project?.name || "Project"}
+                                >
                                     {isLoading ? "Loading..." : project?.name || "Project"}
-                                </span>
+                                </div>
                                 <span className="text-xs text-muted-foreground">Research Project</span>
                             </div>
                         </div>
@@ -227,24 +283,6 @@ export function ProjectSidebar({ projectId, collapsed, onToggle }: Props) {
                         )}
                     </Button>
                 </div>
-
-
-
-                {/* Project Stats */}
-                {!collapsed && project && (
-                    <div className="p-3 border-b border-primary/10 relative z-10">
-                        <div className="grid grid-cols-2 gap-2 text-xs">
-                            <div className="bg-background/20 rounded-lg p-2 border border-primary/10">
-                                <div className="text-muted-foreground">Papers</div>
-                                <div className="font-semibold text-primary">{project.totalPapers}</div>
-                            </div>
-                            <div className="bg-background/20 rounded-lg p-2 border border-primary/10">
-                                <div className="text-muted-foreground">Progress</div>
-                                <div className="font-semibold text-green-500">{project.progress}%</div>
-                            </div>
-                        </div>
-                    </div>
-                )}
 
                 {/* Navigation */}
                 <nav className="flex-1 space-y-2 p-3 relative z-10 overflow-y-auto custom-scrollbar">
@@ -279,7 +317,7 @@ export function ProjectSidebar({ projectId, collapsed, onToggle }: Props) {
                                 variant="outline"
                                 size={collapsed ? "sm" : "default"}
                                 className={cn(
-                                    "w-full bg-red-500/10 border-red-500/30 text-red-400 hover:bg-red-500/20 hover:border-red-500/40 hover:text-red-300 transition-all duration-300",
+                                    "w-full bg-gradient-to-r from-blue-500/15 via-purple-500/15 to-pink-500/15 border-blue-400/30 text-blue-100 hover:bg-gradient-to-r hover:from-blue-500/25 hover:via-purple-500/25 hover:to-pink-500/25 hover:border-blue-300/50 hover:text-white hover:shadow-lg hover:shadow-blue-500/20 transition-all duration-300",
                                     collapsed && "px-2"
                                 )}
                             >

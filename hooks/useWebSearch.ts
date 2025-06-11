@@ -57,20 +57,26 @@ export function useWebSearch(): UseWebSearchState & UseWebSearchActions {
             // Step 2: Poll for results with progress updates
             const onProgress = (attempt: number, status: string) => {
                 const progressMap: Record<string, number> = {
-                    'SUBMITTED': 30,
-                    'PROCESSING': 60,
+                    'SUBMITTED': 25,
+                    'PROCESSING': 75,
                     'COMPLETED': 100
                 }
 
                 const stepMap: Record<string, string> = {
-                    'SUBMITTED': "Fetching from academic databases...",
-                    'PROCESSING': "Processing and filtering results...",
-                    'COMPLETED': "Search completed successfully!"
+                    'SUBMITTED': "Scanning arXiv repository...",
+                    'PROCESSING': "Querying Semantic Scholar & filtering results...",
+                    'COMPLETED': "Enriching metadata & finalizing papers..."
                 }
 
-                const currentProgress = progressMap[status] || 30 + (attempt * 5)
-                const currentStep = stepMap[status] || `Processing... (attempt ${attempt})`
+                // Create more realistic progress steps with incremental updates
+                let currentProgress = progressMap[status] || 25 + (attempt * 8)
 
+                // Add some randomization for more realistic feel
+                if (status === 'PROCESSING') {
+                    currentProgress = Math.min(75 + (attempt * 3) + Math.floor(Math.random() * 5), 95)
+                }
+
+                const currentStep = stepMap[status] || `Analyzing results from database ${attempt}...`
                 updateProgress(Math.min(currentProgress, 95), currentStep)
             }
 

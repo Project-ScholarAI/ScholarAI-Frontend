@@ -47,20 +47,21 @@ import {
     Tag,
     Users,
     TrendingUp,
-    BarChart3
+    BarChart3,
+    FolderOpen,
+    Globe
 } from "lucide-react"
 import { cn } from "@/lib/utils"
 import { useWebSearch } from "@/hooks/useWebSearch"
 import { getProjectLibrary, getProjectLibraryStats } from "@/lib/api"
 import { SearchLoadingProgress } from "@/components/library/SearchLoadingProgress"
 import { PaperCard } from "@/components/library/PaperCard"
+import { StreamingPaperCard } from "@/components/library/StreamingPaperCard"
 import { PaperDetailModal } from "@/components/library/PaperDetailModal"
 import { PdfViewerModal } from "@/components/library/PdfViewerModal"
 import { SearchConfigDialog } from "@/components/library/SearchConfigDialog"
 import { B2DownloadTest } from "@/components/test/B2DownloadTest"
 import type { Paper, WebSearchRequest } from "@/types/websearch"
-
-// Using Paper interface from types/websearch.ts
 
 interface ProjectLibraryPageProps {
     params: Promise<{
@@ -70,8 +71,11 @@ interface ProjectLibraryPageProps {
 
 export default function ProjectLibraryPage({ params }: ProjectLibraryPageProps) {
     const [projectId, setProjectId] = useState<string>("")
-    const [papers, setPapers] = useState<Paper[]>([])
+    const [allPapers, setAllPapers] = useState<Paper[]>([])
+    const [currentWebSearchPapers, setCurrentWebSearchPapers] = useState<Paper[]>([])
+    const [uploadedContent, setUploadedContent] = useState<any[]>([])
     const [isLoading, setIsLoading] = useState(true)
+    const [activeTab, setActiveTab] = useState<'current-search' | 'all-papers' | 'uploaded'>('current-search')
     const [searchQuery, setSearchQuery] = useState("")
     const [sortBy, setSortBy] = useState<'date' | 'citations' | 'title'>('date')
     const [sortDirection, setSortDirection] = useState<'asc' | 'desc'>('desc')
@@ -109,12 +113,7 @@ export default function ProjectLibraryPage({ params }: ProjectLibraryPageProps) 
     // Load papers from web search results when available
     useEffect(() => {
         if (webSearch.papers.length > 0) {
-            // Merge new papers with existing ones, avoiding duplicates
-            setPapers(prevPapers => {
-                const existingTitles = new Set(prevPapers.map(p => p.title.toLowerCase()))
-                const newPapers = webSearch.papers.filter(p => !existingTitles.has(p.title.toLowerCase()))
-                return [...prevPapers, ...newPapers]
-            })
+            setCurrentWebSearchPapers(webSearch.papers)
         }
     }, [webSearch.papers])
 
@@ -131,7 +130,7 @@ export default function ProjectLibraryPage({ params }: ProjectLibraryPageProps) 
 
             // Set papers from library data
             if (libraryData.data.papers) {
-                setPapers(libraryData.data.papers)
+                setAllPapers(libraryData.data.papers)
             }
 
             // Set library stats
@@ -145,7 +144,21 @@ export default function ProjectLibraryPage({ params }: ProjectLibraryPageProps) 
         }
     }
 
-    const filteredAndSortedPapers = papers
+    // Get the current papers based on active tab
+    const getCurrentPapers = () => {
+        switch (activeTab) {
+            case 'current-search':
+                return currentWebSearchPapers
+            case 'all-papers':
+                return allPapers
+            case 'uploaded':
+                return [] // TODO: Implement uploaded content display
+            default:
+                return []
+        }
+    }
+
+    const filteredAndSortedPapers = getCurrentPapers()
         .filter(paper => {
             const matchesSearch = paper.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
                 paper.authors.some(author => author.name.toLowerCase().includes(searchQuery.toLowerCase())) ||
@@ -199,8 +212,6 @@ export default function ProjectLibraryPage({ params }: ProjectLibraryPageProps) 
         setShowPdfViewer(true)
     }
 
-
-
     // Scroll handling
     const handleScroll = (e: React.UIEvent<HTMLDivElement>) => {
         const scrollTop = e.currentTarget.scrollTop
@@ -215,8 +226,8 @@ export default function ProjectLibraryPage({ params }: ProjectLibraryPageProps) 
     }
 
     // Get unique sources and fields for filtering
-    const uniqueSources = [...new Set(papers.map(p => p.source).filter(Boolean))]
-    const uniqueFields = [...new Set(papers.flatMap(p => p.fieldsOfStudy || []).filter(Boolean))]
+    const uniqueSources = [...new Set(getCurrentPapers().map(p => p.source).filter(Boolean))]
+    const uniqueFields = [...new Set(getCurrentPapers().flatMap(p => p.fieldsOfStudy || []).filter(Boolean))]
 
     if (isLoading) {
         return (
@@ -236,297 +247,99 @@ export default function ProjectLibraryPage({ params }: ProjectLibraryPageProps) 
     }
 
     return (
-        <div className="min-h-screen bg-gradient-to-br from-background via-background/95 to-primary/5 relative overflow-hidden">
-            {/* Background Effects */}
+        <div className="min-h-screen bg-gradient-to-br from-background via-background/95 to-primary/5 relative overflow-hidden flex flex-col">
             <div className="absolute inset-0 bg-grid-pattern opacity-5" />
-            <div className="absolute top-0 right-0 w-96 h-96 bg-gradient-to-bl from-primary/10 via-purple-500/5 to-transparent rounded-full blur-3xl" />
-            <div className="absolute bottom-0 left-0 w-96 h-96 bg-gradient-to-tr from-blue-500/10 via-purple-500/5 to-transparent rounded-full blur-3xl" />
 
-            <div className="relative z-10 container mx-auto px-6 py-6">
-                {/* Library Header */}
+            {/* Header */}
+            <div className="relative z-10">
                 <motion.div
                     initial={{ opacity: 0, y: -20 }}
                     animate={{ opacity: 1, y: 0 }}
                     transition={{ duration: 0.6 }}
-                    className="mb-6"
+                    className="text-center py-8"
                 >
-                    <div className="flex items-center justify-between mb-6">
-                        <div>
-                            <h1 className="text-3xl font-bold bg-gradient-to-r from-primary via-blue-500 to-purple-500 bg-clip-text text-transparent flex items-center gap-3">
-                                <Database className="h-8 w-8 text-primary" />
-                                Paper Library
-                            </h1>
-                            <p className="text-muted-foreground mt-1">
-                                Manage and analyze your research papers with advanced tools
-                            </p>
+                    <div className="flex items-center justify-center gap-3 mb-2">
+                        <div className="p-2 rounded-lg bg-gradient-to-r from-blue-500/20 to-purple-500/20 border border-primary/20">
+                            <BookOpen className="h-6 w-6 text-primary" />
                         </div>
-                        <div className="flex gap-2">
-                            <Button
-                                onClick={() => setShowFilters(!showFilters)}
-                                variant="outline"
-                                className="bg-background/40 backdrop-blur-xl border-primary/20 hover:bg-primary/5"
-                            >
-                                <Settings2 className="mr-2 h-4 w-4" />
-                                Filters
-                            </Button>
-                            <Button
-                                onClick={() => projectId && loadProjectLibrary(projectId)}
-                                disabled={isLoadingLibrary}
-                                variant="outline"
-                                className="bg-background/40 backdrop-blur-xl border-primary/20 hover:bg-primary/5"
-                            >
-                                {isLoadingLibrary ? (
-                                    <RefreshCw className="mr-2 h-4 w-4 animate-spin" />
-                                ) : (
-                                    <RefreshCw className="mr-2 h-4 w-4" />
-                                )}
-                                Refresh
-                            </Button>
-                            <Button
-                                onClick={handleRetrievePapers}
-                                disabled={webSearch.isSearching}
-                                className="bg-gradient-to-r from-blue-500 to-cyan-500 hover:from-blue-600 hover:to-cyan-600 text-white"
-                            >
-                                {webSearch.isSearching ? (
-                                    <RefreshCw className="mr-2 h-4 w-4 animate-spin" />
-                                ) : (
-                                    <Download className="mr-2 h-4 w-4" />
-                                )}
-                                {webSearch.isSearching ? "Fetching..." : "Fetch Papers"}
-                            </Button>
-                        </div>
+                        <h1 className="text-3xl font-bold bg-gradient-to-r from-primary to-purple-500 bg-clip-text text-transparent">
+                            Paper Library
+                        </h1>
                     </div>
+                    <p className="text-muted-foreground">
+                        Manage and analyze your research papers with advanced tools
+                    </p>
+                </motion.div>
+            </div>
 
-                    {/* Library Stats */}
-                    <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
-                        {[
-                            {
-                                label: "Total Papers",
-                                value: libraryStats?.totalPapers?.toString() || papers.length.toString(),
-                                icon: BookOpen,
-                                color: "text-blue-500"
-                            },
-                            {
-                                label: "Open Access",
-                                value: papers.filter(p => p.isOpenAccess).length.toString(),
-                                icon: CheckCircle,
-                                color: "text-green-500"
-                            },
-                            {
-                                label: "Search Operations",
-                                value: libraryStats?.completedSearchOperations?.toString() || "0",
-                                icon: TrendingUp,
-                                color: "text-purple-500"
-                            },
-                            {
-                                label: "Total Citations",
-                                value: papers.reduce((acc, p) => acc + p.citationCount, 0).toString(),
-                                icon: Quote,
-                                color: "text-yellow-500"
-                            }
-                        ].map((stat, index) => (
-                            <motion.div
-                                key={stat.label}
-                                initial={{ opacity: 0, y: 20 }}
-                                animate={{ opacity: 1, y: 0 }}
-                                transition={{ delay: index * 0.1, duration: 0.6 }}
+            {/* Sticky Tabs */}
+            <div className="sticky top-0 z-40 bg-gradient-to-br from-background via-background/95 to-primary/5 backdrop-blur-xl border-b border-primary/10">
+                <motion.div
+                    initial={{ opacity: 0, y: -20 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ duration: 0.6, delay: 0.1 }}
+                    className="max-w-7xl mx-auto px-6 py-4"
+                >
+                    <Tabs value={activeTab} onValueChange={(value) => setActiveTab(value as any)} className="w-full">
+                        <TabsList className="grid w-full grid-cols-3 bg-background/60 backdrop-blur-xl border border-primary/10">
+                            <TabsTrigger
+                                value="current-search"
+                                className="flex items-center gap-2 data-[state=active]:bg-gradient-to-r data-[state=active]:from-blue-500/20 data-[state=active]:to-cyan-500/20"
                             >
-                                <Card className="bg-background/40 backdrop-blur-xl border border-primary/10 shadow-lg hover:shadow-primary/20 transition-all duration-300">
-                                    <CardContent className="p-4">
-                                        <div className="flex items-center justify-between">
-                                            <div>
-                                                <p className="text-sm text-muted-foreground">{stat.label}</p>
-                                                <p className="text-xl font-bold text-foreground">
-                                                    {isLoadingLibrary ? (
-                                                        <RefreshCw className="h-5 w-5 animate-spin" />
-                                                    ) : (
-                                                        stat.value
-                                                    )}
-                                                </p>
-                                            </div>
-                                            <stat.icon className={`h-6 w-6 ${stat.color}`} />
-                                        </div>
-                                    </CardContent>
-                                </Card>
-                            </motion.div>
-                        ))}
-                    </div>
-                </motion.div>
-
-                {/* Search and Filters */}
-                {/* Library Error Display */}
-                {libraryError && (
-                    <motion.div
-                        initial={{ opacity: 0, y: -10 }}
-                        animate={{ opacity: 1, y: 0 }}
-                        className="mb-6"
-                    >
-                        <Card className="bg-red-500/10 border-red-500/20 shadow-lg">
-                            <CardContent className="p-4">
-                                <div className="flex items-center gap-3">
-                                    <AlertCircle className="h-5 w-5 text-red-500" />
-                                    <div className="flex-1">
-                                        <p className="text-red-500 font-medium">Failed to load library</p>
-                                        <p className="text-red-400 text-sm">{libraryError}</p>
-                                    </div>
-                                    <Button
-                                        variant="outline"
-                                        size="sm"
-                                        onClick={() => projectId && loadProjectLibrary(projectId)}
-                                        className="text-red-500 border-red-500/20 hover:bg-red-500/10"
-                                    >
-                                        <RefreshCw className="h-4 w-4 mr-2" />
-                                        Retry
-                                    </Button>
-                                </div>
-                            </CardContent>
-                        </Card>
-                    </motion.div>
-                )}
-
-                <motion.div
-                    initial={{ opacity: 0, y: 20 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    transition={{ duration: 0.6, delay: 0.2 }}
-                    className="mb-6"
-                >
-                    <Card className="bg-background/40 backdrop-blur-xl border border-primary/10 shadow-lg">
-                        <CardContent className="p-6">
-                            {/* Search Bar */}
-                            <div className="flex flex-col lg:flex-row gap-4 mb-4">
-                                <div className="relative flex-1">
-                                    <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                                    <Input
-                                        placeholder="Search papers, authors, venues, or tags..."
-                                        value={searchQuery}
-                                        onChange={(e) => setSearchQuery(e.target.value)}
-                                        className="pl-10 bg-background/40 backdrop-blur-xl border-primary/20 focus:border-primary/40"
-                                    />
-                                </div>
-                                <div className="flex gap-2">
-                                    <Button
-                                        variant="outline"
-                                        size="sm"
-                                        onClick={() => setViewMode(viewMode === 'grid' ? 'list' : 'grid')}
-                                        className="bg-background/40 backdrop-blur-xl border-primary/20"
-                                    >
-                                        {viewMode === 'grid' ? <List className="h-4 w-4" /> : <Grid3X3 className="h-4 w-4" />}
-                                    </Button>
-                                    <Button
-                                        variant="outline"
-                                        size="sm"
-                                        onClick={() => setSortDirection(sortDirection === 'asc' ? 'desc' : 'asc')}
-                                        className="bg-background/40 backdrop-blur-xl border-primary/20"
-                                    >
-                                        {sortDirection === 'asc' ? <ArrowUp className="h-4 w-4" /> : <ArrowDown className="h-4 w-4" />}
-                                    </Button>
-                                </div>
-                            </div>
-
-                            {/* Advanced Filters */}
-                            <AnimatePresence>
-                                {showFilters && (
-                                    <motion.div
-                                        initial={{ opacity: 0, height: 0 }}
-                                        animate={{ opacity: 1, height: "auto" }}
-                                        exit={{ opacity: 0, height: 0 }}
-                                        className="overflow-hidden"
-                                    >
-                                        <Separator className="my-4" />
-                                        <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-                                            <div>
-                                                <label className="text-sm font-medium mb-2 block">Sort By</label>
-                                                <Select value={sortBy} onValueChange={(value: any) => setSortBy(value)}>
-                                                    <SelectTrigger className="bg-background/40 backdrop-blur-xl border-primary/20">
-                                                        <SelectValue />
-                                                    </SelectTrigger>
-                                                    <SelectContent>
-                                                        <SelectItem value="date">Publication Date</SelectItem>
-                                                        <SelectItem value="citations">Citations</SelectItem>
-                                                        <SelectItem value="title">Title</SelectItem>
-                                                    </SelectContent>
-                                                </Select>
-                                            </div>
-
-                                            <div>
-                                                <label className="text-sm font-medium mb-2 block">Source</label>
-                                                <Select value={filterSource} onValueChange={setFilterSource}>
-                                                    <SelectTrigger className="bg-background/40 backdrop-blur-xl border-primary/20">
-                                                        <SelectValue />
-                                                    </SelectTrigger>
-                                                    <SelectContent>
-                                                        <SelectItem value="all">All Sources</SelectItem>
-                                                        {uniqueSources.map(source => (
-                                                            <SelectItem key={source} value={source}>{source}</SelectItem>
-                                                        ))}
-                                                    </SelectContent>
-                                                </Select>
-                                            </div>
-
-                                            <div>
-                                                <label className="text-sm font-medium mb-2 block">Access</label>
-                                                <Select value={filterOpenAccess} onValueChange={setFilterOpenAccess}>
-                                                    <SelectTrigger className="bg-background/40 backdrop-blur-xl border-primary/20">
-                                                        <SelectValue />
-                                                    </SelectTrigger>
-                                                    <SelectContent>
-                                                        <SelectItem value="all">All Papers</SelectItem>
-                                                        <SelectItem value="open">Open Access</SelectItem>
-                                                        <SelectItem value="closed">Closed Access</SelectItem>
-                                                    </SelectContent>
-                                                </Select>
-                                            </div>
-
-                                            <div>
-                                                <label className="text-sm font-medium mb-2 block">Quick Actions</label>
-                                                <div className="flex gap-2">
-                                                    <Button size="sm" variant="outline" className="flex-1 bg-background/40">
-                                                        <Upload className="h-3 w-3 mr-1" />
-                                                        Upload
-                                                    </Button>
-                                                    <Button size="sm" variant="outline" className="flex-1 bg-background/40">
-                                                        <Tag className="h-3 w-3 mr-1" />
-                                                        Categorize
-                                                    </Button>
-                                                </div>
-                                            </div>
-                                        </div>
-                                    </motion.div>
+                                <Globe className="h-4 w-4" />
+                                Current Web Search
+                                {currentWebSearchPapers.length > 0 && (
+                                    <Badge variant="secondary" className="ml-1 text-xs">
+                                        {currentWebSearchPapers.length}
+                                    </Badge>
                                 )}
-                            </AnimatePresence>
-                        </CardContent>
-                    </Card>
+                            </TabsTrigger>
+                            <TabsTrigger
+                                value="all-papers"
+                                className="flex items-center gap-2 data-[state=active]:bg-gradient-to-r data-[state=active]:from-green-500/20 data-[state=active]:to-emerald-500/20"
+                            >
+                                <BookOpen className="h-4 w-4" />
+                                All Papers
+                                {allPapers.length > 0 && (
+                                    <Badge variant="secondary" className="ml-1 text-xs">
+                                        {allPapers.length}
+                                    </Badge>
+                                )}
+                            </TabsTrigger>
+                            <TabsTrigger
+                                value="uploaded"
+                                className="flex items-center gap-2 data-[state=active]:bg-gradient-to-r data-[state=active]:from-purple-500/20 data-[state=active]:to-pink-500/20"
+                            >
+                                <FolderOpen className="h-4 w-4" />
+                                Uploaded Content
+                                <Badge variant="secondary" className="ml-1 text-xs">
+                                    {uploadedContent.length}
+                                </Badge>
+                            </TabsTrigger>
+                        </TabsList>
+                    </Tabs>
                 </motion.div>
+            </div>
 
-                {/* Papers Content */}
-                <motion.div
-                    initial={{ opacity: 0, y: 20 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    transition={{ duration: 0.6, delay: 0.4 }}
-                    className="max-h-[calc(100vh-400px)] overflow-hidden"
-                >
-                    {papers.length === 0 ? (
-                        /* Empty State */
-                        <Card className="bg-background/40 backdrop-blur-xl border border-primary/10 shadow-lg">
-                            <CardContent className="p-12">
-                                <div className="text-center">
-                                    <Database className="h-16 w-16 text-muted-foreground mx-auto mb-6" />
-                                    <h3 className="text-xl font-semibold mb-2">No Papers Yet</h3>
-                                    <p className="text-muted-foreground mb-6 max-w-md mx-auto">
-                                        {libraryStats?.totalPapers === 0 ?
-                                            "This project doesn't have any papers yet. Start building your research library by fetching papers or uploading your own documents." :
-                                            "Start building your research library by fetching papers or uploading your own documents."
-                                        }
-                                    </p>
-                                    {libraryStats && libraryStats.completedSearchOperations > 0 && (
-                                        <div className="mb-4 p-3 bg-blue-500/10 border border-blue-500/20 rounded-lg">
-                                            <p className="text-sm text-blue-400">
-                                                📊 {libraryStats.completedSearchOperations} search operations completed
-                                                {libraryStats.retrievedAt && ` • Last updated: ${new Date(libraryStats.retrievedAt).toLocaleDateString()}`}
-                                            </p>
+            {/* Scrollable Content Area */}
+            <div className="flex-1 overflow-y-auto">
+                <div className="max-w-7xl mx-auto px-6 py-6 space-y-6">
+                    <Tabs value={activeTab} onValueChange={(value) => setActiveTab(value as any)} className="w-full">
+
+                        {/* Current Web Search Tab */}
+                        <TabsContent value="current-search" className="mt-6">
+                            <Card className="bg-background/40 backdrop-blur-xl border border-primary/10 shadow-lg">
+                                <CardHeader>
+                                    <div className="flex items-center justify-between">
+                                        <div>
+                                            <CardTitle className="text-lg flex items-center gap-2">
+                                                <Globe className="h-5 w-5 text-blue-500" />
+                                                Current Web Search Results
+                                            </CardTitle>
+                                            <CardDescription>
+                                                Papers retrieved from your latest web search
+                                            </CardDescription>
                                         </div>
-                                    )}
-                                    <div className="flex gap-3 justify-center">
                                         <Button
                                             onClick={handleRetrievePapers}
                                             disabled={webSearch.isSearching}
@@ -537,91 +350,363 @@ export default function ProjectLibraryPage({ params }: ProjectLibraryPageProps) 
                                             ) : (
                                                 <Download className="mr-2 h-4 w-4" />
                                             )}
-                                            {webSearch.isSearching ? "Fetching Papers..." : "Fetch Papers"}
+                                            {webSearch.isSearching ? "Searching..." : "Start New Search"}
                                         </Button>
-                                        <Button variant="outline" className="bg-background/40 backdrop-blur-xl border-primary/20">
+                                    </div>
+                                </CardHeader>
+                                <CardContent>
+                                    {/* Inline Search Progress */}
+                                    {webSearch.isSearching && (
+                                        <div className="mb-6 p-6 bg-gradient-to-br from-blue-500/5 via-purple-500/5 to-cyan-500/5 rounded-xl border border-blue-500/20">
+                                            <div className="text-center mb-6">
+                                                <motion.div
+                                                    animate={{ rotate: 360 }}
+                                                    transition={{ duration: 3, repeat: Infinity, ease: "linear" }}
+                                                    className="inline-flex items-center justify-center w-12 h-12 bg-gradient-to-r from-blue-500 to-cyan-500 rounded-full mb-3"
+                                                >
+                                                    <Search className="h-6 w-6 text-white" />
+                                                </motion.div>
+                                                <h3 className="text-lg font-semibold bg-gradient-to-r from-blue-500 via-purple-500 to-cyan-500 bg-clip-text text-transparent">
+                                                    Searching Academic Papers
+                                                </h3>
+                                                <p className="text-muted-foreground text-sm mt-1">
+                                                    AI agent scanning multiple databases for relevant research
+                                                </p>
+                                            </div>
+
+                                            {/* Progress Bar with Metal Gears */}
+                                            <div className="relative mb-4">
+                                                <div className="w-full h-2 bg-muted/30 rounded-full overflow-hidden">
+                                                    <motion.div
+                                                        initial={{ width: 0 }}
+                                                        animate={{ width: `${webSearch.progress}%` }}
+                                                        transition={{ duration: 0.8, ease: "easeOut" }}
+                                                        className="h-full bg-gradient-to-r from-blue-500 via-purple-500 to-cyan-500 rounded-full relative"
+                                                    >
+                                                        <div className="absolute inset-0 -skew-x-12 bg-gradient-to-r from-transparent via-white/30 to-transparent animate-pulse" />
+                                                    </motion.div>
+                                                </div>
+
+                                                <motion.div
+                                                    style={{ left: `${Math.min(webSearch.progress, 97)}%` }}
+                                                    className="absolute -top-3 transform -translate-x-1/2"
+                                                    transition={{ duration: 0.8, ease: "easeOut" }}
+                                                >
+                                                    <div className="flex items-center gap-0.5">
+                                                        <motion.div
+                                                            animate={{ rotate: 360 }}
+                                                            transition={{ duration: 3, repeat: Infinity, ease: "linear" }}
+                                                        >
+                                                            <svg width="20" height="20" viewBox="0 0 24 24" className="text-blue-500">
+                                                                <path
+                                                                    fill="currentColor"
+                                                                    d="M12,15.5A3.5,3.5 0 0,1 8.5,12A3.5,3.5 0 0,1 12,8.5A3.5,3.5 0 0,1 15.5,12A3.5,3.5 0 0,1 12,15.5M19.43,12.97C19.47,12.65 19.5,12.33 19.5,12C19.5,11.67 19.47,11.34 19.43,11L21.54,9.37C21.73,9.22 21.78,8.95 21.66,8.73L19.66,5.27C19.54,5.05 19.27,4.96 19.05,5.05L16.56,6.05C16.04,5.66 15.5,5.32 14.87,5.07L14.5,2.42C14.46,2.18 14.25,2 14,2H10C9.75,2 9.54,2.18 9.5,2.42L9.13,5.07C8.5,5.32 7.96,5.66 7.44,6.05L4.95,5.05C4.73,4.96 4.46,5.05 4.34,5.27L2.34,8.73C2.22,8.95 2.27,9.22 2.46,9.37L4.57,11C4.53,11.34 4.5,11.67 4.5,12C4.5,12.33 4.53,12.65 4.57,12.97L2.46,14.63C2.27,14.78 2.22,15.05 2.34,15.27L4.34,18.73C4.46,18.95 4.73,19.03 4.95,18.95L7.44,17.94C7.96,18.34 8.5,18.68 9.13,18.93L9.5,21.58C9.54,21.82 9.75,22 10,22H14C14.25,22 14.46,21.82 14.5,21.58L14.87,18.93C15.5,18.68 16.04,18.34 16.56,17.94L19.05,18.95C19.27,19.03 19.54,18.95 19.66,18.73L21.66,15.27C21.78,15.05 21.73,14.78 21.54,14.63L19.43,12.97Z"
+                                                                />
+                                                            </svg>
+                                                        </motion.div>
+                                                        <motion.div
+                                                            animate={{ rotate: -360 }}
+                                                            transition={{ duration: 2, repeat: Infinity, ease: "linear" }}
+                                                        >
+                                                            <svg width="14" height="14" viewBox="0 0 24 24" className="text-cyan-500">
+                                                                <path
+                                                                    fill="currentColor"
+                                                                    d="M12,15.5A3.5,3.5 0 0,1 8.5,12A3.5,3.5 0 0,1 12,8.5A3.5,3.5 0 0,1 15.5,12A3.5,3.5 0 0,1 12,15.5M19.43,12.97C19.47,12.65 19.5,12.33 19.5,12C19.5,11.67 19.47,11.34 19.43,11L21.54,9.37C21.73,9.22 21.78,8.95 21.66,8.73L19.66,5.27C19.54,5.05 19.27,4.96 19.05,5.05L16.56,6.05C16.04,5.66 15.5,5.32 14.87,5.07L14.5,2.42C14.46,2.18 14.25,2 14,2H10C9.75,2 9.54,2.18 9.5,2.42L9.13,5.07C8.5,5.32 7.96,5.66 7.44,6.05L4.95,5.05C4.73,4.96 4.46,5.05 4.34,5.27L2.34,8.73C2.22,8.95 2.27,9.22 2.46,9.37L4.57,11C4.53,11.34 4.5,11.67 4.5,12C4.5,12.33 4.53,12.65 4.57,12.97L2.46,14.63C2.27,14.78 2.22,15.05 2.34,15.27L4.34,18.73C4.46,18.95 4.73,19.03 4.95,18.95L7.44,17.94C7.96,18.34 8.5,18.68 9.13,18.93L9.5,21.58C9.54,21.82 9.75,22 10,22H14C14.25,22 14.46,21.82 14.5,21.58L14.87,18.93C15.5,18.68 16.04,18.34 16.56,17.94L19.05,18.95C19.27,19.03 19.54,18.95 19.66,18.73L21.66,15.27C21.78,15.05 21.73,14.78 21.54,14.63L19.43,12.97Z"
+                                                                />
+                                                            </svg>
+                                                        </motion.div>
+                                                    </div>
+                                                </motion.div>
+
+                                                <div className="text-center mt-3">
+                                                    <span className="text-lg font-bold text-primary">
+                                                        {Math.round(webSearch.progress)}%
+                                                    </span>
+                                                </div>
+                                            </div>
+
+                                            <div className="text-center">
+                                                <div className="flex items-center justify-center gap-2 text-sm text-muted-foreground">
+                                                    <motion.div
+                                                        animate={{ scale: [1, 1.2, 1] }}
+                                                        transition={{ duration: 1.5, repeat: Infinity }}
+                                                        className="w-2 h-2 bg-blue-500 rounded-full"
+                                                    />
+                                                    <span>{webSearch.currentStep}</span>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    )}
+
+                                    {/* Papers Content */}
+                                    {(getCurrentPapers().length > 0 || webSearch.isSearching) && (
+                                        <motion.div
+                                            initial={{ opacity: 0, y: 20 }}
+                                            animate={{ opacity: 1, y: 0 }}
+                                            transition={{ duration: 0.6, delay: 0.4 }}
+                                            className="w-full"
+                                        >
+                                            <div className="w-full" ref={setScrollContainer} onScroll={handleScroll}>
+                                                {viewMode === 'grid' ? (
+                                                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 pb-4">
+                                                        <AnimatePresence mode="popLayout">
+                                                            {webSearch.isSearching && (
+                                                                Array.from({ length: 12 }).map((_, index) => (
+                                                                    <StreamingPaperCard
+                                                                        key={`loading-${index}`}
+                                                                        index={index}
+                                                                        isLoading={true}
+                                                                        streamDelay={Math.max(0, webSearch.progress * 10 - 200)}
+                                                                    />
+                                                                ))
+                                                            )}
+
+                                                            {!webSearch.isSearching && filteredAndSortedPapers.map((paper, index) => (
+                                                                <StreamingPaperCard
+                                                                    key={`${paper.title}-${index}`}
+                                                                    paper={paper}
+                                                                    index={index}
+                                                                    onSelect={handlePaperSelect}
+                                                                    onViewPdf={handleViewPdf}
+                                                                    streamDelay={0}
+                                                                />
+                                                            ))}
+                                                        </AnimatePresence>
+                                                    </div>
+                                                ) : (
+                                                    <div className="space-y-3 pb-4">
+                                                        <AnimatePresence mode="popLayout">
+                                                            {filteredAndSortedPapers.map((paper, index) => (
+                                                                <PaperCard
+                                                                    key={`${paper.title}-${index}`}
+                                                                    paper={paper}
+                                                                    index={index}
+                                                                    onSelect={handlePaperSelect}
+                                                                    onViewPdf={handleViewPdf}
+                                                                />
+                                                            ))}
+                                                        </AnimatePresence>
+                                                    </div>
+                                                )}
+                                            </div>
+                                        </motion.div>
+                                    )}
+
+                                    {!webSearch.isSearching && getCurrentPapers().length === 0 && (
+                                        <div className="text-center py-12">
+                                            <Globe className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
+                                            <h3 className="text-lg font-medium text-muted-foreground mb-2">No papers found</h3>
+                                            <p className="text-muted-foreground mb-4">Start a new search to find relevant research papers</p>
+                                            <Button onClick={handleRetrievePapers} className="bg-gradient-to-r from-blue-500 to-cyan-500 hover:from-blue-600 hover:to-cyan-600 text-white">
+                                                <Search className="mr-2 h-4 w-4" />
+                                                Start Search
+                                            </Button>
+                                        </div>
+                                    )}
+                                </CardContent>
+                            </Card>
+                        </TabsContent>
+
+                        {/* All Papers Tab */}
+                        <TabsContent value="all-papers" className="mt-6">
+                            <Card className="bg-background/40 backdrop-blur-xl border border-primary/10 shadow-lg">
+                                <CardHeader>
+                                    <div className="flex items-center justify-between">
+                                        <div>
+                                            <CardTitle className="text-lg flex items-center gap-2">
+                                                <BookOpen className="h-5 w-5 text-green-500" />
+                                                All Papers
+                                            </CardTitle>
+                                            <CardDescription>
+                                                Complete collection of papers in your library
+                                            </CardDescription>
+                                        </div>
+                                        <div className="flex items-center gap-2">
+                                            <Button
+                                                variant="outline"
+                                                size="sm"
+                                                onClick={() => setViewMode(viewMode === 'grid' ? 'list' : 'grid')}
+                                                className="bg-background/40 backdrop-blur-xl border-primary/20"
+                                            >
+                                                {viewMode === 'grid' ? <List className="h-4 w-4" /> : <Grid3X3 className="h-4 w-4" />}
+                                            </Button>
+                                            <Button
+                                                variant="outline"
+                                                size="sm"
+                                                onClick={() => setShowFilters(!showFilters)}
+                                                className="bg-background/40 backdrop-blur-xl border-primary/20"
+                                            >
+                                                <Filter className="h-4 w-4 mr-2" />
+                                                Filters
+                                            </Button>
+                                        </div>
+                                    </div>
+                                </CardHeader>
+                                <CardContent>
+                                    {/* Search Bar */}
+                                    <div className="flex items-center gap-4 mb-6">
+                                        <div className="relative flex-1">
+                                            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground h-4 w-4" />
+                                            <Input
+                                                placeholder="Search papers by title, author, venue, or content..."
+                                                value={searchQuery}
+                                                onChange={(e) => setSearchQuery(e.target.value)}
+                                                className="pl-10 bg-background/40 backdrop-blur-xl border-primary/20"
+                                            />
+                                        </div>
+                                    </div>
+
+                                    {/* Filters */}
+                                    <AnimatePresence>
+                                        {showFilters && (
+                                            <motion.div
+                                                initial={{ opacity: 0, height: 0 }}
+                                                animate={{ opacity: 1, height: "auto" }}
+                                                exit={{ opacity: 0, height: 0 }}
+                                                className="overflow-hidden"
+                                            >
+                                                <Separator className="my-3" />
+                                                <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+                                                    <div>
+                                                        <label className="text-sm font-medium mb-2 block">Sort By</label>
+                                                        <Select value={sortBy} onValueChange={(value: any) => setSortBy(value)}>
+                                                            <SelectTrigger className="bg-background/40 backdrop-blur-xl border-primary/20">
+                                                                <SelectValue />
+                                                            </SelectTrigger>
+                                                            <SelectContent>
+                                                                <SelectItem value="date">Publication Date</SelectItem>
+                                                                <SelectItem value="citations">Citations</SelectItem>
+                                                                <SelectItem value="title">Title</SelectItem>
+                                                            </SelectContent>
+                                                        </Select>
+                                                    </div>
+
+                                                    <div>
+                                                        <label className="text-sm font-medium mb-2 block">Source</label>
+                                                        <Select value={filterSource} onValueChange={setFilterSource}>
+                                                            <SelectTrigger className="bg-background/40 backdrop-blur-xl border-primary/20">
+                                                                <SelectValue />
+                                                            </SelectTrigger>
+                                                            <SelectContent>
+                                                                <SelectItem value="all">All Sources</SelectItem>
+                                                                {uniqueSources.map(source => (
+                                                                    <SelectItem key={source} value={source}>{source}</SelectItem>
+                                                                ))}
+                                                            </SelectContent>
+                                                        </Select>
+                                                    </div>
+
+                                                    <div>
+                                                        <label className="text-sm font-medium mb-2 block">Access</label>
+                                                        <Select value={filterOpenAccess} onValueChange={setFilterOpenAccess}>
+                                                            <SelectTrigger className="bg-background/40 backdrop-blur-xl border-primary/20">
+                                                                <SelectValue />
+                                                            </SelectTrigger>
+                                                            <SelectContent>
+                                                                <SelectItem value="all">All Papers</SelectItem>
+                                                                <SelectItem value="open">Open Access</SelectItem>
+                                                                <SelectItem value="closed">Closed Access</SelectItem>
+                                                            </SelectContent>
+                                                        </Select>
+                                                    </div>
+                                                </div>
+                                            </motion.div>
+                                        )}
+                                    </AnimatePresence>
+
+                                    {/* Papers Content */}
+                                    {getCurrentPapers().length > 0 && (
+                                        <motion.div
+                                            initial={{ opacity: 0, y: 20 }}
+                                            animate={{ opacity: 1, y: 0 }}
+                                            transition={{ duration: 0.6, delay: 0.4 }}
+                                            className="w-full"
+                                        >
+                                            <div className="w-full" ref={setScrollContainer} onScroll={handleScroll}>
+                                                {viewMode === 'grid' ? (
+                                                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 pb-4">
+                                                        <AnimatePresence mode="popLayout">
+                                                            {filteredAndSortedPapers.map((paper, index) => (
+                                                                <StreamingPaperCard
+                                                                    key={`${paper.title}-${index}`}
+                                                                    paper={paper}
+                                                                    index={index}
+                                                                    onSelect={handlePaperSelect}
+                                                                    onViewPdf={handleViewPdf}
+                                                                    streamDelay={0}
+                                                                />
+                                                            ))}
+                                                        </AnimatePresence>
+                                                    </div>
+                                                ) : (
+                                                    <div className="space-y-3 pb-4">
+                                                        <AnimatePresence mode="popLayout">
+                                                            {filteredAndSortedPapers.map((paper, index) => (
+                                                                <PaperCard
+                                                                    key={`${paper.title}-${index}`}
+                                                                    paper={paper}
+                                                                    index={index}
+                                                                    onSelect={handlePaperSelect}
+                                                                    onViewPdf={handleViewPdf}
+                                                                />
+                                                            ))}
+                                                        </AnimatePresence>
+                                                    </div>
+                                                )}
+                                            </div>
+                                        </motion.div>
+                                    )}
+
+                                    {getCurrentPapers().length === 0 && (
+                                        <div className="text-center py-12">
+                                            <BookOpen className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
+                                            <h3 className="text-lg font-medium text-muted-foreground mb-2">No papers in library</h3>
+                                            <p className="text-muted-foreground mb-4">Your library is empty. Add papers through web search or file upload.</p>
+                                        </div>
+                                    )}
+                                </CardContent>
+                            </Card>
+                        </TabsContent>
+
+                        {/* Uploaded Content Tab */}
+                        <TabsContent value="uploaded" className="mt-6">
+                            <Card className="bg-background/40 backdrop-blur-xl border border-primary/10 shadow-lg">
+                                <CardHeader>
+                                    <div className="flex items-center justify-between">
+                                        <div>
+                                            <CardTitle className="text-lg flex items-center gap-2">
+                                                <FolderOpen className="h-5 w-5 text-purple-500" />
+                                                Uploaded Content
+                                            </CardTitle>
+                                            <CardDescription>
+                                                Papers and documents you've uploaded directly
+                                            </CardDescription>
+                                        </div>
+                                        <Button
+                                            variant="outline"
+                                            className="bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600 text-white border-0"
+                                        >
+                                            <Upload className="h-4 w-4 mr-2" />
+                                            Upload Files
+                                        </Button>
+                                    </div>
+                                </CardHeader>
+                                <CardContent>
+                                    <div className="text-center py-12">
+                                        <Upload className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
+                                        <h3 className="text-lg font-medium text-muted-foreground mb-2">No uploaded content</h3>
+                                        <p className="text-muted-foreground mb-4">Upload PDFs or other documents to analyze them with AI</p>
+                                        <Button className="bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600 text-white">
                                             <Upload className="mr-2 h-4 w-4" />
-                                            Upload Papers
+                                            Upload Files
                                         </Button>
                                     </div>
-
-                                    {/* B2 Download Test Component - TEMPORARY FOR TESTING */}
-                                    <div className="mt-8">
-                                        <B2DownloadTest />
-                                    </div>
-                                </div>
-                            </CardContent>
-                        </Card>
-                    ) : (
-                        /* Papers Grid */
-                        <div className="h-full">
-                            <div className="flex items-center justify-between mb-6">
-                                <h3 className="text-lg font-semibold flex items-center gap-2">
-                                    <BookOpen className="h-5 w-5 text-primary" />
-                                    {filteredAndSortedPapers.length} Papers Found
-                                </h3>
-                                <div className="flex gap-2">
-                                    <Button size="sm" variant="outline" className="bg-background/40">
-                                        <BarChart3 className="mr-2 h-4 w-4" />
-                                        Analyze All
-                                    </Button>
-                                    <Button size="sm" variant="outline" className="bg-background/40">
-                                        <FileText className="mr-2 h-4 w-4" />
-                                        Export List
-                                    </Button>
-                                </div>
-                            </div>
-
-                            {/* Scrollable Papers Container */}
-                            <div
-                                ref={setScrollContainer}
-                                onScroll={handleScroll}
-                                className="h-[calc(100vh-500px)] overflow-y-auto pr-2 custom-scrollbar scroll-smooth"
-                            >
-                                {viewMode === 'grid' ? (
-                                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6 pb-6">
-                                        <AnimatePresence mode="popLayout">
-                                            {filteredAndSortedPapers.map((paper, index) => (
-                                                <PaperCard
-                                                    key={`${paper.title}-${index}`}
-                                                    paper={paper}
-                                                    index={index}
-                                                    onSelect={handlePaperSelect}
-                                                    onViewPdf={handleViewPdf}
-                                                />
-                                            ))}
-                                        </AnimatePresence>
-                                    </div>
-                                ) : (
-                                    <div className="space-y-4 pb-6">
-                                        <AnimatePresence mode="popLayout">
-                                            {filteredAndSortedPapers.map((paper, index) => (
-                                                <PaperCard
-                                                    key={`${paper.title}-${index}`}
-                                                    paper={paper}
-                                                    index={index}
-                                                    onSelect={handlePaperSelect}
-                                                    onViewPdf={handleViewPdf}
-                                                />
-                                            ))}
-                                        </AnimatePresence>
-                                    </div>
-                                )}
-                            </div>
-                        </div>
-                    )}
-                </motion.div>
+                                </CardContent>
+                            </Card>
+                        </TabsContent>
+                    </Tabs>
+                </div>
             </div>
-
-            {/* Search Loading Progress */}
-            <SearchLoadingProgress
-                isVisible={webSearch.isSearching}
-                progress={webSearch.progress}
-                currentStep={webSearch.currentStep}
-                onComplete={() => {
-                    // Optional callback when search completes
-                }}
-            />
 
             {/* Paper Detail Modal */}
             <PaperDetailModal

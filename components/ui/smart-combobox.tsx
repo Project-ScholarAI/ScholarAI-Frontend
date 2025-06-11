@@ -174,9 +174,9 @@ export function SmartComboBox({
                                             </div>
                                         </CommandItem>
                                     )}
-                                    {filteredSuggestions.map((suggestion) => (
+                                    {filteredSuggestions.map((suggestion, index) => (
                                         <CommandItem
-                                            key={suggestion}
+                                            key={`${suggestion}-${index}`}
                                             value={suggestion}
                                             onSelect={() => handleSelect(suggestion)}
                                             className="flex items-center justify-between cursor-pointer hover:bg-primary/10 transition-colors"
