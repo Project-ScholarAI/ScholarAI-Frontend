@@ -27,6 +27,7 @@ interface TagInputProps {
     searchFunction?: (query: string, suggestions: string[]) => string[]
     maxTags?: number
     className?: string
+    style?: React.CSSProperties
     disabled?: boolean
     allowCustomTags?: boolean
 }
@@ -39,6 +40,7 @@ export function TagInput({
     searchFunction,
     maxTags,
     className,
+    style,
     disabled = false,
     allowCustomTags = true
 }: TagInputProps) {
@@ -108,7 +110,7 @@ export function TagInput({
     }, [inputValue, filteredSuggestions.length])
 
     return (
-        <div className={cn("relative", className)}>
+        <div className={cn("relative", className)} style={style}>
             <div className="flex flex-wrap items-center gap-2 p-3 min-h-[2.5rem] bg-background/40 backdrop-blur-xl border border-primary/20 rounded-lg focus-within:border-primary/40 transition-all duration-300">
                 {value.map((tag) => (
                     <Badge

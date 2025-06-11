@@ -44,15 +44,15 @@ export function StreamingPaperCard({
     const [isContentLoaded, setIsContentLoaded] = useState(false)
     const [isMetadataLoaded, setIsMetadataLoaded] = useState(false)
 
-    // Simulate streaming effect with staggered appearance
+    // Enhanced streaming effect with more realistic delays
     useEffect(() => {
         const timer = setTimeout(() => {
             setIsVisible(true)
 
-            // Simulate content loading phases
-            setTimeout(() => setIsContentLoaded(true), 300 + (index * 50))
-            setTimeout(() => setIsMetadataLoaded(true), 600 + (index * 50))
-        }, streamDelay + (index * 200))
+            // More realistic content loading phases
+            setTimeout(() => setIsContentLoaded(true), 200 + (index * 30))
+            setTimeout(() => setIsMetadataLoaded(true), 400 + (index * 30))
+        }, streamDelay)
 
         return () => clearTimeout(timer)
     }, [index, streamDelay])
@@ -89,49 +89,79 @@ export function StreamingPaperCard({
     if (isLoading || !isVisible) {
         return (
             <motion.div
-                initial={{ opacity: 0, y: 20, scale: 0.95 }}
+                initial={{ opacity: 0, y: 30, scale: 0.9 }}
                 animate={{
-                    opacity: isVisible ? 0.6 : 0,
-                    y: isVisible ? 0 : 20,
-                    scale: isVisible ? 1 : 0.95
+                    opacity: isVisible ? 0.8 : 0,
+                    y: isVisible ? 0 : 30,
+                    scale: isVisible ? 1 : 0.9
                 }}
-                transition={{ duration: 0.5, delay: index * 0.1 }}
+                transition={{
+                    duration: 0.6,
+                    delay: index * 0.05,
+                    ease: "easeOut"
+                }}
                 className="group"
             >
                 <Card className="bg-background/20 backdrop-blur-xl border border-primary/10 hover:border-primary/30 transition-all duration-300 cursor-pointer relative overflow-hidden">
-                    {/* Loading shimmer effect */}
-                    <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/5 to-transparent animate-pulse" />
+                    {/* Enhanced Loading shimmer effect */}
+                    <div className="absolute inset-0 bg-gradient-to-r from-transparent via-blue-500/10 to-transparent animate-pulse duration-2000" />
+                    <motion.div
+                        animate={{ x: ["-100%", "100%"] }}
+                        transition={{ duration: 2, repeat: Infinity, ease: "linear" }}
+                        className="absolute inset-0 bg-gradient-to-r from-transparent via-white/10 to-transparent"
+                    />
 
                     <CardContent className="p-4">
                         <div className="space-y-3">
-                            {/* Loading title */}
-                            <div className="space-y-2">
-                                <Skeleton className="h-4 w-full bg-primary/10" />
-                                <Skeleton className="h-4 w-3/4 bg-primary/10" />
-                            </div>
+                            {/* Loading title with stagger */}
+                            <motion.div
+                                className="space-y-2"
+                                initial={{ opacity: 0 }}
+                                animate={{ opacity: isVisible ? 1 : 0 }}
+                                transition={{ delay: index * 0.1 }}
+                            >
+                                <Skeleton className="h-4 w-full bg-primary/15 animate-pulse" />
+                                <Skeleton className="h-4 w-3/4 bg-primary/15 animate-pulse" style={{ animationDelay: "0.2s" }} />
+                            </motion.div>
 
-                            {/* Loading authors */}
-                            <div className="flex items-center gap-2">
-                                <Skeleton className="h-3 w-16 bg-primary/10" />
-                                <Skeleton className="h-3 w-20 bg-primary/10" />
-                            </div>
+                            {/* Loading authors with stagger */}
+                            <motion.div
+                                className="flex items-center gap-2"
+                                initial={{ opacity: 0 }}
+                                animate={{ opacity: isVisible ? 1 : 0 }}
+                                transition={{ delay: index * 0.1 + 0.2 }}
+                            >
+                                <Skeleton className="h-3 w-16 bg-primary/15 animate-pulse" style={{ animationDelay: "0.4s" }} />
+                                <Skeleton className="h-3 w-20 bg-primary/15 animate-pulse" style={{ animationDelay: "0.6s" }} />
+                            </motion.div>
 
-                            {/* Loading metadata */}
-                            <div className="flex items-center justify-between">
-                                <Skeleton className="h-6 w-12 rounded-full bg-primary/10" />
+                            {/* Loading metadata with stagger */}
+                            <motion.div
+                                className="flex items-center justify-between"
+                                initial={{ opacity: 0 }}
+                                animate={{ opacity: isVisible ? 1 : 0 }}
+                                transition={{ delay: index * 0.1 + 0.4 }}
+                            >
+                                <Skeleton className="h-6 w-12 rounded-full bg-primary/15 animate-pulse" style={{ animationDelay: "0.8s" }} />
                                 <div className="flex gap-1">
-                                    <Skeleton className="h-8 w-8 rounded bg-primary/10" />
-                                    <Skeleton className="h-8 w-8 rounded bg-primary/10" />
+                                    <Skeleton className="h-8 w-8 rounded bg-primary/15 animate-pulse" style={{ animationDelay: "1s" }} />
+                                    <Skeleton className="h-8 w-8 rounded bg-primary/15 animate-pulse" style={{ animationDelay: "1.2s" }} />
                                 </div>
-                            </div>
+                            </motion.div>
                         </div>
 
-                        {/* Loading indicator */}
+                        {/* Enhanced Loading indicator */}
                         <div className="absolute top-2 right-2">
                             <motion.div
-                                animate={{ rotate: 360 }}
-                                transition={{ duration: 2, repeat: Infinity, ease: "linear" }}
-                                className="w-4 h-4 text-primary/60"
+                                animate={{
+                                    rotate: 360,
+                                    scale: [1, 1.1, 1]
+                                }}
+                                transition={{
+                                    rotate: { duration: 2, repeat: Infinity, ease: "linear" },
+                                    scale: { duration: 1.5, repeat: Infinity }
+                                }}
+                                className="w-4 h-4 text-blue-500/70"
                             >
                                 <RefreshCw className="w-full h-full" />
                             </motion.div>

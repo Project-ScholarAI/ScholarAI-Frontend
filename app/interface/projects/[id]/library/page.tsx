@@ -247,11 +247,11 @@ export default function ProjectLibraryPage({ params }: ProjectLibraryPageProps) 
     }
 
     return (
-        <div className="min-h-screen bg-gradient-to-br from-background via-background/95 to-primary/5 relative overflow-hidden flex flex-col">
+        <div className="h-screen bg-gradient-to-br from-background via-background/95 to-primary/5 relative overflow-hidden flex flex-col">
             <div className="absolute inset-0 bg-grid-pattern opacity-5" />
 
-            {/* Header */}
-            <div className="relative z-10">
+            {/* Sticky Header */}
+            <div className="sticky top-0 z-50 border-l-0 border-r border-t border-primary/20 bg-gradient-to-br from-background/60 to-primary/5 backdrop-blur-sm" style={{ boxShadow: 'inset -10px 0 30px rgba(139, 92, 246, 0.15), 0 0 40px rgba(99, 102, 241, 0.1)' }}>
                 <motion.div
                     initial={{ opacity: 0, y: -20 }}
                     animate={{ opacity: 1, y: 0 }}
@@ -273,15 +273,15 @@ export default function ProjectLibraryPage({ params }: ProjectLibraryPageProps) 
             </div>
 
             {/* Sticky Tabs */}
-            <div className="sticky top-0 z-40 bg-gradient-to-br from-background via-background/95 to-primary/5 backdrop-blur-xl border-b border-primary/10">
+            <div className="sticky top-[120px] z-40 bg-gradient-to-br from-background via-background/95 to-primary/5 backdrop-blur-xl border-l-0 border-r border-b border-primary/20" style={{ boxShadow: 'inset -8px 0 25px rgba(139, 92, 246, 0.1), 0 2px 15px rgba(99, 102, 241, 0.1), 0 4px 25px rgba(139, 92, 246, 0.06)' }}>
                 <motion.div
                     initial={{ opacity: 0, y: -20 }}
                     animate={{ opacity: 1, y: 0 }}
                     transition={{ duration: 0.6, delay: 0.1 }}
-                    className="max-w-7xl mx-auto px-6 py-4"
+                    className="w-full px-6 py-4"
                 >
                     <Tabs value={activeTab} onValueChange={(value) => setActiveTab(value as any)} className="w-full">
-                        <TabsList className="grid w-full grid-cols-3 bg-background/60 backdrop-blur-xl border border-primary/10">
+                        <TabsList className="grid w-full grid-cols-3 bg-background/60 backdrop-blur-xl border border-primary/20" style={{ boxShadow: '0 0 12px rgba(99, 102, 241, 0.1), 0 0 25px rgba(139, 92, 246, 0.06)' }}>
                             <TabsTrigger
                                 value="current-search"
                                 className="flex items-center gap-2 data-[state=active]:bg-gradient-to-r data-[state=active]:from-blue-500/20 data-[state=active]:to-cyan-500/20"
@@ -321,15 +321,15 @@ export default function ProjectLibraryPage({ params }: ProjectLibraryPageProps) 
                 </motion.div>
             </div>
 
-            {/* Scrollable Content Area */}
-            <div className="flex-1 overflow-y-auto">
-                <div className="max-w-7xl mx-auto px-6 py-6 space-y-6">
-                    <Tabs value={activeTab} onValueChange={(value) => setActiveTab(value as any)} className="w-full">
+            {/* Scrollable Content Area - Full Height */}
+            <div className="flex-1 overflow-y-auto border-l-0 border-r border-primary/20 bg-gradient-to-br from-background/60 to-primary/5 backdrop-blur-sm" style={{ boxShadow: 'inset -8px 0 25px rgba(139, 92, 246, 0.08)' }} ref={setScrollContainer} onScroll={handleScroll}>
+                <div className="w-full h-full">
+                    <Tabs value={activeTab} onValueChange={(value) => setActiveTab(value as any)} className="w-full h-full flex flex-col">
 
                         {/* Current Web Search Tab */}
-                        <TabsContent value="current-search" className="mt-6">
-                            <Card className="bg-background/40 backdrop-blur-xl border border-primary/10 shadow-lg">
-                                <CardHeader>
+                        <TabsContent value="current-search" className="flex-1 m-0 p-0">
+                            <Card className="w-full h-full bg-transparent border-0 shadow-none rounded-none flex flex-col">
+                                <CardHeader className="px-6 pt-6 pb-4">
                                     <div className="flex items-center justify-between">
                                         <div>
                                             <CardTitle className="text-lg flex items-center gap-2">
@@ -343,7 +343,8 @@ export default function ProjectLibraryPage({ params }: ProjectLibraryPageProps) 
                                         <Button
                                             onClick={handleRetrievePapers}
                                             disabled={webSearch.isSearching}
-                                            className="bg-gradient-to-r from-blue-500 to-cyan-500 hover:from-blue-600 hover:to-cyan-600 text-white"
+                                            className="bg-gradient-to-r from-blue-500 to-cyan-500 hover:from-blue-600 hover:to-cyan-600 text-white border border-blue-500/30"
+                                            style={{ boxShadow: '0 0 15px rgba(59, 130, 246, 0.4), 0 0 30px rgba(6, 182, 212, 0.2), inset 0 1px 0 rgba(255, 255, 255, 0.1)' }}
                                         >
                                             {webSearch.isSearching ? (
                                                 <RefreshCw className="mr-2 h-4 w-4 animate-spin" />
@@ -354,17 +355,25 @@ export default function ProjectLibraryPage({ params }: ProjectLibraryPageProps) 
                                         </Button>
                                     </div>
                                 </CardHeader>
-                                <CardContent>
+                                <CardContent className="flex-1 flex flex-col px-6 pb-6">
                                     {/* Inline Search Progress */}
                                     {webSearch.isSearching && (
-                                        <div className="mb-6 p-6 bg-gradient-to-br from-blue-500/5 via-purple-500/5 to-cyan-500/5 rounded-xl border border-blue-500/20">
+                                        <div className="-mx-6 mb-6 p-6 bg-gradient-to-br from-blue-500/5 via-purple-500/5 to-cyan-500/5 rounded-xl border border-blue-500/30" style={{ boxShadow: '0 0 20px rgba(59, 130, 246, 0.15), 0 0 40px rgba(6, 182, 212, 0.1)' }}>
                                             <div className="text-center mb-6">
                                                 <motion.div
                                                     animate={{ rotate: 360 }}
-                                                    transition={{ duration: 3, repeat: Infinity, ease: "linear" }}
+                                                    transition={{ duration: 4, repeat: Infinity, ease: "linear" }}
                                                     className="inline-flex items-center justify-center w-12 h-12 bg-gradient-to-r from-blue-500 to-cyan-500 rounded-full mb-3"
+                                                    style={{
+                                                        boxShadow: `
+                                                            0 0 20px rgba(59, 130, 246, 0.4),
+                                                            0 0 40px rgba(6, 182, 212, 0.3),
+                                                            0 0 60px rgba(99, 102, 241, 0.2),
+                                                            inset 0 1px 0 rgba(255, 255, 255, 0.2)
+                                                        `
+                                                    }}
                                                 >
-                                                    <Search className="h-6 w-6 text-white" />
+                                                    <Globe className="h-6 w-6 text-white" />
                                                 </motion.div>
                                                 <h3 className="text-lg font-semibold bg-gradient-to-r from-blue-500 via-purple-500 to-cyan-500 bg-clip-text text-transparent">
                                                     Searching Academic Papers
@@ -374,54 +383,114 @@ export default function ProjectLibraryPage({ params }: ProjectLibraryPageProps) 
                                                 </p>
                                             </div>
 
-                                            {/* Progress Bar with Metal Gears */}
-                                            <div className="relative mb-4">
-                                                <div className="w-full h-2 bg-muted/30 rounded-full overflow-hidden">
+                                            {/* Enhanced Progress Bar with Metal Gears */}
+                                            <div className="relative mb-6">
+                                                {/* Progress Bar */}
+                                                <div className="relative w-4/5 mx-auto h-3 bg-muted/20 rounded-full overflow-hidden border border-primary/40"
+                                                    style={{
+                                                        boxShadow: `
+                                                        0 0 10px rgba(99, 102, 241, 0.3),
+                                                        0 0 20px rgba(139, 92, 246, 0.2),
+                                                        0 0 30px rgba(99, 102, 241, 0.1),
+                                                        inset 0 1px 0 rgba(255, 255, 255, 0.1)
+                                                    `
+                                                    }}>
                                                     <motion.div
                                                         initial={{ width: 0 }}
                                                         animate={{ width: `${webSearch.progress}%` }}
-                                                        transition={{ duration: 0.8, ease: "easeOut" }}
+                                                        transition={{ duration: 0.5, ease: "easeOut" }}
                                                         className="h-full bg-gradient-to-r from-blue-500 via-purple-500 to-cyan-500 rounded-full relative"
+                                                        style={{
+                                                            boxShadow: `
+                                                                0 0 10px rgba(59, 130, 246, 0.4),
+                                                                inset 0 1px 0 rgba(255, 255, 255, 0.2),
+                                                                inset 0 -1px 0 rgba(0, 0, 0, 0.1)
+                                                            `
+                                                        }}
                                                     >
-                                                        <div className="absolute inset-0 -skew-x-12 bg-gradient-to-r from-transparent via-white/30 to-transparent animate-pulse" />
+                                                        <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/20 to-transparent -skew-x-12 animate-pulse" />
                                                     </motion.div>
                                                 </div>
 
+                                                {/* Metal Gears at Bar End - Fixed Position */}
                                                 <motion.div
-                                                    style={{ left: `${Math.min(webSearch.progress, 97)}%` }}
-                                                    className="absolute -top-3 transform -translate-x-1/2"
-                                                    transition={{ duration: 0.8, ease: "easeOut" }}
+                                                    className="absolute -top-4 right-2"
                                                 >
-                                                    <div className="flex items-center gap-0.5">
+                                                    <div className="relative flex items-center justify-center">
+                                                        {/* Large Metal Gear */}
                                                         <motion.div
                                                             animate={{ rotate: 360 }}
-                                                            transition={{ duration: 3, repeat: Infinity, ease: "linear" }}
+                                                            transition={{ duration: 4, repeat: Infinity, ease: "linear" }}
+                                                            className="relative"
+                                                            style={{
+                                                                filter: 'drop-shadow(0 2px 4px rgba(0,0,0,0.3))'
+                                                            }}
                                                         >
-                                                            <svg width="20" height="20" viewBox="0 0 24 24" className="text-blue-500">
+                                                            <svg width="28" height="28" viewBox="0 0 24 24" className="text-slate-400">
+                                                                <defs>
+                                                                    <linearGradient id="metalGradientLarge" x1="0%" y1="0%" x2="100%" y2="100%">
+                                                                        <stop offset="0%" stopColor="#e2e8f0" stopOpacity={1} />
+                                                                        <stop offset="30%" stopColor="#cbd5e1" stopOpacity={1} />
+                                                                        <stop offset="70%" stopColor="#94a3b8" stopOpacity={1} />
+                                                                        <stop offset="100%" stopColor="#64748b" stopOpacity={1} />
+                                                                    </linearGradient>
+                                                                </defs>
                                                                 <path
-                                                                    fill="currentColor"
+                                                                    fill="url(#metalGradientLarge)"
+                                                                    stroke="#475569"
+                                                                    strokeWidth="0.5"
                                                                     d="M12,15.5A3.5,3.5 0 0,1 8.5,12A3.5,3.5 0 0,1 12,8.5A3.5,3.5 0 0,1 15.5,12A3.5,3.5 0 0,1 12,15.5M19.43,12.97C19.47,12.65 19.5,12.33 19.5,12C19.5,11.67 19.47,11.34 19.43,11L21.54,9.37C21.73,9.22 21.78,8.95 21.66,8.73L19.66,5.27C19.54,5.05 19.27,4.96 19.05,5.05L16.56,6.05C16.04,5.66 15.5,5.32 14.87,5.07L14.5,2.42C14.46,2.18 14.25,2 14,2H10C9.75,2 9.54,2.18 9.5,2.42L9.13,5.07C8.5,5.32 7.96,5.66 7.44,6.05L4.95,5.05C4.73,4.96 4.46,5.05 4.34,5.27L2.34,8.73C2.22,8.95 2.27,9.22 2.46,9.37L4.57,11C4.53,11.34 4.5,11.67 4.5,12C4.5,12.33 4.53,12.65 4.57,12.97L2.46,14.63C2.27,14.78 2.22,15.05 2.34,15.27L4.34,18.73C4.46,18.95 4.73,19.03 4.95,18.95L7.44,17.94C7.96,18.34 8.5,18.68 9.13,18.93L9.5,21.58C9.54,21.82 9.75,22 10,22H14C14.25,22 14.46,21.82 14.5,21.58L14.87,18.93C15.5,18.68 16.04,18.34 16.56,17.94L19.05,18.95C19.27,19.03 19.54,18.95 19.66,18.73L21.66,15.27C21.78,15.05 21.73,14.78 21.54,14.63L19.43,12.97Z"
                                                                 />
                                                             </svg>
                                                         </motion.div>
+
+                                                        {/* Small Metal Gear (Diagonal Position) */}
                                                         <motion.div
                                                             animate={{ rotate: -360 }}
-                                                            transition={{ duration: 2, repeat: Infinity, ease: "linear" }}
+                                                            transition={{ duration: 2.5, repeat: Infinity, ease: "linear" }}
+                                                            className="absolute -top-2 -right-2"
+                                                            style={{
+                                                                filter: 'drop-shadow(0 1px 2px rgba(0,0,0,0.3))'
+                                                            }}
                                                         >
-                                                            <svg width="14" height="14" viewBox="0 0 24 24" className="text-cyan-500">
+                                                            <svg width="16" height="16" viewBox="0 0 24 24" className="text-slate-500">
+                                                                <defs>
+                                                                    <linearGradient id="metalGradientSmall" x1="0%" y1="0%" x2="100%" y2="100%">
+                                                                        <stop offset="0%" stopColor="#f1f5f9" stopOpacity={1} />
+                                                                        <stop offset="30%" stopColor="#e2e8f0" stopOpacity={1} />
+                                                                        <stop offset="70%" stopColor="#94a3b8" stopOpacity={1} />
+                                                                        <stop offset="100%" stopColor="#475569" stopOpacity={1} />
+                                                                    </linearGradient>
+                                                                </defs>
                                                                 <path
-                                                                    fill="currentColor"
+                                                                    fill="url(#metalGradientSmall)"
+                                                                    stroke="#334155"
+                                                                    strokeWidth="0.3"
                                                                     d="M12,15.5A3.5,3.5 0 0,1 8.5,12A3.5,3.5 0 0,1 12,8.5A3.5,3.5 0 0,1 15.5,12A3.5,3.5 0 0,1 12,15.5M19.43,12.97C19.47,12.65 19.5,12.33 19.5,12C19.5,11.67 19.47,11.34 19.43,11L21.54,9.37C21.73,9.22 21.78,8.95 21.66,8.73L19.66,5.27C19.54,5.05 19.27,4.96 19.05,5.05L16.56,6.05C16.04,5.66 15.5,5.32 14.87,5.07L14.5,2.42C14.46,2.18 14.25,2 14,2H10C9.75,2 9.54,2.18 9.5,2.42L9.13,5.07C8.5,5.32 7.96,5.66 7.44,6.05L4.95,5.05C4.73,4.96 4.46,5.05 4.34,5.27L2.34,8.73C2.22,8.95 2.27,9.22 2.46,9.37L4.57,11C4.53,11.34 4.5,11.67 4.5,12C4.5,12.33 4.53,12.65 4.57,12.97L2.46,14.63C2.27,14.78 2.22,15.05 2.34,15.27L4.34,18.73C4.46,18.95 4.73,19.03 4.95,18.95L7.44,17.94C7.96,18.34 8.5,18.68 9.13,18.93L9.5,21.58C9.54,21.82 9.75,22 10,22H14C14.25,22 14.46,21.82 14.5,21.58L14.87,18.93C15.5,18.68 16.04,18.34 16.56,17.94L19.05,18.95C19.27,19.03 19.54,18.95 19.66,18.73L21.66,15.27C21.78,15.05 21.73,14.78 21.54,14.63L19.43,12.97Z"
                                                                 />
                                                             </svg>
                                                         </motion.div>
+
+                                                        {/* Connecting Elements */}
+                                                        <div className="absolute inset-0 pointer-events-none">
+                                                            <motion.div
+                                                                animate={{ opacity: [0.3, 0.6, 0.3] }}
+                                                                transition={{ duration: 2, repeat: Infinity }}
+                                                                className="absolute top-1 right-1 w-1 h-1 bg-blue-400 rounded-full"
+                                                            />
+                                                        </div>
                                                     </div>
                                                 </motion.div>
 
-                                                <div className="text-center mt-3">
-                                                    <span className="text-lg font-bold text-primary">
+                                                {/* Enhanced Percentage Display */}
+                                                <div className="text-center mt-4">
+                                                    <motion.span
+                                                        className="text-2xl font-bold bg-gradient-to-r from-blue-500 via-purple-500 to-cyan-500 bg-clip-text text-transparent"
+                                                        animate={{ scale: [1, 1.05, 1] }}
+                                                        transition={{ duration: 2, repeat: Infinity }}
+                                                    >
                                                         {Math.round(webSearch.progress)}%
-                                                    </span>
+                                                    </motion.span>
                                                 </div>
                                             </div>
 
@@ -444,11 +513,11 @@ export default function ProjectLibraryPage({ params }: ProjectLibraryPageProps) 
                                             initial={{ opacity: 0, y: 20 }}
                                             animate={{ opacity: 1, y: 0 }}
                                             transition={{ duration: 0.6, delay: 0.4 }}
-                                            className="w-full"
+                                            className="w-full flex-1"
                                         >
-                                            <div className="w-full" ref={setScrollContainer} onScroll={handleScroll}>
+                                            <div className="w-full h-full">
                                                 {viewMode === 'grid' ? (
-                                                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 pb-4">
+                                                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 pb-6">
                                                         <AnimatePresence mode="popLayout">
                                                             {webSearch.isSearching && (
                                                                 Array.from({ length: 12 }).map((_, index) => (
@@ -456,7 +525,7 @@ export default function ProjectLibraryPage({ params }: ProjectLibraryPageProps) 
                                                                         key={`loading-${index}`}
                                                                         index={index}
                                                                         isLoading={true}
-                                                                        streamDelay={Math.max(0, webSearch.progress * 10 - 200)}
+                                                                        streamDelay={Math.max(0, (webSearch.progress * 15) + (index * 150))}
                                                                     />
                                                                 ))
                                                             )}
@@ -468,13 +537,13 @@ export default function ProjectLibraryPage({ params }: ProjectLibraryPageProps) 
                                                                     index={index}
                                                                     onSelect={handlePaperSelect}
                                                                     onViewPdf={handleViewPdf}
-                                                                    streamDelay={0}
+                                                                    streamDelay={index * 200}
                                                                 />
                                                             ))}
                                                         </AnimatePresence>
                                                     </div>
                                                 ) : (
-                                                    <div className="space-y-3 pb-4">
+                                                    <div className="space-y-3 pb-6">
                                                         <AnimatePresence mode="popLayout">
                                                             {filteredAndSortedPapers.map((paper, index) => (
                                                                 <PaperCard
@@ -497,7 +566,7 @@ export default function ProjectLibraryPage({ params }: ProjectLibraryPageProps) 
                                             <Globe className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
                                             <h3 className="text-lg font-medium text-muted-foreground mb-2">No papers found</h3>
                                             <p className="text-muted-foreground mb-4">Start a new search to find relevant research papers</p>
-                                            <Button onClick={handleRetrievePapers} className="bg-gradient-to-r from-blue-500 to-cyan-500 hover:from-blue-600 hover:to-cyan-600 text-white">
+                                            <Button onClick={handleRetrievePapers} className="bg-gradient-to-r from-blue-500 to-cyan-500 hover:from-blue-600 hover:to-cyan-600 text-white border border-blue-500/30" style={{ boxShadow: '0 0 15px rgba(59, 130, 246, 0.4), 0 0 30px rgba(6, 182, 212, 0.2), inset 0 1px 0 rgba(255, 255, 255, 0.1)' }}>
                                                 <Search className="mr-2 h-4 w-4" />
                                                 Start Search
                                             </Button>
@@ -508,9 +577,9 @@ export default function ProjectLibraryPage({ params }: ProjectLibraryPageProps) 
                         </TabsContent>
 
                         {/* All Papers Tab */}
-                        <TabsContent value="all-papers" className="mt-6">
-                            <Card className="bg-background/40 backdrop-blur-xl border border-primary/10 shadow-lg">
-                                <CardHeader>
+                        <TabsContent value="all-papers" className="flex-1 m-0 p-0">
+                            <Card className="w-full h-full bg-transparent border-0 shadow-none rounded-none flex flex-col">
+                                <CardHeader className="px-6 pt-6 pb-4">
                                     <div className="flex items-center justify-between">
                                         <div>
                                             <CardTitle className="text-lg flex items-center gap-2">
@@ -527,6 +596,7 @@ export default function ProjectLibraryPage({ params }: ProjectLibraryPageProps) 
                                                 size="sm"
                                                 onClick={() => setViewMode(viewMode === 'grid' ? 'list' : 'grid')}
                                                 className="bg-background/40 backdrop-blur-xl border-primary/20"
+                                                style={{ boxShadow: '0 0 8px rgba(99, 102, 241, 0.08), 0 0 16px rgba(139, 92, 246, 0.04)' }}
                                             >
                                                 {viewMode === 'grid' ? <List className="h-4 w-4" /> : <Grid3X3 className="h-4 w-4" />}
                                             </Button>
@@ -535,6 +605,7 @@ export default function ProjectLibraryPage({ params }: ProjectLibraryPageProps) 
                                                 size="sm"
                                                 onClick={() => setShowFilters(!showFilters)}
                                                 className="bg-background/40 backdrop-blur-xl border-primary/20"
+                                                style={{ boxShadow: '0 0 8px rgba(99, 102, 241, 0.08), 0 0 16px rgba(139, 92, 246, 0.04)' }}
                                             >
                                                 <Filter className="h-4 w-4 mr-2" />
                                                 Filters
@@ -542,7 +613,7 @@ export default function ProjectLibraryPage({ params }: ProjectLibraryPageProps) 
                                         </div>
                                     </div>
                                 </CardHeader>
-                                <CardContent>
+                                <CardContent className="flex-1 flex flex-col px-6 pb-6">
                                     {/* Search Bar */}
                                     <div className="flex items-center gap-4 mb-6">
                                         <div className="relative flex-1">
@@ -552,6 +623,7 @@ export default function ProjectLibraryPage({ params }: ProjectLibraryPageProps) 
                                                 value={searchQuery}
                                                 onChange={(e) => setSearchQuery(e.target.value)}
                                                 className="pl-10 bg-background/40 backdrop-blur-xl border-primary/20"
+                                                style={{ boxShadow: '0 0 8px rgba(99, 102, 241, 0.06), 0 0 16px rgba(139, 92, 246, 0.03)' }}
                                             />
                                         </div>
                                     </div>
@@ -570,7 +642,7 @@ export default function ProjectLibraryPage({ params }: ProjectLibraryPageProps) 
                                                     <div>
                                                         <label className="text-sm font-medium mb-2 block">Sort By</label>
                                                         <Select value={sortBy} onValueChange={(value: any) => setSortBy(value)}>
-                                                            <SelectTrigger className="bg-background/40 backdrop-blur-xl border-primary/20">
+                                                            <SelectTrigger className="bg-background/40 backdrop-blur-xl border-primary/20" style={{ boxShadow: '0 0 6px rgba(99, 102, 241, 0.06), 0 0 12px rgba(139, 92, 246, 0.03)' }}>
                                                                 <SelectValue />
                                                             </SelectTrigger>
                                                             <SelectContent>
@@ -584,7 +656,7 @@ export default function ProjectLibraryPage({ params }: ProjectLibraryPageProps) 
                                                     <div>
                                                         <label className="text-sm font-medium mb-2 block">Source</label>
                                                         <Select value={filterSource} onValueChange={setFilterSource}>
-                                                            <SelectTrigger className="bg-background/40 backdrop-blur-xl border-primary/20">
+                                                            <SelectTrigger className="bg-background/40 backdrop-blur-xl border-primary/20" style={{ boxShadow: '0 0 6px rgba(99, 102, 241, 0.06), 0 0 12px rgba(139, 92, 246, 0.03)' }}>
                                                                 <SelectValue />
                                                             </SelectTrigger>
                                                             <SelectContent>
@@ -599,7 +671,7 @@ export default function ProjectLibraryPage({ params }: ProjectLibraryPageProps) 
                                                     <div>
                                                         <label className="text-sm font-medium mb-2 block">Access</label>
                                                         <Select value={filterOpenAccess} onValueChange={setFilterOpenAccess}>
-                                                            <SelectTrigger className="bg-background/40 backdrop-blur-xl border-primary/20">
+                                                            <SelectTrigger className="bg-background/40 backdrop-blur-xl border-primary/20" style={{ boxShadow: '0 0 6px rgba(99, 102, 241, 0.06), 0 0 12px rgba(139, 92, 246, 0.03)' }}>
                                                                 <SelectValue />
                                                             </SelectTrigger>
                                                             <SelectContent>
@@ -620,11 +692,11 @@ export default function ProjectLibraryPage({ params }: ProjectLibraryPageProps) 
                                             initial={{ opacity: 0, y: 20 }}
                                             animate={{ opacity: 1, y: 0 }}
                                             transition={{ duration: 0.6, delay: 0.4 }}
-                                            className="w-full"
+                                            className="w-full flex-1"
                                         >
-                                            <div className="w-full" ref={setScrollContainer} onScroll={handleScroll}>
+                                            <div className="w-full h-full">
                                                 {viewMode === 'grid' ? (
-                                                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 pb-4">
+                                                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 pb-6">
                                                         <AnimatePresence mode="popLayout">
                                                             {filteredAndSortedPapers.map((paper, index) => (
                                                                 <StreamingPaperCard
@@ -639,7 +711,7 @@ export default function ProjectLibraryPage({ params }: ProjectLibraryPageProps) 
                                                         </AnimatePresence>
                                                     </div>
                                                 ) : (
-                                                    <div className="space-y-3 pb-4">
+                                                    <div className="space-y-3 pb-6">
                                                         <AnimatePresence mode="popLayout">
                                                             {filteredAndSortedPapers.map((paper, index) => (
                                                                 <PaperCard
@@ -669,9 +741,9 @@ export default function ProjectLibraryPage({ params }: ProjectLibraryPageProps) 
                         </TabsContent>
 
                         {/* Uploaded Content Tab */}
-                        <TabsContent value="uploaded" className="mt-6">
-                            <Card className="bg-background/40 backdrop-blur-xl border border-primary/10 shadow-lg">
-                                <CardHeader>
+                        <TabsContent value="uploaded" className="flex-1 m-0 p-0">
+                            <Card className="w-full h-full bg-transparent border-0 shadow-none rounded-none flex flex-col">
+                                <CardHeader className="px-6 pt-6 pb-4">
                                     <div className="flex items-center justify-between">
                                         <div>
                                             <CardTitle className="text-lg flex items-center gap-2">
@@ -684,19 +756,20 @@ export default function ProjectLibraryPage({ params }: ProjectLibraryPageProps) 
                                         </div>
                                         <Button
                                             variant="outline"
-                                            className="bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600 text-white border-0"
+                                            className="bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600 text-white border border-purple-500/30"
+                                            style={{ boxShadow: '0 0 15px rgba(147, 51, 234, 0.4), 0 0 30px rgba(236, 72, 153, 0.2), inset 0 1px 0 rgba(255, 255, 255, 0.1)' }}
                                         >
                                             <Upload className="h-4 w-4 mr-2" />
                                             Upload Files
                                         </Button>
                                     </div>
                                 </CardHeader>
-                                <CardContent>
+                                <CardContent className="flex-1 flex flex-col px-6 pb-6">
                                     <div className="text-center py-12">
                                         <Upload className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
                                         <h3 className="text-lg font-medium text-muted-foreground mb-2">No uploaded content</h3>
                                         <p className="text-muted-foreground mb-4">Upload PDFs or other documents to analyze them with AI</p>
-                                        <Button className="bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600 text-white">
+                                        <Button className="bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600 text-white border border-purple-500/30" style={{ boxShadow: '0 0 15px rgba(147, 51, 234, 0.4), 0 0 30px rgba(236, 72, 153, 0.2), inset 0 1px 0 rgba(255, 255, 255, 0.1)' }}>
                                             <Upload className="mr-2 h-4 w-4" />
                                             Upload Files
                                         </Button>
@@ -707,6 +780,9 @@ export default function ProjectLibraryPage({ params }: ProjectLibraryPageProps) 
                     </Tabs>
                 </div>
             </div>
+
+            {/* Bottom Border */}
+            <div className="border-l-0 border-r border-b border-primary/20 bg-gradient-to-r from-background/60 to-primary/5 backdrop-blur-sm h-1" style={{ boxShadow: 'inset -8px 0 25px rgba(139, 92, 246, 0.08), 0 -2px 15px rgba(99, 102, 241, 0.1)' }}></div>
 
             {/* Paper Detail Modal */}
             <PaperDetailModal
@@ -739,7 +815,8 @@ export default function ProjectLibraryPage({ params }: ProjectLibraryPageProps) 
                         <Button
                             onClick={scrollToTop}
                             size="sm"
-                            className="h-12 w-12 rounded-full bg-gradient-to-r from-primary to-purple-500 hover:from-primary/90 hover:to-purple-500/90 text-white shadow-lg hover:shadow-xl transition-all duration-300 border-0"
+                            className="h-12 w-12 rounded-full bg-gradient-to-r from-primary to-purple-500 hover:from-primary/90 hover:to-purple-500/90 text-white shadow-lg hover:shadow-xl transition-all duration-300 border border-primary/30"
+                            style={{ boxShadow: '0 0 20px rgba(99, 102, 241, 0.5), 0 0 40px rgba(139, 92, 246, 0.3), inset 0 1px 0 rgba(255, 255, 255, 0.2)' }}
                         >
                             <ChevronUp className="h-5 w-5" />
                         </Button>
