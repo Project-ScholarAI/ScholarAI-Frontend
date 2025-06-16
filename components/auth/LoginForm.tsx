@@ -68,6 +68,7 @@ export function LoginForm() {
     const [isLoading, setIsLoading] = useState(false)
     const [sessionExpired, setSessionExpired] = useState(false)
     const [signupSuccess, setSignupSuccess] = useState(false)
+    const [resetSuccess, setResetSuccess] = useState(false)
     const [socialLoginSuccessMessage, setSocialLoginSuccessMessage] = useState<string | null>(null)
     const router = useRouter()
     const searchParams = useSearchParams()
@@ -81,10 +82,11 @@ export function LoginForm() {
         if (searchParams.get("session") === "expired") setSessionExpired(true)
         if (searchParams.get("signup") === "success") {
             setSignupSuccess(true)
-            // Auto-dismiss after 5 seconds
-            setTimeout(() => {
-                setSignupSuccess(false)
-            }, 5000)
+            setTimeout(() => setSignupSuccess(false), 5000)
+        }
+        if (searchParams.get("reset") === "success") {
+            setResetSuccess(true)
+            setTimeout(() => setResetSuccess(false), 5000)
         }
     }, [searchParams])
 
@@ -94,6 +96,7 @@ export function LoginForm() {
         if (errors[name as keyof typeof errors]) setErrors((prev) => ({ ...prev, [name]: "" }))
         if (sessionExpired) setSessionExpired(false)
         if (signupSuccess) setSignupSuccess(false)
+        if (resetSuccess) setResetSuccess(false)
         if (socialLoginSuccessMessage) setSocialLoginSuccessMessage(null)
     }
 
@@ -200,6 +203,18 @@ export function LoginForm() {
                     {sessionExpired && (
                         <div className="mb-4 p-3 bg-yellow-500/20 border border-yellow-500/30 rounded-md text-white text-sm">
                             Your session has expired. Please log in again to continue.
+                        </div>
+                    )}
+
+                    {resetSuccess && (
+                        <div className="mb-6 p-4 rounded-2xl backdrop-blur-2xl border border-primary/40 bg-gradient-to-br from-primary/20 via-primary/10 to-green-500/15 shadow-lg shadow-primary/20 text-white text-base font-['Segoe_UI'] animate-fadeIn relative overflow-hidden">
+                            <div className="absolute inset-0 bg-gradient-to-r from-transparent via-primary/10 to-transparent animate-shimmer"></div>
+                            <div className="relative z-10 flex items-center gap-3">
+                                <svg className="w-6 h-6 text-green-400 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                                </svg>
+                                <span className="font-medium">Password has been reset successfully! Please log in with your new password.</span>
+                            </div>
                         </div>
                     )}
 
@@ -319,12 +334,12 @@ export function LoginForm() {
 
                     <p className="text-center text-primary/50 text-base mt-8 font-['Segoe_UI']">
                         {AUTH_CONSTANTS.noAccount}{" "}
-                        <button
-                            onClick={() => navigateWithLoading("/signup", "Initializing registration...")}
+                        <Link
+                            href="/signup"
                             className="relative inline-block text-primary/80 hover:text-primary transition-colors font-medium cursor-pointer underline decoration-primary/50 hover:decoration-primary underline-offset-2"
                         >
                             {AUTH_CONSTANTS.signUpLink}
-                        </button>
+                        </Link>
                     </p>
                 </div>
             </div>

@@ -10,6 +10,7 @@ export function middleware(request: NextRequest) {
     '/', // Assuming landing page is public
     '/login',
     '/register',
+    '/signup',
     '/forgot-password',
     
     // Add any other public static pages if needed
