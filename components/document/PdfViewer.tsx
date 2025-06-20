@@ -117,7 +117,25 @@ export function PDFViewer({ documentUrl, documentName = "Document" }: Props) {
         setProcessedUrl(url)
       } catch (error) {
         console.error('Failed to load PDF:', error)
-        setError(error instanceof Error ? error.message : 'Failed to load PDF')
+        let errorMessage = 'Failed to load PDF document.'
+
+        if (error instanceof Error) {
+          if (error.message.includes('fetch')) {
+            errorMessage += ' Network error - the PDF may be inaccessible or blocked by CORS policy.'
+          } else if (error.message.includes('CORS')) {
+            errorMessage += ' Cross-origin request blocked. Using proxy to retry...'
+          } else if (error.message.includes('404')) {
+            errorMessage += ' PDF file not found (404).'
+          } else if (error.message.includes('401') || error.message.includes('403')) {
+            errorMessage += ' Access denied - authentication may be required.'
+          } else if (documentUrl?.startsWith('http')) {
+            errorMessage += ' External PDF access failed. Proxy will handle this automatically.'
+          } else {
+            errorMessage += ' The file may be corrupted or in an unsupported format.'
+          }
+        }
+
+        setError(errorMessage)
       } finally {
         setIsLoading(false)
       }
@@ -157,26 +175,41 @@ export function PDFViewer({ documentUrl, documentName = "Document" }: Props) {
     setCurrentPage(e.currentPage)
   }, [])
 
-  const handleDocumentLoadError = useCallback((error: any) => {
-    console.error('Document load error:', error)
-    let errorMessage = 'Failed to load PDF document.'
+  // Add scroll event listener to track current page manually if needed
+  useEffect(() => {
+    const viewer = containerRef.current?.querySelector('.rpv-core__viewer')
+    if (!viewer) return
 
-    if (error?.message?.includes('fetch')) {
-      errorMessage += ' Network error - the PDF may be inaccessible or blocked by CORS policy.'
-    } else if (error?.message?.includes('CORS')) {
-      errorMessage += ' Cross-origin request blocked. Using proxy to retry...'
-    } else if (error?.message?.includes('404')) {
-      errorMessage += ' PDF file not found (404).'
-    } else if (error?.message?.includes('401') || error?.message?.includes('403')) {
-      errorMessage += ' Access denied - authentication may be required.'
-    } else if (documentUrl?.startsWith('http')) {
-      errorMessage += ' External PDF access failed. Proxy will handle this automatically.'
-    } else {
-      errorMessage += ' The file may be corrupted or in an unsupported format.'
+    const handleScroll = () => {
+      const pages = viewer.querySelectorAll('.rpv-core__page-layer')
+      if (pages.length === 0) return
+
+      const viewerRect = viewer.getBoundingClientRect()
+      const viewerCenter = viewerRect.top + viewerRect.height / 2
+
+      // Find which page is closest to the center of the viewer
+      let closestPageIndex = 0
+      let closestDistance = Infinity
+
+      pages.forEach((page, index) => {
+        const pageRect = page.getBoundingClientRect()
+        const pageCenter = pageRect.top + pageRect.height / 2
+        const distance = Math.abs(pageCenter - viewerCenter)
+
+        if (distance < closestDistance) {
+          closestDistance = distance
+          closestPageIndex = index
+        }
+      })
+
+      if (closestPageIndex !== currentPage) {
+        setCurrentPage(closestPageIndex)
+      }
     }
 
-    setError(errorMessage)
-  }, [documentUrl])
+    viewer.addEventListener('scroll', handleScroll, { passive: true })
+    return () => viewer.removeEventListener('scroll', handleScroll)
+  }, [processedUrl, currentPage])
 
   // Handle keyboard shortcuts
   useEffect(() => {
@@ -209,41 +242,65 @@ export function PDFViewer({ documentUrl, documentName = "Document" }: Props) {
     }
   }
 
-  // Simple and reliable page navigation
+  // Enhanced page navigation with multiple fallback methods
   const jumpToPageNumber = (pageIndex: number) => {
     console.log('Jumping to page index:', pageIndex)
     setCurrentPage(pageIndex)
 
-    // Method 1: Scroll to page element
+    // Wait for the component to update, then scroll
     setTimeout(() => {
-      const pageElement = document.querySelector(`[data-page-number="${pageIndex}"]`) ||
-        document.querySelector(`.rpv-core__page-layer:nth-child(${pageIndex + 1})`)
+      const viewer = containerRef.current?.querySelector('.rpv-core__viewer') as HTMLElement
+      if (!viewer) {
+        console.warn('PDF viewer container not found')
+        return
+      }
+
+      // Method 1: Find page by data attribute or class
+      let pageElement = viewer.querySelector(`[data-page-number="${pageIndex + 1}"]`) ||
+        viewer.querySelector(`[data-page-number="${pageIndex}"]`) ||
+        viewer.querySelector(`.rpv-core__page-layer:nth-child(${pageIndex + 1})`)
 
       if (pageElement) {
+        console.log('Found page element, scrolling...')
         pageElement.scrollIntoView({
           behavior: 'smooth',
           block: 'start'
         })
-        console.log('Scrolled to page element')
-      } else {
-        // Method 2: Calculate scroll position
-        const viewer = document.querySelector('.rpv-core__viewer')
-        const pages = document.querySelectorAll('.rpv-core__page-layer')
-
-        if (viewer && pages.length > pageIndex) {
-          const targetPage = pages[pageIndex] as HTMLElement
-          const containerTop = viewer.getBoundingClientRect().top
-          const pageTop = targetPage.getBoundingClientRect().top
-          const scrollTop = viewer.scrollTop + (pageTop - containerTop)
-
-          viewer.scrollTo({
-            top: scrollTop,
-            behavior: 'smooth'
-          })
-          console.log('Calculated scroll position')
-        }
+        return
       }
-    }, 100)
+
+      // Method 2: Calculate scroll position based on page height
+      const pages = viewer.querySelectorAll('.rpv-core__page-layer')
+      if (pages.length > pageIndex) {
+        const targetPage = pages[pageIndex] as HTMLElement
+        console.log('Scrolling to calculated position...')
+
+        // Calculate the scroll position
+        let scrollTop = 0
+        for (let i = 0; i < pageIndex; i++) {
+          const page = pages[i] as HTMLElement
+          scrollTop += page.offsetHeight + 16 // Include margin
+        }
+
+        viewer.scrollTo({
+          top: scrollTop,
+          behavior: 'smooth'
+        })
+        return
+      }
+
+      // Method 3: Force re-render and try again
+      console.log('Forcing re-render and retrying...')
+      setTimeout(() => {
+        const retryPages = viewer.querySelectorAll('.rpv-core__page-layer')
+        if (retryPages.length > pageIndex) {
+          retryPages[pageIndex].scrollIntoView({
+            behavior: 'smooth',
+            block: 'start'
+          })
+        }
+      }, 500)
+    }, 200)
   }
 
   const handleJumpToPage = () => {
@@ -271,8 +328,16 @@ export function PDFViewer({ documentUrl, documentName = "Document" }: Props) {
     console.log('Switching scroll mode to:', mode)
     setScrollMode(mode)
 
-    // Reset to first page when switching modes
-    setCurrentPage(1)
+    // Reset to first page when switching modes and scroll to top
+    setCurrentPage(0)
+
+    // Ensure the viewer scrolls to the top after mode change
+    setTimeout(() => {
+      const viewer = containerRef.current?.querySelector('.rpv-core__viewer')
+      if (viewer) {
+        viewer.scrollTo({ top: 0, behavior: 'smooth' })
+      }
+    }, 100)
   }
 
   // Handle zoom
@@ -618,8 +683,9 @@ export function PDFViewer({ documentUrl, documentName = "Document" }: Props) {
           /* PDF Viewer */
           <div
             ref={containerRef}
-            className="flex-1 pdf-viewer-container relative"
+            className="flex-1 pdf-viewer-container relative overflow-hidden"
             data-scroll-mode={scrollMode === ScrollMode.Vertical ? "vertical" : "horizontal"}
+            style={{ height: 'calc(100vh - 14rem)' }}
           >
             <Worker workerUrl="/pdfjs/pdf.worker.min.js">
               <Viewer
@@ -630,7 +696,6 @@ export function PDFViewer({ documentUrl, documentName = "Document" }: Props) {
                 ]}
                 onDocumentLoad={handleDocumentLoad}
                 onPageChange={handlePageChange}
-                onDocumentLoadError={handleDocumentLoadError}
                 theme="dark"
                 defaultScale={1.0}
                 scrollMode={scrollMode}

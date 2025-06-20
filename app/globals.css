@@ -502,4 +502,86 @@
   .backdrop-blur-3xl {
     backdrop-filter: blur(40px);
   }
+
+  /* PDF Viewer specific styles */
+  .pdf-viewer-container {
+    position: relative;
+    width: 100%;
+    height: 100%;
+  }
+
+  .pdf-viewer-container .rpv-core__viewer {
+    height: 100% !important;
+    overflow: auto !important;
+    scrollbar-width: thin;
+    scrollbar-color: hsl(var(--muted-foreground)) transparent;
+  }
+
+  .pdf-viewer-container .rpv-core__viewer::-webkit-scrollbar {
+    width: 8px;
+    height: 8px;
+  }
+
+  .pdf-viewer-container .rpv-core__viewer::-webkit-scrollbar-track {
+    background: hsl(var(--muted));
+    border-radius: 4px;
+  }
+
+  .pdf-viewer-container .rpv-core__viewer::-webkit-scrollbar-thumb {
+    background: hsl(var(--muted-foreground));
+    border-radius: 4px;
+  }
+
+  .pdf-viewer-container .rpv-core__viewer::-webkit-scrollbar-thumb:hover {
+    background: hsl(var(--foreground));
+  }
+
+  .pdf-viewer-container .rpv-core__inner-pages {
+    height: auto !important;
+    min-height: 100%;
+  }
+
+  .pdf-viewer-container .rpv-core__page-layer {
+    margin: 8px auto !important;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+    border-radius: 4px;
+    overflow: hidden;
+  }
+
+  /* Ensure PDF pages are properly sized and scrollable */
+  .pdf-viewer-container[data-scroll-mode="vertical"] .rpv-core__inner-pages {
+    display: block !important;
+    padding: 16px;
+  }
+
+  .pdf-viewer-container[data-scroll-mode="horizontal"] .rpv-core__inner-pages {
+    display: flex !important;
+    flex-direction: row !important;
+    align-items: flex-start !important;
+    padding: 16px;
+    gap: 16px;
+  }
+
+  .pdf-viewer-container[data-scroll-mode="horizontal"] .rpv-core__page-layer {
+    flex-shrink: 0 !important;
+    margin: 0 !important;
+  }
+
+  /* Override any conflicting styles */
+  .pdf-viewer-container * {
+    scrollbar-width: thin !important;
+  }
+
+  .pdf-viewer-container .rpv-core__viewer-body {
+    overflow: visible !important;
+  }
+
+  /* Dark theme adjustments for PDF viewer */
+  .dark .pdf-viewer-container .rpv-core__page-layer {
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
+  }
+
+  .dark .pdf-viewer-container .rpv-core__viewer::-webkit-scrollbar-track {
+    background: hsl(var(--card));
+  }
 }
