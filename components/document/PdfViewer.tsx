@@ -18,8 +18,9 @@ import {
   Minus,
   ChevronLeft,
   ChevronRight,
-  Book,
-  Scroll,
+  X,
+  ChevronUp,
+  ChevronDown,
   Hash
 } from "lucide-react"
 import { Button } from "@/components/ui/button"
@@ -82,22 +83,22 @@ export function PDFViewer({ documentUrl, documentName = "Document" }: Props) {
   const [currentPage, setCurrentPage] = useState(0)
   const [totalPages, setTotalPages] = useState(0)
   const [showSearch, setShowSearch] = useState(false)
-  const [scrollMode, setScrollMode] = useState<ScrollMode>(ScrollMode.Vertical)
   const [searchKeyword, setSearchKeyword] = useState('')
   const [jumpToPage, setJumpToPage] = useState('')
   const [scale, setScale] = useState(1.0)
+  const [currentMatchIndex, setCurrentMatchIndex] = useState(0)
+  const [totalMatches, setTotalMatches] = useState(0)
   const searchInputRef = useRef<HTMLInputElement>(null)
-  const jumpPageInputRef = useRef<HTMLInputElement>(null)
   const containerRef = useRef<HTMLDivElement>(null)
 
-  // Initialize plugins - simplified
+  // Initialize plugins
   const zoomPluginInstance = zoomPlugin()
-  const { ZoomInButton, ZoomOutButton, ZoomPopover } = zoomPluginInstance
+  const { zoomTo } = zoomPluginInstance
 
   const searchPluginInstance = searchPlugin({
-    keyword: [searchKeyword],
+    keyword: searchKeyword ? [searchKeyword] : [],
   })
-  const { clearHighlights, highlight } = searchPluginInstance
+  const { clearHighlights, highlight, jumpToNextMatch, jumpToPreviousMatch } = searchPluginInstance
 
   // Load and process PDF URL
   useEffect(() => {
@@ -235,10 +236,12 @@ export function PDFViewer({ documentUrl, documentName = "Document" }: Props) {
   // Handle search
   const handleSearch = (keyword: string) => {
     setSearchKeyword(keyword)
+    setCurrentMatchIndex(0)
     if (keyword.trim()) {
       highlight([keyword])
     } else {
       clearHighlights()
+      setTotalMatches(0)
     }
   }
 
@@ -323,32 +326,45 @@ export function PDFViewer({ documentUrl, documentName = "Document" }: Props) {
     }
   }
 
-  // Handle scroll mode change
-  const handleScrollModeChange = (mode: ScrollMode) => {
-    console.log('Switching scroll mode to:', mode)
-    setScrollMode(mode)
 
-    // Reset to first page when switching modes and scroll to top
-    setCurrentPage(0)
-
-    // Ensure the viewer scrolls to the top after mode change
-    setTimeout(() => {
-      const viewer = containerRef.current?.querySelector('.rpv-core__viewer')
-      if (viewer) {
-        viewer.scrollTo({ top: 0, behavior: 'smooth' })
-      }
-    }, 100)
-  }
 
   // Handle zoom
   const handleZoomIn = () => {
     const newScale = Math.min(scale * 1.2, 3.0)
     setScale(newScale)
+    if (zoomTo) {
+      zoomTo(newScale)
+    }
   }
 
   const handleZoomOut = () => {
     const newScale = Math.max(scale / 1.2, 0.5)
     setScale(newScale)
+    if (zoomTo) {
+      zoomTo(newScale)
+    }
+  }
+
+  const handleFitToPage = () => {
+    setScale(1.0)
+    if (zoomTo) {
+      zoomTo(1.0)
+    }
+  }
+
+  // Search navigation
+  const handleNextMatch = () => {
+    if (totalMatches > 0) {
+      jumpToNextMatch()
+      setCurrentMatchIndex((prev) => (prev + 1) % totalMatches)
+    }
+  }
+
+  const handlePreviousMatch = () => {
+    if (totalMatches > 0) {
+      jumpToPreviousMatch()
+      setCurrentMatchIndex((prev) => (prev - 1 + totalMatches) % totalMatches)
+    }
   }
 
   const retryLoad = () => {
@@ -382,208 +398,46 @@ export function PDFViewer({ documentUrl, documentName = "Document" }: Props) {
 
   return (
     <div className="flex flex-col h-full bg-background">
-      {/* Custom Document Toolbar */}
-      <div className="flex items-center justify-between h-14 px-4 bg-card border-b border-border shadow-sm">
+      {/* Compact Header */}
+      <div className="flex items-center justify-between h-12 px-4 bg-card border-b border-border">
         <div className="flex items-center gap-3">
-          <div className="flex items-center gap-2">
-            <FileText className="h-5 w-5 text-primary" />
-            <span className="text-foreground font-medium text-sm">{documentName}</span>
-          </div>
-
-          <div className="h-4 w-px bg-border" />
-
-          <div className="flex items-center gap-1">
-            <Button
-              variant="ghost"
-              size="sm"
-              onClick={() => setViewMode('read')}
-              className={cn(
-                "h-8 px-3 text-xs",
-                viewMode === 'read'
-                  ? "bg-primary/10 text-primary"
-                  : "text-muted-foreground hover:bg-muted hover:text-foreground"
-              )}
-            >
-              Read
-            </Button>
-            <Button
-              variant="ghost"
-              size="sm"
-              onClick={() => setViewMode('edit')}
-              className={cn(
-                "h-8 px-3 text-xs",
-                viewMode === 'edit'
-                  ? "bg-primary/10 text-primary"
-                  : "text-muted-foreground hover:bg-muted hover:text-foreground"
-              )}
-            >
-              Annotate
-            </Button>
-          </div>
+          <FileText className="h-4 w-4 text-primary" />
+          <span className="text-foreground font-medium text-sm truncate max-w-64">{documentName}</span>
         </div>
 
         <div className="flex items-center gap-2">
-          {/* Page Navigation */}
-          <div className="flex items-center gap-1">
-            <Button
-              variant="ghost"
-              size="sm"
-              onClick={goToPreviousPage}
-              disabled={currentPage === 0}
-              className="h-8 w-8 p-0 text-muted-foreground hover:bg-muted hover:text-foreground disabled:opacity-50"
-            >
-              <ChevronLeft className="h-4 w-4" />
-            </Button>
-
-            <div className="flex items-center gap-2 text-sm text-muted-foreground">
-              <span>Page {currentPage + 1} of {totalPages || '...'}</span>
-            </div>
-
-            <Button
-              variant="ghost"
-              size="sm"
-              onClick={goToNextPage}
-              disabled={currentPage >= totalPages - 1}
-              className="h-8 w-8 p-0 text-muted-foreground hover:bg-muted hover:text-foreground disabled:opacity-50"
-            >
-              <ChevronRight className="h-4 w-4" />
-            </Button>
-          </div>
-
-          <div className="h-4 w-px bg-border" />
-
-          {/* Jump to Page */}
-          <div className="flex items-center gap-1">
-            <Hash className="h-4 w-4 text-muted-foreground" />
-            <Input
-              ref={jumpPageInputRef}
-              type="number"
-              value={jumpToPage}
-              onChange={(e) => setJumpToPage(e.target.value)}
-              onKeyDown={(e) => {
-                if (e.key === 'Enter') {
-                  handleJumpToPage()
-                }
-              }}
-              placeholder="Go"
-              className="h-8 w-12 text-xs text-center border-0 bg-muted/50 focus:bg-background"
-              min={1}
-              max={totalPages}
-            />
-            {jumpToPage && (
-              <Button
-                variant="ghost"
-                size="sm"
-                onClick={handleJumpToPage}
-                className="h-8 w-8 p-0 text-muted-foreground hover:bg-muted hover:text-foreground"
-              >
-                <ChevronRight className="h-3 w-3" />
-              </Button>
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={() => {
+              setShowSearch(!showSearch)
+              if (!showSearch) {
+                setTimeout(() => searchInputRef.current?.focus(), 100)
+              }
+            }}
+            className={cn(
+              "h-8 w-8 p-0",
+              showSearch ? "bg-primary/10 text-primary" : "text-muted-foreground hover:bg-muted hover:text-foreground"
             )}
-          </div>
-
-          <div className="h-4 w-px bg-border" />
-
-          {/* Scroll Mode */}
-          <div className="flex items-center gap-1">
-            <Button
-              variant="ghost"
-              size="sm"
-              onClick={() => handleScrollModeChange(ScrollMode.Horizontal)}
-              className={cn(
-                "h-8 w-8 p-0",
-                scrollMode === ScrollMode.Horizontal
-                  ? "bg-primary/10 text-primary"
-                  : "text-muted-foreground hover:bg-muted hover:text-foreground"
-              )}
-            >
-              <Book className="h-4 w-4" />
-            </Button>
-            <Button
-              variant="ghost"
-              size="sm"
-              onClick={() => handleScrollModeChange(ScrollMode.Vertical)}
-              className={cn(
-                "h-8 w-8 p-0",
-                scrollMode === ScrollMode.Vertical
-                  ? "bg-primary/10 text-primary"
-                  : "text-muted-foreground hover:bg-muted hover:text-foreground"
-              )}
-            >
-              <Scroll className="h-4 w-4" />
-            </Button>
-          </div>
-
-          <div className="h-4 w-px bg-border" />
-
-          {/* Zoom Controls */}
-          <div className="flex items-center gap-1">
-            <Button
-              variant="ghost"
-              size="sm"
-              onClick={handleZoomOut}
-              className="h-8 w-8 p-0 text-muted-foreground hover:bg-muted hover:text-foreground"
-            >
-              <Minus className="h-4 w-4" />
-            </Button>
-
-            <Button
-              variant="ghost"
-              size="sm"
-              className="h-8 px-2 text-xs text-muted-foreground hover:bg-muted hover:text-foreground"
-            >
-              {Math.round(scale * 100)}%
-            </Button>
-
-            <Button
-              variant="ghost"
-              size="sm"
-              onClick={handleZoomIn}
-              className="h-8 w-8 p-0 text-muted-foreground hover:bg-muted hover:text-foreground"
-            >
-              <Plus className="h-4 w-4" />
-            </Button>
-          </div>
-
-          <div className="h-4 w-px bg-border" />
-
-          {/* Action Buttons */}
-          <div className="flex items-center gap-1">
-            <Button
-              variant="ghost"
-              size="sm"
-              onClick={() => {
-                setShowSearch(!showSearch)
-                if (!showSearch) {
-                  setTimeout(() => searchInputRef.current?.focus(), 100)
-                }
-              }}
-              className={cn(
-                "h-8 w-8 p-0",
-                showSearch
-                  ? "bg-primary/10 text-primary"
-                  : "text-muted-foreground hover:bg-muted hover:text-foreground"
-              )}
-            >
-              <Search className="h-4 w-4" />
-            </Button>
-            <Button
-              variant="ghost"
-              size="sm"
-              onClick={handleDownload}
-              className="h-8 w-8 p-0 text-muted-foreground hover:bg-muted hover:text-foreground"
-            >
-              <Download className="h-4 w-4" />
-            </Button>
-            <Button
-              variant="ghost"
-              size="sm"
-              onClick={() => setIsFullscreen(!isFullscreen)}
-              className="h-8 w-8 p-0 text-muted-foreground hover:bg-muted hover:text-foreground"
-            >
-              {isFullscreen ? <Minimize className="h-4 w-4" /> : <Maximize className="h-4 w-4" />}
-            </Button>
-          </div>
+          >
+            <Search className="h-4 w-4" />
+          </Button>
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={handleDownload}
+            className="h-8 w-8 p-0 text-muted-foreground hover:bg-muted hover:text-foreground"
+          >
+            <Download className="h-4 w-4" />
+          </Button>
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={() => setIsFullscreen(!isFullscreen)}
+            className="h-8 w-8 p-0 text-muted-foreground hover:bg-muted hover:text-foreground"
+          >
+            {isFullscreen ? <Minimize className="h-4 w-4" /> : <Maximize className="h-4 w-4" />}
+          </Button>
         </div>
       </div>
 
@@ -596,16 +450,45 @@ export function PDFViewer({ documentUrl, documentName = "Document" }: Props) {
             type="text"
             value={searchKeyword}
             onChange={(e) => handleSearch(e.target.value)}
-            placeholder="Search in document... (Ctrl+F)"
+            placeholder="Search in document..."
             className="h-8 flex-1 text-sm"
             onKeyDown={(e) => {
               if (e.key === 'Escape') {
                 setShowSearch(false)
                 setSearchKeyword('')
                 clearHighlights()
+              } else if (e.key === 'Enter') {
+                if (e.shiftKey) {
+                  handlePreviousMatch()
+                } else {
+                  handleNextMatch()
+                }
               }
             }}
           />
+          {searchKeyword && totalMatches > 0 && (
+            <div className="flex items-center gap-1">
+              <span className="text-xs text-muted-foreground">
+                {currentMatchIndex + 1} of {totalMatches}
+              </span>
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={handlePreviousMatch}
+                className="h-6 w-6 p-0 text-muted-foreground hover:bg-muted hover:text-foreground"
+              >
+                <ChevronUp className="h-3 w-3" />
+              </Button>
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={handleNextMatch}
+                className="h-6 w-6 p-0 text-muted-foreground hover:bg-muted hover:text-foreground"
+              >
+                <ChevronDown className="h-3 w-3" />
+              </Button>
+            </div>
+          )}
           <Button
             variant="ghost"
             size="sm"
@@ -616,7 +499,7 @@ export function PDFViewer({ documentUrl, documentName = "Document" }: Props) {
             }}
             className="h-8 w-8 p-0 text-muted-foreground hover:bg-muted hover:text-foreground"
           >
-            ×
+            <X className="h-4 w-4" />
           </Button>
         </div>
       )}
@@ -624,81 +507,39 @@ export function PDFViewer({ documentUrl, documentName = "Document" }: Props) {
       {/* Document Viewer */}
       <div className="flex-1 bg-background">
         {isLoading ? (
-          /* Loading State */
           <div className="flex items-center justify-center h-full w-full">
             <div className="text-center">
               <RefreshCw className="h-8 w-8 animate-spin mx-auto mb-4 text-primary" />
               <p className="text-sm text-muted-foreground">Loading PDF...</p>
-              {documentUrl && (
-                <p className="text-xs text-muted-foreground mt-2 max-w-md mx-auto truncate">
-                  {documentUrl}
-                </p>
-              )}
             </div>
           </div>
         ) : error ? (
-          /* Error State */
           <div className="flex items-center justify-center h-full w-full">
             <div className="text-center max-w-md">
               <AlertCircle className="h-12 w-12 text-destructive mx-auto mb-4" />
               <h3 className="text-lg font-semibold mb-2">Failed to Load PDF</h3>
               <p className="text-sm text-muted-foreground mb-4">{error}</p>
-              {documentUrl && (
-                <div className="mb-4 p-2 bg-muted/50 rounded text-xs text-muted-foreground break-all">
-                  URL: {documentUrl}
-                </div>
-              )}
-              <div className="flex gap-2 justify-center flex-wrap">
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={retryLoad}
-                >
-                  <RefreshCw className="h-4 w-4 mr-2" />
-                  Retry
-                </Button>
-                {processedUrl && (
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={testPdfUrl}
-                  >
-                    Test URL
-                  </Button>
-                )}
-
-                {documentUrl && (
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={() => window.open(documentUrl, '_blank')}
-                  >
-                    Open in New Tab
-                  </Button>
-                )}
-              </div>
+              <Button variant="outline" size="sm" onClick={retryLoad}>
+                <RefreshCw className="h-4 w-4 mr-2" />
+                Retry
+              </Button>
             </div>
           </div>
         ) : processedUrl ? (
-          /* PDF Viewer */
           <div
             ref={containerRef}
-            className="flex-1 pdf-viewer-container relative overflow-hidden"
-            data-scroll-mode={scrollMode === ScrollMode.Vertical ? "vertical" : "horizontal"}
-            style={{ height: 'calc(100vh - 14rem)' }}
+            className="flex-1 pdf-viewer-container"
+            style={{ height: 'calc(100vh - 12rem)', overflow: 'auto' }}
           >
             <Worker workerUrl="/pdfjs/pdf.worker.min.js">
               <Viewer
                 fileUrl={processedUrl}
-                plugins={[
-                  zoomPluginInstance,
-                  searchPluginInstance,
-                ]}
+                plugins={[zoomPluginInstance, searchPluginInstance]}
                 onDocumentLoad={handleDocumentLoad}
                 onPageChange={handlePageChange}
                 theme="dark"
                 defaultScale={1.0}
-                scrollMode={scrollMode}
+                scrollMode={ScrollMode.Vertical}
                 renderLoader={(percentages: number) => (
                   <div className="flex items-center justify-center h-full">
                     <div className="text-center">
@@ -709,41 +550,8 @@ export function PDFViewer({ documentUrl, documentName = "Document" }: Props) {
                 )}
               />
             </Worker>
-
-            {/* Always-visible Floating Navigation */}
-            {totalPages > 1 && (
-              <div className="absolute bottom-6 right-6 flex items-center gap-2 z-50">
-                <Button
-                  variant="secondary"
-                  size="sm"
-                  onClick={goToPreviousPage}
-                  disabled={currentPage === 0}
-                  className="h-12 w-12 p-0 rounded-full shadow-lg border border-border/50 backdrop-blur-sm bg-background/95 hover:bg-background disabled:opacity-50 transition-all duration-200"
-                >
-                  <ChevronLeft className="h-5 w-5" />
-                </Button>
-                <div className="px-4 py-2 rounded-full bg-background/95 backdrop-blur-sm border border-border/50 text-sm font-medium text-foreground shadow-lg">
-                  {currentPage + 1} / {totalPages}
-                </div>
-                <Button
-                  variant="secondary"
-                  size="sm"
-                  onClick={goToNextPage}
-                  disabled={currentPage >= totalPages - 1}
-                  className="h-12 w-12 p-0 rounded-full shadow-lg border border-border/50 backdrop-blur-sm bg-background/95 hover:bg-background disabled:opacity-50 transition-all duration-200"
-                >
-                  <ChevronRight className="h-5 w-5" />
-                </Button>
-              </div>
-            )}
-
-            {/* Mode Indicator */}
-            <div className="absolute top-4 left-4 px-3 py-2 rounded-lg bg-background/90 backdrop-blur-sm border border-border/50 text-sm text-muted-foreground shadow-lg z-40">
-              {scrollMode === ScrollMode.Horizontal ? '📖 Page Mode' : '📜 Scroll Mode'}
-            </div>
           </div>
         ) : (
-          /* No Document State */
           <div className="flex items-center justify-center h-full w-full">
             <div className="text-center">
               <FileText className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
@@ -752,6 +560,86 @@ export function PDFViewer({ documentUrl, documentName = "Document" }: Props) {
           </div>
         )}
       </div>
+
+      {/* Footer Controls - Drawboard style */}
+      {processedUrl && !isLoading && !error && (
+        <div className="flex items-center justify-between h-14 px-6 bg-card border-t border-border pdf-footer-controls">
+          {/* Page Navigation */}
+          <div className="flex items-center gap-3">
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={goToPreviousPage}
+              disabled={currentPage === 0}
+              className="h-9 w-9 p-0 rounded-lg border border-border hover:bg-muted disabled:opacity-50"
+            >
+              <ChevronLeft className="h-4 w-4" />
+            </Button>
+
+            <div className="flex items-center gap-2">
+              <Input
+                type="number"
+                value={jumpToPage || (currentPage + 1).toString()}
+                onChange={(e) => setJumpToPage(e.target.value)}
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter') {
+                    handleJumpToPage()
+                  }
+                }}
+                onBlur={() => setJumpToPage('')}
+                className="h-9 w-16 text-center text-sm"
+                min={1}
+                max={totalPages}
+              />
+              <span className="text-sm text-muted-foreground">
+                of {totalPages}
+              </span>
+            </div>
+
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={goToNextPage}
+              disabled={currentPage >= totalPages - 1}
+              className="h-9 w-9 p-0 rounded-lg border border-border hover:bg-muted disabled:opacity-50"
+            >
+              <ChevronRight className="h-4 w-4" />
+            </Button>
+          </div>
+
+          {/* Zoom Controls */}
+          <div className="flex items-center gap-3">
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={handleZoomOut}
+              disabled={scale <= 0.5}
+              className="h-9 w-9 p-0 rounded-lg border border-border hover:bg-muted disabled:opacity-50"
+            >
+              <Minus className="h-4 w-4" />
+            </Button>
+
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={handleFitToPage}
+              className="h-9 px-3 text-sm font-medium border border-border hover:bg-muted"
+            >
+              {Math.round(scale * 100)}%
+            </Button>
+
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={handleZoomIn}
+              disabled={scale >= 3.0}
+              className="h-9 w-9 p-0 rounded-lg border border-border hover:bg-muted disabled:opacity-50"
+            >
+              <Plus className="h-4 w-4" />
+            </Button>
+          </div>
+        </div>
+      )}
     </div>
   )
 }

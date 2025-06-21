@@ -165,23 +165,23 @@ body {
   color: hsl(var(--primary-foreground)) !important;
 }
 
-/* Scrollbar styling */
-.rpv-core__viewer::-webkit-scrollbar {
+/* Scrollbar styling - only for inner pages container */
+.rpv-core__inner-pages::-webkit-scrollbar {
   width: 8px;
   height: 8px;
 }
 
-.rpv-core__viewer::-webkit-scrollbar-track {
+.rpv-core__inner-pages::-webkit-scrollbar-track {
   background: var(--rpv-color-muted);
   border-radius: 4px;
 }
 
-.rpv-core__viewer::-webkit-scrollbar-thumb {
+.rpv-core__inner-pages::-webkit-scrollbar-thumb {
   background: var(--rpv-color-muted-foreground);
   border-radius: 4px;
 }
 
-.rpv-core__viewer::-webkit-scrollbar-thumb:hover {
+.rpv-core__inner-pages::-webkit-scrollbar-thumb:hover {
   background: var(--rpv-color-primary);
 }
 
@@ -308,23 +308,46 @@ body {
 }
 
 /* ───────────────────────────────────────────────────────────────────────── */
-/* 1) Let the "viewer" fill its wrapper                                   */
+/* 1) Make the outer container the ONLY scrollable element                 */
 /* ───────────────────────────────────────────────────────────────────────── */
+.pdf-viewer-container {
+  overflow-y: auto !important;
+  /* The user wants this to scroll */
+  overflow-x: hidden !important;
+}
+
 .pdf-viewer-container .rpv-core__viewer {
-  height: 100% !important;
+  /* Let the content determine the height */
+  height: auto !important;
+  overflow: visible !important;
+}
+
+.pdf-viewer-container .rpv-default-layout__container {
+  overflow: visible !important;
+}
+
+.pdf-viewer-container .rpv-default-layout__main {
+  overflow: visible !important;
+}
+
+.pdf-viewer-container .rpv-default-layout__body {
+  overflow: visible !important;
 }
 
 /* ───────────────────────────────────────────────────────────────────────── */
-/* 2) Make the inner-pages container scrollable vertically                 */
+/* 2) Let the inner-pages container grow with its content                  */
 /* ───────────────────────────────────────────────────────────────────────── */
+.pdf-viewer-container .rpv-core__inner-pages {
+  /* Let height be determined by pages */
+  height: auto !important;
+  overflow: visible !important;
+}
+
 .pdf-viewer-container[data-scroll-mode="vertical"] .rpv-core__inner-pages {
   display: flex !important;
   flex-direction: column !important;
-  height: 100% !important;
-  /* fill the viewer */
-  overflow-y: auto !important;
-  /* vertical scrollbar */
-  overflow-x: hidden !important;
+  height: auto !important;
+  overflow: visible !important;
 }
 
 /* ───────────────────────────────────────────────────────────────────────── */
