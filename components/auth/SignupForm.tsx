@@ -272,12 +272,12 @@ export function SignupForm() {
 
                     <p className="text-center text-primary/50 text-base mt-6 font-['Segoe_UI']">
                         Already have an account?{" "}
-                        <button
-                            onClick={() => navigateWithLoading("/login", "Preparing login interface...")}
+                        <Link
+                            href="/login"
                             className="relative inline-block text-primary/80 hover:text-primary transition-colors font-medium cursor-pointer underline decoration-primary/50 hover:decoration-primary underline-offset-2"
                         >
                             Log in
-                        </button>
+                        </Link>
                     </p>
                 </div>
             </div>
