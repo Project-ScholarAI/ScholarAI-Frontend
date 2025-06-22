@@ -44,62 +44,70 @@ export function LibraryContent() {
   }
 
   return (
-    <div className="p-6 space-y-4">
-      <div className="flex flex-col sm:flex-row gap-4 items-center justify-between">
-        <div className="relative w-full sm:w-64">
-          <Search className="absolute left-2 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-          <Input
-            placeholder="Search documents..."
-            className="pl-8"
-            value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
-          />
-        </div>
+    <div className="h-full bg-[#1e1e1e] text-white overflow-auto">
+      <div className="p-6 space-y-4">
+        <div className="flex flex-col sm:flex-row gap-4 items-center justify-between">
+          <div className="relative w-full sm:w-64">
+            <Search className="absolute left-2 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-400" />
+            <Input
+              placeholder="Search documents..."
+              className="pl-8 bg-[#2d2d30] border-[#3e3e42] text-white placeholder:text-gray-400 focus:border-[#007acc]"
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+            />
+          </div>
 
-        <div className="flex items-center gap-2">
-          <DropdownMenu>
-            <DropdownMenuTrigger asChild>
-              <Button variant="outline" size="sm">
-                {sortOrder === "desc" ? <SortDesc className="mr-2 h-4 w-4" /> : <SortAsc className="mr-2 h-4 w-4" />}
-                Sort
+          <div className="flex items-center gap-2">
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button variant="outline" size="sm" className="bg-[#2d2d30] border-[#3e3e42] text-white hover:bg-[#3e3e42]">
+                  {sortOrder === "desc" ? <SortDesc className="mr-2 h-4 w-4" /> : <SortAsc className="mr-2 h-4 w-4" />}
+                  Sort
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end" className="bg-[#252526] border-[#3e3e42] text-white">
+                <DropdownMenuItem onClick={() => setSortOrder("desc")} className="hover:bg-[#3e3e42]">Newest first</DropdownMenuItem>
+                <DropdownMenuItem onClick={() => setSortOrder("asc")} className="hover:bg-[#3e3e42]">Oldest first</DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
+
+            <div className="flex items-center rounded-md border border-[#3e3e42] bg-[#252526]">
+              <Button
+                variant="ghost"
+                size="icon"
+                className={cn(
+                  "rounded-none text-gray-300 hover:bg-[#3e3e42] hover:text-white",
+                  viewMode === "grid" && "bg-[#1e1e1e] text-white"
+                )}
+                onClick={() => setViewMode("grid")}
+              >
+                <Grid className="h-4 w-4" />
               </Button>
-            </DropdownMenuTrigger>
-            <DropdownMenuContent align="end">
-              <DropdownMenuItem onClick={() => setSortOrder("desc")}>Newest first</DropdownMenuItem>
-              <DropdownMenuItem onClick={() => setSortOrder("asc")}>Oldest first</DropdownMenuItem>
-            </DropdownMenuContent>
-          </DropdownMenu>
-
-          <div className="flex items-center rounded-md border bg-muted">
-            <Button
-              variant="ghost"
-              size="icon"
-              className={cn("rounded-none", viewMode === "grid" && "bg-background")}
-              onClick={() => setViewMode("grid")}
-            >
-              <Grid className="h-4 w-4" />
-            </Button>
-            <Button
-              variant="ghost"
-              size="icon"
-              className={cn("rounded-none", viewMode === "list" && "bg-background")}
-              onClick={() => setViewMode("list")}
-            >
-              <List className="h-4 w-4" />
-            </Button>
+              <Button
+                variant="ghost"
+                size="icon"
+                className={cn(
+                  "rounded-none text-gray-300 hover:bg-[#3e3e42] hover:text-white",
+                  viewMode === "list" && "bg-[#1e1e1e] text-white"
+                )}
+                onClick={() => setViewMode("list")}
+              >
+                <List className="h-4 w-4" />
+              </Button>
+            </div>
           </div>
         </div>
-      </div>
 
-      {viewMode === "grid" ? (
-        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
-          {sortedDocuments.map((doc) => (
-            <DocumentCard key={doc.id} document={doc} icon={getDocumentIcon(doc.type)} />
-          ))}
-        </div>
-      ) : (
-        <DocumentList documents={sortedDocuments} getIcon={getDocumentIcon} />
-      )}
+        {viewMode === "grid" ? (
+          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
+            {sortedDocuments.map((doc) => (
+              <DocumentCard key={doc.id} document={doc} icon={getDocumentIcon(doc.type)} />
+            ))}
+          </div>
+        ) : (
+          <DocumentList documents={sortedDocuments} getIcon={getDocumentIcon} />
+        )}
+      </div>
     </div>
   )
 }

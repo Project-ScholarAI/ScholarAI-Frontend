@@ -17,7 +17,7 @@ export function PasswordField({
 }: PasswordFieldProps) {
   return (
     <div className="mb-4">
-      <label htmlFor={id} className="block text-white mb-2 font-['Segoe_UI'] text-sm pl-8">
+      <label htmlFor={id} className="block text-primary/60 font-['Segoe_UI'] text-sm pl-8 mb-2 font-medium">
         {label}
       </label>
       <div className="relative">
@@ -29,15 +29,15 @@ export function PasswordField({
           value={value}
           onChange={onChange}
           required={required}
-          className="w-full h-16 border border-white/40 rounded-2xl px-8 pr-14 text-white/90 text-xl
-                   placeholder:text-white/60 focus:outline-none focus:border-white/70 font-['Segoe_UI']
-                   bg-white/20 backdrop-blur-md shadow-md"
+          className="w-full h-16 border border-primary/30 rounded-2xl px-8 pr-14 text-white/95 text-xl
+                   placeholder:text-primary/50 focus:outline-none focus:border-primary/60 font-['Segoe_UI']
+                   backdrop-blur-md shadow-lg"
           style={{
-            background: 'rgba(255,255,255,0.18)',
+            background: 'linear-gradient(135deg, rgba(99, 102, 241, 0.15) 0%, rgba(139, 92, 246, 0.10) 50%, rgba(168, 85, 247, 0.15) 100%)',
             WebkitBackdropFilter: 'blur(8px)',
             backdropFilter: 'blur(8px)',
-            border: '1.5px solid rgba(255,255,255,0.35)',
-            boxShadow: '0 4px 24px 0 rgba(31, 38, 135, 0.10)'
+            border: '1.5px solid rgba(99, 102, 241, 0.25)',
+            boxShadow: '0 4px 32px 0 rgba(99, 102, 241, 0.15)'
           }}
           aria-invalid={!!error}
           aria-describedby={error ? `${id}-error` : undefined}
@@ -45,7 +45,7 @@ export function PasswordField({
         <button
           type="button"
           onClick={() => toggleShowPassword?.()} // <-- call the function safely
-          className="absolute right-6 top-1/2 transform -translate-y-1/2 text-white/70 hover:text-white"
+          className="absolute right-6 top-1/2 transform -translate-y-1/2 text-primary/70 hover:text-primary transition-colors duration-200"
           aria-label={showPassword ? "Hide password" : "Show password"}
         >
           {showPassword ? <EyeOff size={24} /> : <Eye size={24} />}
