@@ -4,8 +4,18 @@
 ARG NODE_VERSION=20                # bump easily in one place
 FROM node:${NODE_VERSION}-alpine AS base
 
-# glibc compatibility for some native addons
-RUN apk add --no-cache libc6-compat
+# glibc compatibility for some native addons and build tools for native modules
+RUN apk add --no-cache \
+    libc6-compat \
+    cairo-dev \
+    jpeg-dev \
+    pango-dev \
+    giflib-dev \
+    librsvg-dev \
+    pixman-dev \
+    python3 \
+    make \
+    g++
 WORKDIR /app
 
 # ---------- 2️⃣ Dependencies ----------
