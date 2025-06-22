@@ -1,7 +1,7 @@
 "use client"
 
 import { useState } from "react"
-import { PdfViewer } from "@/components/document/PdfViewer"
+import { PDFViewer } from "@/components/document/PdfViewer"
 import { MarkdownViewer } from "@/components/document/MarkdownViewer"
 import { TextViewer } from "@/components/document/TextViewer"
 import type { Document } from "@/types/document"
@@ -18,12 +18,9 @@ export function DocumentViewer({ document }: Props) {
     switch (document.type) {
       case "pdf":
         return (
-          <PdfViewer
-            url={document.url}
-            currentPage={currentPage}
-            setCurrentPage={setCurrentPage}
-            scale={scale}
-            setScale={setScale}
+          <PDFViewer
+            documentUrl={document.url}
+            documentName={document.title}
           />
         )
       case "md":

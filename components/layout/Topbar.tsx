@@ -1,8 +1,9 @@
 "use client"
 
 import { usePathname } from "next/navigation"
-import { MessageSquare, Upload, Filter } from "lucide-react"
+import { MessageSquare, Upload, Filter, LogOut } from "lucide-react"
 import { Button } from "@/components/ui/button"
+import { LogoutButton } from "@/components/auth/LogoutButton"
 import { getPageTitle } from "@/lib/utils/navigation"
 
 type Props = {
@@ -32,6 +33,10 @@ export function Topbar({ onChatToggle }: Props) {
         <Button variant="outline" size="icon" onClick={onChatToggle} aria-label="Toggle chat">
           <MessageSquare className="h-5 w-5" />
         </Button>
+        <LogoutButton className="px-3 py-2 text-sm border border-input bg-background hover:bg-accent hover:text-accent-foreground rounded-md">
+          <LogOut className="mr-2 h-4 w-4" />
+          Logout
+        </LogoutButton>
       </div>
     </div>
   )
