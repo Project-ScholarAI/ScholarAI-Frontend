@@ -6,6 +6,7 @@ import type { PopoverProps } from '@react-pdf-viewer/core'
 import { zoomPlugin } from '@react-pdf-viewer/zoom'
 import type { ZoomPopoverProps } from '@react-pdf-viewer/zoom'
 import { searchPlugin } from '@react-pdf-viewer/search'
+import { pageNavigationPlugin } from '@react-pdf-viewer/page-navigation'
 import {
   Download,
   FileText,
@@ -95,6 +96,9 @@ export function PDFViewer({ documentUrl, documentName = "Document" }: Props) {
   const zoomPluginInstance = zoomPlugin()
   const { zoomTo } = zoomPluginInstance
 
+  const pageNavigationPluginInstance = pageNavigationPlugin()
+  const { jumpToPage: jumpToPageAPI } = pageNavigationPluginInstance
+
   const searchPluginInstance = searchPlugin({
     keyword: searchKeyword ? [searchKeyword] : [],
   })
@@ -178,38 +182,58 @@ export function PDFViewer({ documentUrl, documentName = "Document" }: Props) {
 
   // Add scroll event listener to track current page manually if needed
   useEffect(() => {
-    const viewer = containerRef.current?.querySelector('.rpv-core__viewer')
-    if (!viewer) return
+    const outerContainer = containerRef.current?.parentElement
+    if (!outerContainer) return
 
     const handleScroll = () => {
-      const pages = viewer.querySelectorAll('.rpv-core__page-layer')
+      // Find all pages in the document
+      const pages = document.querySelectorAll('.rpv-core__page-layer')
       if (pages.length === 0) return
 
-      const viewerRect = viewer.getBoundingClientRect()
-      const viewerCenter = viewerRect.top + viewerRect.height / 2
+      const containerRect = outerContainer.getBoundingClientRect()
+      const containerTop = containerRect.top
+      const containerBottom = containerRect.bottom
+      const containerCenter = containerTop + containerRect.height / 2
 
-      // Find which page is closest to the center of the viewer
-      let closestPageIndex = 0
-      let closestDistance = Infinity
+      // Find which page is most visible in the viewport
+      let visiblePageIndex = 0
+      let maxVisibleArea = 0
 
       pages.forEach((page, index) => {
         const pageRect = page.getBoundingClientRect()
-        const pageCenter = pageRect.top + pageRect.height / 2
-        const distance = Math.abs(pageCenter - viewerCenter)
 
-        if (distance < closestDistance) {
-          closestDistance = distance
-          closestPageIndex = index
+        // Calculate visible area of this page
+        const visibleTop = Math.max(pageRect.top, containerTop)
+        const visibleBottom = Math.min(pageRect.bottom, containerBottom)
+        const visibleHeight = Math.max(0, visibleBottom - visibleTop)
+        const visibleArea = visibleHeight * pageRect.width
+
+        if (visibleArea > maxVisibleArea) {
+          maxVisibleArea = visibleArea
+          visiblePageIndex = index
         }
       })
 
-      if (closestPageIndex !== currentPage) {
-        setCurrentPage(closestPageIndex)
+      if (visiblePageIndex !== currentPage) {
+        console.log('Page changed from', currentPage, 'to', visiblePageIndex)
+        setCurrentPage(visiblePageIndex)
       }
     }
 
-    viewer.addEventListener('scroll', handleScroll, { passive: true })
-    return () => viewer.removeEventListener('scroll', handleScroll)
+    // Throttle scroll events for better performance
+    let ticking = false
+    const throttledHandleScroll = () => {
+      if (!ticking) {
+        requestAnimationFrame(() => {
+          handleScroll()
+          ticking = false
+        })
+        ticking = true
+      }
+    }
+
+    outerContainer.addEventListener('scroll', throttledHandleScroll, { passive: true })
+    return () => outerContainer.removeEventListener('scroll', throttledHandleScroll)
   }, [processedUrl, currentPage])
 
   // Handle keyboard shortcuts
@@ -245,65 +269,57 @@ export function PDFViewer({ documentUrl, documentName = "Document" }: Props) {
     }
   }
 
-  // Enhanced page navigation with multiple fallback methods
+  // Enhanced page navigation - cleaned up but keeping working logic
   const jumpToPageNumber = (pageIndex: number) => {
-    console.log('Jumping to page index:', pageIndex)
     setCurrentPage(pageIndex)
 
-    // Wait for the component to update, then scroll
-    setTimeout(() => {
-      const viewer = containerRef.current?.querySelector('.rpv-core__viewer') as HTMLElement
-      if (!viewer) {
-        console.warn('PDF viewer container not found')
+    // Use the page navigation plugin API if available
+    if (jumpToPageAPI) {
+      try {
+        jumpToPageAPI(pageIndex)
         return
+      } catch (error) {
+        console.warn('Plugin API failed, using fallback:', error)
       }
+    }
 
-      // Method 1: Find page by data attribute or class
-      let pageElement = viewer.querySelector(`[data-page-number="${pageIndex + 1}"]`) ||
-        viewer.querySelector(`[data-page-number="${pageIndex}"]`) ||
-        viewer.querySelector(`.rpv-core__page-layer:nth-child(${pageIndex + 1})`)
+    // Fallback: Direct DOM manipulation
+    const pageSelectors = [
+      '.rpv-core__page-layer',
+      '[data-page-number]',
+      '.rpv-page',
+      '.page'
+    ]
 
-      if (pageElement) {
-        console.log('Found page element, scrolling...')
-        pageElement.scrollIntoView({
-          behavior: 'smooth',
-          block: 'start'
-        })
-        return
+    let pages: NodeListOf<Element> | null = null
+
+    for (const selector of pageSelectors) {
+      const foundPages = document.querySelectorAll(selector)
+      if (foundPages.length > 0) {
+        pages = foundPages
+        break
       }
+    }
 
-      // Method 2: Calculate scroll position based on page height
-      const pages = viewer.querySelectorAll('.rpv-core__page-layer')
-      if (pages.length > pageIndex) {
-        const targetPage = pages[pageIndex] as HTMLElement
-        console.log('Scrolling to calculated position...')
+    if (pages && pages.length > pageIndex && pageIndex >= 0) {
+      const targetPage = pages[pageIndex] as HTMLElement
+      const scrollContainer = containerRef.current?.parentElement
 
-        // Calculate the scroll position
-        let scrollTop = 0
-        for (let i = 0; i < pageIndex; i++) {
-          const page = pages[i] as HTMLElement
-          scrollTop += page.offsetHeight + 16 // Include margin
-        }
+      if (scrollContainer && targetPage) {
+        const containerRect = scrollContainer.getBoundingClientRect()
+        const pageRect = targetPage.getBoundingClientRect()
 
-        viewer.scrollTo({
-          top: scrollTop,
+        const currentScroll = scrollContainer.scrollTop
+        const targetScroll = currentScroll + pageRect.top - containerRect.top - 20
+
+        // Force immediate scroll first, then smooth scroll
+        scrollContainer.scrollTop = targetScroll
+        scrollContainer.scrollTo({
+          top: targetScroll,
           behavior: 'smooth'
         })
-        return
       }
-
-      // Method 3: Force re-render and try again
-      console.log('Forcing re-render and retrying...')
-      setTimeout(() => {
-        const retryPages = viewer.querySelectorAll('.rpv-core__page-layer')
-        if (retryPages.length > pageIndex) {
-          retryPages[pageIndex].scrollIntoView({
-            behavior: 'smooth',
-            block: 'start'
-          })
-        }
-      }, 500)
-    }, 200)
+    }
   }
 
   const handleJumpToPage = () => {
@@ -326,7 +342,29 @@ export function PDFViewer({ documentUrl, documentName = "Document" }: Props) {
     }
   }
 
+  // Handle zoom with wheel events
+  const handleWheel = useCallback((e: WheelEvent) => {
+    if (e.ctrlKey || e.metaKey) {
+      e.preventDefault()
 
+      const delta = e.deltaY > 0 ? -0.1 : 0.1
+      const newScale = Math.max(0.5, Math.min(3.0, scale + delta))
+
+      setScale(newScale)
+      if (zoomTo) {
+        zoomTo(newScale)
+      }
+    }
+  }, [scale, zoomTo])
+
+  // Add wheel event listener for zoom
+  useEffect(() => {
+    const container = containerRef.current
+    if (!container) return
+
+    container.addEventListener('wheel', handleWheel, { passive: false })
+    return () => container.removeEventListener('wheel', handleWheel)
+  }, [handleWheel])
 
   // Handle zoom
   const handleZoomIn = () => {
@@ -399,12 +437,7 @@ export function PDFViewer({ documentUrl, documentName = "Document" }: Props) {
   return (
     <div className="flex flex-col h-full bg-background">
       {/* Compact Header */}
-      <div className="flex items-center justify-between h-12 px-4 bg-card border-b border-border">
-        <div className="flex items-center gap-3">
-          <FileText className="h-4 w-4 text-primary" />
-          <span className="text-foreground font-medium text-sm truncate max-w-64">{documentName}</span>
-        </div>
-
+      <div className="flex items-center justify-end h-12 px-4 bg-card border-b border-border">
         <div className="flex items-center gap-2">
           <Button
             variant="ghost"
@@ -505,7 +538,7 @@ export function PDFViewer({ documentUrl, documentName = "Document" }: Props) {
       )}
 
       {/* Document Viewer */}
-      <div className="flex-1 bg-background">
+      <div className="flex-1 bg-background overflow-auto">
         {isLoading ? (
           <div className="flex items-center justify-center h-full w-full">
             <div className="text-center">
@@ -528,13 +561,13 @@ export function PDFViewer({ documentUrl, documentName = "Document" }: Props) {
         ) : processedUrl ? (
           <div
             ref={containerRef}
-            className="flex-1 pdf-viewer-container"
-            style={{ height: 'calc(100vh - 12rem)', overflow: 'auto' }}
+            className="pdf-viewer-container"
+            style={{ touchAction: 'pan-x pan-y pinch-zoom' }}
           >
             <Worker workerUrl="/pdfjs/pdf.worker.min.js">
               <Viewer
                 fileUrl={processedUrl}
-                plugins={[zoomPluginInstance, searchPluginInstance]}
+                plugins={[zoomPluginInstance, pageNavigationPluginInstance, searchPluginInstance]}
                 onDocumentLoad={handleDocumentLoad}
                 onPageChange={handlePageChange}
                 theme="dark"
@@ -565,13 +598,13 @@ export function PDFViewer({ documentUrl, documentName = "Document" }: Props) {
       {processedUrl && !isLoading && !error && (
         <div className="flex items-center justify-between h-14 px-6 bg-card border-t border-border pdf-footer-controls">
           {/* Page Navigation */}
-          <div className="flex items-center gap-3">
+          <div className="flex items-center gap-2">
             <Button
               variant="ghost"
               size="sm"
               onClick={goToPreviousPage}
-              disabled={currentPage === 0}
-              className="h-9 w-9 p-0 rounded-lg border border-border hover:bg-muted disabled:opacity-50"
+              disabled={currentPage <= 0}
+              className="h-8 w-8 p-0 text-muted-foreground hover:bg-muted hover:text-foreground disabled:opacity-50"
             >
               <ChevronLeft className="h-4 w-4" />
             </Button>
@@ -579,21 +612,26 @@ export function PDFViewer({ documentUrl, documentName = "Document" }: Props) {
             <div className="flex items-center gap-2">
               <Input
                 type="number"
-                value={jumpToPage || (currentPage + 1).toString()}
+                value={jumpToPage}
                 onChange={(e) => setJumpToPage(e.target.value)}
                 onKeyDown={(e) => {
                   if (e.key === 'Enter') {
                     handleJumpToPage()
                   }
                 }}
-                onBlur={() => setJumpToPage('')}
-                className="h-9 w-16 text-center text-sm"
-                min={1}
-                max={totalPages}
+                className="w-16 h-8 text-center text-sm"
+                placeholder={(currentPage + 1).toString()}
+                min="1"
+                max={totalPages.toString()}
               />
-              <span className="text-sm text-muted-foreground">
-                of {totalPages}
-              </span>
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={handleJumpToPage}
+                className="h-8 px-2 text-muted-foreground hover:bg-muted hover:text-foreground"
+              >
+                Go
+              </Button>
             </div>
 
             <Button
@@ -601,20 +639,20 @@ export function PDFViewer({ documentUrl, documentName = "Document" }: Props) {
               size="sm"
               onClick={goToNextPage}
               disabled={currentPage >= totalPages - 1}
-              className="h-9 w-9 p-0 rounded-lg border border-border hover:bg-muted disabled:opacity-50"
+              className="h-8 w-8 p-0 text-muted-foreground hover:bg-muted hover:text-foreground disabled:opacity-50"
             >
               <ChevronRight className="h-4 w-4" />
             </Button>
           </div>
 
           {/* Zoom Controls */}
-          <div className="flex items-center gap-3">
+          <div className="flex items-center gap-2">
             <Button
               variant="ghost"
               size="sm"
               onClick={handleZoomOut}
               disabled={scale <= 0.5}
-              className="h-9 w-9 p-0 rounded-lg border border-border hover:bg-muted disabled:opacity-50"
+              className="h-8 w-8 p-0 text-muted-foreground hover:bg-muted hover:text-foreground disabled:opacity-50"
             >
               <Minus className="h-4 w-4" />
             </Button>
@@ -623,7 +661,7 @@ export function PDFViewer({ documentUrl, documentName = "Document" }: Props) {
               variant="ghost"
               size="sm"
               onClick={handleFitToPage}
-              className="h-9 px-3 text-sm font-medium border border-border hover:bg-muted"
+              className="h-8 px-3 text-sm font-medium text-muted-foreground hover:bg-muted hover:text-foreground"
             >
               {Math.round(scale * 100)}%
             </Button>
@@ -633,10 +671,17 @@ export function PDFViewer({ documentUrl, documentName = "Document" }: Props) {
               size="sm"
               onClick={handleZoomIn}
               disabled={scale >= 3.0}
-              className="h-9 w-9 p-0 rounded-lg border border-border hover:bg-muted disabled:opacity-50"
+              className="h-8 w-8 p-0 text-muted-foreground hover:bg-muted hover:text-foreground disabled:opacity-50"
             >
               <Plus className="h-4 w-4" />
             </Button>
+          </div>
+
+          {/* Page Debug Info */}
+          <div className="flex items-center gap-2">
+            <span className="text-sm text-muted-foreground">
+              Page {currentPage + 1} of {totalPages}
+            </span>
           </div>
         </div>
       )}
