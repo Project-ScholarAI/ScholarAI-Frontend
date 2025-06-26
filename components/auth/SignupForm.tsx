@@ -255,7 +255,7 @@ export function SignupForm() {
                                         <span className="font-['Segoe_UI']">Creating account...</span>
                                     </>
                                 ) : (
-                                    <span className="font-['Segoe_UI']">Sign up</span>
+                                    <span className="font-['Segoe_UI']">Munim up</span>
                                 )}
                             </button>
                         </form>
