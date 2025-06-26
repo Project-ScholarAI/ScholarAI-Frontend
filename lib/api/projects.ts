@@ -5,10 +5,9 @@ import {
   APIResponse,
   ProjectStats,
 } from "@/types/project";
-import { authenticatedFetch } from "@/lib/api";
+import { authenticatedFetch } from "@/lib/api/auth";
+import { getApiUrl } from "@/lib/config/api-config";
 
-const API_BASE_URL =
-  process.env.NEXT_PUBLIC_API_BASE_URL || "http://localhost:8080";
 const PROJECTS_ENDPOINT = "/api/v1/projects";
 
 // Helper function to handle API response
@@ -28,7 +27,7 @@ export const projectsApi = {
   // Get all projects for the authenticated user
   async getProjects(): Promise<Project[]> {
     const response = await authenticatedFetch(
-      `${API_BASE_URL}${PROJECTS_ENDPOINT}`,
+      getApiUrl(PROJECTS_ENDPOINT),
       {
         method: "GET",
       }
@@ -40,7 +39,7 @@ export const projectsApi = {
   // Get project by ID
   async getProject(id: string): Promise<Project> {
     const response = await authenticatedFetch(
-      `${API_BASE_URL}${PROJECTS_ENDPOINT}/${id}`,
+      getApiUrl(`${PROJECTS_ENDPOINT}/${id}`),
       {
         method: "GET",
       }
@@ -52,7 +51,7 @@ export const projectsApi = {
   // Get projects by status
   async getProjectsByStatus(status: string): Promise<Project[]> {
     const response = await authenticatedFetch(
-      `${API_BASE_URL}${PROJECTS_ENDPOINT}/status/${status}`,
+      getApiUrl(`${PROJECTS_ENDPOINT}/status/${status}`),
       {
         method: "GET",
       }
@@ -64,7 +63,7 @@ export const projectsApi = {
   // Get starred projects
   async getStarredProjects(): Promise<Project[]> {
     const response = await authenticatedFetch(
-      `${API_BASE_URL}${PROJECTS_ENDPOINT}/starred`,
+      getApiUrl(`${PROJECTS_ENDPOINT}/starred`),
       {
         method: "GET",
       }
@@ -76,7 +75,7 @@ export const projectsApi = {
   // Get project statistics
   async getProjectStats(): Promise<ProjectStats> {
     const response = await authenticatedFetch(
-      `${API_BASE_URL}${PROJECTS_ENDPOINT}/stats`,
+      getApiUrl(`${PROJECTS_ENDPOINT}/stats`),
       {
         method: "GET",
       }
@@ -88,7 +87,7 @@ export const projectsApi = {
   // Create a new project
   async createProject(projectData: CreateProjectRequest): Promise<Project> {
     const response = await authenticatedFetch(
-      `${API_BASE_URL}${PROJECTS_ENDPOINT}`,
+      getApiUrl(PROJECTS_ENDPOINT),
       {
         method: "POST",
         body: JSON.stringify(projectData),
@@ -104,7 +103,7 @@ export const projectsApi = {
     projectData: UpdateProjectRequest
   ): Promise<Project> {
     const response = await authenticatedFetch(
-      `${API_BASE_URL}${PROJECTS_ENDPOINT}/${id}`,
+      getApiUrl(`${PROJECTS_ENDPOINT}/${id}`),
       {
         method: "PUT",
         body: JSON.stringify(projectData),
@@ -117,7 +116,7 @@ export const projectsApi = {
   // Delete a project
   async deleteProject(id: string): Promise<void> {
     const response = await authenticatedFetch(
-      `${API_BASE_URL}${PROJECTS_ENDPOINT}/${id}`,
+      getApiUrl(`${PROJECTS_ENDPOINT}/${id}`),
       {
         method: "DELETE",
       }
@@ -134,7 +133,7 @@ export const projectsApi = {
   // Toggle project star status
   async toggleStar(id: string): Promise<Project> {
     const response = await authenticatedFetch(
-      `${API_BASE_URL}${PROJECTS_ENDPOINT}/${id}/toggle-star`,
+      getApiUrl(`${PROJECTS_ENDPOINT}/${id}/toggle-star`),
       {
         method: "POST",
       }
@@ -146,7 +145,7 @@ export const projectsApi = {
   // Update project status
   async updateStatus(id: string, status: string): Promise<Project> {
     const response = await authenticatedFetch(
-      `${API_BASE_URL}${PROJECTS_ENDPOINT}/${id}`,
+      getApiUrl(`${PROJECTS_ENDPOINT}/${id}`),
       {
         method: "PUT",
         body: JSON.stringify({ status }),

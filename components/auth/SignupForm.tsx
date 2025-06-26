@@ -8,7 +8,7 @@ import { InputField } from "@/components/form/InputField"
 import { PasswordField } from "@/components/form/PasswordField"
 import { Checkbox } from "@/components/form/Checkbox"
 import { AUTH_CONSTANTS } from "@/constants/auth"
-import { signup } from "@/lib/api"
+import { signup } from "@/lib/api/auth"
 import type { SignupFormData } from "@/types/auth"
 import SocialLogin from "./SocialLogin"
 import { useNavigationWithLoading } from "@/components/ui/RouteTransition"
@@ -255,7 +255,7 @@ export function SignupForm() {
                                         <span className="font-['Segoe_UI']">Creating account...</span>
                                     </>
                                 ) : (
-                                    <span className="font-['Segoe_UI']">Munim up</span>
+                                    <span className="font-['Segoe_UI']">Sign up</span>
                                 )}
                             </button>
                         </form>

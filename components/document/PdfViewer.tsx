@@ -27,7 +27,7 @@ import {
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { cn } from "@/lib/utils/cn"
-import { downloadPdfWithAuth } from "@/lib/api"
+import { downloadPdfWithAuth } from "@/lib/api/pdf"
 
 // Import CSS for react-pdf-viewer
 import '@react-pdf-viewer/core/lib/styles/index.css'
