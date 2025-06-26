@@ -1,7 +1,7 @@
 "use client"
 
 import { useState, useCallback } from "react"
-import { initiateWebSearch, pollUntilComplete } from "@/lib/api"
+import { initiateWebSearch, pollUntilComplete } from "@/lib/api/websearch"
 import type { WebSearchRequest, WebSearchResponse, Paper } from "@/types/websearch"
 
 interface UseWebSearchState {

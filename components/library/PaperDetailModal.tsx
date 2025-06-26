@@ -37,7 +37,7 @@ import {
     Loader2
 } from "lucide-react"
 import { cn } from "@/lib/utils"
-import { downloadPdfWithAuth } from "@/lib/api"
+import { downloadPdfWithAuth } from "@/lib/api/pdf"
 import type { Paper } from "@/types/websearch"
 import { useState } from "react"
 

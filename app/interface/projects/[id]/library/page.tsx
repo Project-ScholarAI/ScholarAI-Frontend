@@ -53,7 +53,7 @@ import {
 } from "lucide-react"
 import { cn } from "@/lib/utils"
 import { useWebSearch } from "@/hooks/useWebSearch"
-import { getProjectLibrary, getProjectLibraryStats } from "@/lib/api"
+import { getProjectLibrary, getProjectLibraryStats } from "@/lib/api/library"
 import { SearchLoadingProgress } from "@/components/library/SearchLoadingProgress"
 import { PaperCard } from "@/components/library/PaperCard"
 import { StreamingPaperCard } from "@/components/library/StreamingPaperCard"

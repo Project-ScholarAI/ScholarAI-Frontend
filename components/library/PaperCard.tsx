@@ -21,7 +21,7 @@ import {
 import { cn } from "@/lib/utils"
 import type { Paper } from "@/types/websearch"
 import { useState, useEffect } from "react"
-import { generatePdfThumbnail, downloadPdfWithAuth } from "@/lib/api"
+import { generatePdfThumbnail, downloadPdfWithAuth } from "@/lib/api/pdf"
 
 interface PaperCardProps {
     paper: Paper
