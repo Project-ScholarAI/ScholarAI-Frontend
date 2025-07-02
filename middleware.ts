@@ -12,7 +12,7 @@ export function middleware(request: NextRequest) {
     '/register',
     '/signup',
     '/forgot-password',
-    
+    '/*'
     // Add any other public static pages if needed
   ];
 
