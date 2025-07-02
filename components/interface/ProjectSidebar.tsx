@@ -135,12 +135,42 @@ export function ProjectSidebar({ projectId, collapsed, onToggle }: Props) {
                 href={fullPath}
                 className={cn(
                     "flex items-center gap-3 rounded-xl px-3 py-3 text-sm font-medium transition-all duration-300 group relative backdrop-blur-sm border",
-                    "hover:bg-primary/10 hover:border-primary/30 hover:shadow-lg hover:shadow-primary/10",
+                    "hover:bg-primary/10 hover:border-primary/30",
                     isActive
-                        ? "bg-gradient-to-r from-primary/20 to-purple-500/10 text-primary border-primary/30 shadow-lg shadow-primary/20"
+                        ? "bg-gradient-to-r from-primary/20 to-purple-500/10 text-primary border-primary/30"
                         : "text-foreground/80 hover:text-foreground border-transparent bg-background/20",
                     collapsed && "justify-center px-2"
                 )}
+                style={isActive ? {
+                    boxShadow: `
+                        0 0 20px rgba(99, 102, 241, 0.3),
+                        0 0 40px rgba(139, 92, 246, 0.2),
+                        inset 0 1px 0 rgba(255, 255, 255, 0.1),
+                        0 4px 20px rgba(99, 102, 241, 0.15)
+                    `
+                } : {
+                    boxShadow: `
+                        0 0 0px rgba(99, 102, 241, 0),
+                        0 2px 8px rgba(0, 0, 0, 0.1)
+                    `
+                }}
+                onMouseEnter={(e) => {
+                    if (!isActive) {
+                        e.currentTarget.style.boxShadow = `
+                            0 0 15px rgba(99, 102, 241, 0.2),
+                            0 0 30px rgba(139, 92, 246, 0.1),
+                            0 4px 15px rgba(99, 102, 241, 0.1)
+                        `
+                    }
+                }}
+                onMouseLeave={(e) => {
+                    if (!isActive) {
+                        e.currentTarget.style.boxShadow = `
+                            0 0 0px rgba(99, 102, 241, 0),
+                            0 2px 8px rgba(0, 0, 0, 0.1)
+                        `
+                    }
+                }}
             >
                 <div className={cn(
                     "relative p-1.5 rounded-lg transition-all duration-300",
@@ -184,19 +214,36 @@ export function ProjectSidebar({ projectId, collapsed, onToggle }: Props) {
     return (
         <TooltipProvider>
             <div className={cn(
-                "flex h-screen flex-col bg-background/40 backdrop-blur-xl border-r border-primary/10 transition-all duration-300 relative overflow-hidden",
+                "flex h-screen flex-col bg-background/40 backdrop-blur-xl border-r border-primary/20 transition-all duration-300 relative overflow-hidden",
                 collapsed ? "w-16" : "w-72"
-            )}>
+            )}
+                style={{
+                    boxShadow: `
+                    inset -1px 0 0 0 rgba(99, 102, 241, 0.3),
+                    4px 0 20px rgba(99, 102, 241, 0.15),
+                    8px 0 40px rgba(139, 92, 246, 0.1),
+                    0 0 60px rgba(99, 102, 241, 0.05)
+                `
+                }}>
                 {/* Background Effects */}
                 <div className="absolute inset-0 bg-gradient-to-b from-primary/5 via-background/50 to-purple-500/5" />
-                <div className="absolute top-0 right-0 w-32 h-32 bg-gradient-to-bl from-primary/10 to-transparent rounded-full blur-2xl" />
-                <div className="absolute bottom-0 left-0 w-32 h-32 bg-gradient-to-tr from-blue-500/10 to-transparent rounded-full blur-2xl" />
+                <div className="absolute top-0 right-0 w-32 h-32 bg-gradient-to-bl from-primary/15 to-transparent rounded-full blur-2xl animate-pulse" />
+                <div className="absolute bottom-0 left-0 w-32 h-32 bg-gradient-to-tr from-blue-500/15 to-transparent rounded-full blur-2xl animate-pulse" />
+                <div className="absolute top-1/2 left-0 w-full h-px bg-gradient-to-r from-transparent via-primary/30 to-transparent opacity-50" />
+                <div className="absolute inset-0 bg-gradient-to-r from-transparent via-primary/5 to-transparent animate-pulse duration-3000" />
 
                 {/* Header */}
                 <div className={cn(
-                    "flex h-16 items-center justify-between px-4 border-b border-primary/10 relative z-10",
+                    "flex h-16 items-center justify-between px-4 border-b border-primary/20 relative z-10",
                     collapsed && "px-2"
-                )}>
+                )}
+                    style={{
+                        boxShadow: `
+                        0 1px 0 0 rgba(99, 102, 241, 0.3),
+                        0 2px 10px rgba(99, 102, 241, 0.1),
+                        0 4px 20px rgba(139, 92, 246, 0.05)
+                    `
+                    }}>
                     {!collapsed && (
                         <div className="flex items-center gap-3 min-w-0 flex-1">
                             <div className="flex items-center justify-center w-10 h-10 bg-gradient-to-br from-blue-500 via-purple-500 to-pink-500 rounded-xl shadow-lg shadow-blue-500/30 transition-all duration-300 relative overflow-hidden">
@@ -309,7 +356,14 @@ export function ProjectSidebar({ projectId, collapsed, onToggle }: Props) {
                 </nav>
 
                 {/* Exit Project Button at Bottom */}
-                <div className="p-3 border-t border-primary/10 relative z-10 mt-auto">
+                <div className="p-3 border-t border-primary/20 relative z-10 mt-auto"
+                    style={{
+                        boxShadow: `
+                        0 -1px 0 0 rgba(99, 102, 241, 0.3),
+                        0 -2px 10px rgba(99, 102, 241, 0.1),
+                        0 -4px 20px rgba(139, 92, 246, 0.05)
+                    `
+                    }}>
                     <Tooltip>
                         <TooltipTrigger asChild>
                             <Button
@@ -317,9 +371,31 @@ export function ProjectSidebar({ projectId, collapsed, onToggle }: Props) {
                                 variant="outline"
                                 size={collapsed ? "sm" : "default"}
                                 className={cn(
-                                    "w-full bg-gradient-to-r from-blue-500/15 via-purple-500/15 to-pink-500/15 border-blue-400/30 text-blue-100 hover:bg-gradient-to-r hover:from-blue-500/25 hover:via-purple-500/25 hover:to-pink-500/25 hover:border-blue-300/50 hover:text-white hover:shadow-lg hover:shadow-blue-500/20 transition-all duration-300",
+                                    "w-full bg-gradient-to-r from-blue-500/15 via-purple-500/15 to-pink-500/15 border-blue-400/30 text-blue-100 hover:bg-gradient-to-r hover:from-blue-500/25 hover:via-purple-500/25 hover:to-pink-500/25 hover:border-blue-300/50 hover:text-white transition-all duration-300",
                                     collapsed && "px-2"
                                 )}
+                                style={{
+                                    boxShadow: `
+                                        0 0 10px rgba(59, 130, 246, 0.2),
+                                        0 0 20px rgba(139, 92, 246, 0.1),
+                                        inset 0 1px 0 rgba(255, 255, 255, 0.1)
+                                    `
+                                }}
+                                onMouseEnter={(e) => {
+                                    e.currentTarget.style.boxShadow = `
+                                        0 0 20px rgba(59, 130, 246, 0.4),
+                                        0 0 40px rgba(139, 92, 246, 0.2),
+                                        inset 0 1px 0 rgba(255, 255, 255, 0.2),
+                                        0 4px 20px rgba(59, 130, 246, 0.2)
+                                    `
+                                }}
+                                onMouseLeave={(e) => {
+                                    e.currentTarget.style.boxShadow = `
+                                        0 0 10px rgba(59, 130, 246, 0.2),
+                                        0 0 20px rgba(139, 92, 246, 0.1),
+                                        inset 0 1px 0 rgba(255, 255, 255, 0.1)
+                                    `
+                                }}
                             >
                                 <ArrowLeft className="h-4 w-4" />
                                 {!collapsed && <span className="ml-2">Exit Project</span>}

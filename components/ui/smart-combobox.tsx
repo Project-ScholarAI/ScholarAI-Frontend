@@ -29,6 +29,7 @@ interface SmartComboBoxProps {
     searchFunction?: (query: string, suggestions: string[]) => string[]
     emptyMessage?: string
     className?: string
+    style?: React.CSSProperties
     disabled?: boolean
     allowCustomInput?: boolean
     showSuggestionsIcon?: boolean
@@ -43,6 +44,7 @@ export function SmartComboBox({
     searchFunction,
     emptyMessage = "No suggestions found.",
     className,
+    style,
     disabled = false,
     allowCustomInput = true,
     showSuggestionsIcon = true
@@ -103,7 +105,7 @@ export function SmartComboBox({
     }, [value])
 
     return (
-        <div className={cn("relative", className)}>
+        <div className={cn("relative", className)} style={style}>
             <Popover open={open} onOpenChange={setOpen}>
                 <PopoverTrigger asChild>
                     <Button

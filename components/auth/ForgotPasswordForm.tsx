@@ -5,7 +5,7 @@ import { useRouter } from "next/navigation"
 import { useState, useEffect, useCallback } from "react"
 import { InputField } from "@/components/form/InputField"
 import { PasswordField } from "@/components/form/PasswordField"
-import { sendResetCode, submitNewPassword, clearAuthData } from "@/lib/api"
+import { sendResetCode, submitNewPassword, clearAuthData } from "@/lib/api/auth"
 import { useNavigationWithLoading } from "@/components/ui/RouteTransition"
 import Link from "next/link"
 
@@ -98,7 +98,7 @@ export function ForgotPasswordForm() {
             setErrors(newErrors)
             return
         }
-        
+
         setIsLoading(true)
         try {
             await submitNewPassword(email, code, password)
@@ -112,13 +112,13 @@ export function ForgotPasswordForm() {
             setIsLoading(false)
         }
     }
-    
+
     return (
         <div className="w-full min-h-screen flex flex-col px-4 font-['Segoe_UI']">
             <MouseGlitter />
             <div className="flex-1 flex items-center justify-center">
                 <div className="max-w-[450px] w-full">
-                     <h1 className="text-3xl font-extrabold text-center mb-8 bg-gradient-to-r from-primary via-purple-500 to-primary bg-clip-text text-transparent drop-shadow-lg">
+                    <h1 className="text-3xl font-extrabold text-center mb-8 bg-gradient-to-r from-primary via-purple-500 to-primary bg-clip-text text-transparent drop-shadow-lg">
                         {step === 'enterEmail' ? "Forgot Password" : "Reset Your Password"}
                     </h1>
                     <div className="rounded-2xl p-8 w-[450px] flex flex-col shadow-2xl backdrop-blur-2xl border border-primary/30 bg-gradient-to-br from-background/20 via-background/10 to-primary/5 hover:shadow-primary/30 transition-shadow duration-300">
@@ -198,7 +198,7 @@ export function ForgotPasswordForm() {
                             </form>
                         )}
                     </div>
-                     <p className="text-center text-primary/50 text-base mt-6 font-['Segoe_UI']">
+                    <p className="text-center text-primary/50 text-base mt-6 font-['Segoe_UI']">
                         Remember your password?{" "}
                         <Link
                             href="/login"
