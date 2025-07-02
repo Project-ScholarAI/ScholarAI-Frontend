@@ -19,7 +19,8 @@ import {
   Zap,
   Brain,
   Sparkles,
-  LogOut
+  LogOut,
+  CheckSquare
 } from "lucide-react"
 import { cn } from "@/lib/utils/cn"
 import { Button } from "@/components/ui/button"
@@ -63,6 +64,12 @@ const NAV_ITEMS = [
     description: "Global search across papers"
   },
   {
+    name: "ToDo",
+    href: "/interface/todo",
+    icon: CheckSquare,
+    description: "Task management and planning"
+  },
+  {
     name: "Notifications",
     href: "/interface/notifications",
     icon: Bell,
@@ -71,12 +78,6 @@ const NAV_ITEMS = [
 ]
 
 const BOTTOM_ITEMS = [
-  {
-    name: "Settings",
-    href: "/interface/settings",
-    icon: Settings,
-    description: "Application settings"
-  },
   {
     name: "Account",
     href: "/interface/account",
