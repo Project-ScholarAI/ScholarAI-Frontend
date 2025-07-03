@@ -24,7 +24,7 @@ export const accountApi = {
   updateAccount: async (accountData: Partial<UserAccountForm>): Promise<{success: boolean, data?: UserAccount, message?: string}> => {
     try {
       const response = await authenticatedFetch(getApiUrl("/api/v1/account"), {
-        method: "PUT",
+        method: "PATCH",
         body: JSON.stringify(accountData)
       })
       

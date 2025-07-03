@@ -1,45 +1,64 @@
 export interface UserAccount {
   id: string
-  user_id: string
-  full_name?: string
-  address?: string
+  email?: string
+  createdAt?: string
+  updatedAt?: string
+
+  fullName?: string
   institution?: string
-  affiliation?: string
-  profile_image_url?: string
+  department?: string
+  position?: string
   bio?: string
-  website_url?: string
-  google_scholar_url?: string
-  linkedin_url?: string
-  github_url?: string
-  facebook_url?: string
-  orcid_id?: string
+
+  profileImageUrl?: string
+  profileImageFilename?: string
+
+  websiteUrl?: string
+  googleScholarUrl?: string
+  linkedinUrl?: string
+  githubUrl?: string
+  facebookUrl?: string
+  orcidId?: string
+
+  addressLine1?: string
+  addressLine2?: string
+  city?: string
+  stateProvinceRegion?: string
+  postalCode?: string
   country?: string
+
+  languagePreference?: string
   timezone?: string
-  preferred_language?: string
-  created_at: string
-  updated_at: string
 }
 
 export interface UserAccountForm {
-  full_name: string
-  address: string
+  fullName: string
   institution: string
-  affiliation: string
+  department: string
+  position: string
   bio: string
-  website_url: string
-  google_scholar_url: string
-  linkedin_url: string
-  github_url: string
-  facebook_url: string
-  orcid_id: string
+
+  websiteUrl: string
+  googleScholarUrl: string
+  linkedinUrl: string
+  githubUrl: string
+  facebookUrl: string
+  orcidId: string
+
+  addressLine1: string
+  addressLine2: string
+  city: string
+  stateProvinceRegion: string
+  postalCode: string
   country: string
+
+  languagePreference: string
   timezone: string
-  preferred_language: string
 }
 
 export interface SocialLink {
   platform: string
-  url: string
+  url: keyof UserAccount
   icon: string
   color: string
 }

@@ -10,6 +10,7 @@ import { Textarea } from "@/components/ui/textarea"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { Badge } from "@/components/ui/badge"
+import { Separator } from "@/components/ui/separator"
 import { toast } from "sonner"
 import { 
   User, 
@@ -70,20 +71,25 @@ export function AccountContent() {
         if (account) {
           // Create form data from account data, preserving existing values
           const formData: Partial<UserAccountForm> = {
-            full_name: account.full_name || "",
-            address: account.address || "",
+            fullName: account.fullName || "",
             institution: account.institution || "",
-            affiliation: account.affiliation || "",
+            department: account.department || "",
+            position: account.position || "",
             bio: account.bio || "",
-            website_url: account.website_url || "",
-            google_scholar_url: account.google_scholar_url || "",
-            linkedin_url: account.linkedin_url || "",
-            github_url: account.github_url || "",
-            facebook_url: account.facebook_url || "",
-            orcid_id: account.orcid_id || "",
+            websiteUrl: account.websiteUrl || "",
+            googleScholarUrl: account.googleScholarUrl || "",
+            linkedinUrl: account.linkedinUrl || "",
+            githubUrl: account.githubUrl || "",
+            facebookUrl: account.facebookUrl || "",
+            orcidId: account.orcidId || "",
+            addressLine1: account.addressLine1 || "",
+            addressLine2: account.addressLine2 || "",
+            city: account.city || "",
+            stateProvinceRegion: account.stateProvinceRegion || "",
+            postalCode: account.postalCode || "",
             country: account.country || "",
             timezone: account.timezone || "",
-            preferred_language: account.preferred_language || ""
+            languagePreference: account.languagePreference || ""
           }
           
           // Reset form with existing data
@@ -91,20 +97,25 @@ export function AccountContent() {
         } else {
           // If no account data, initialize with empty values
           reset({
-            full_name: "",
-            address: "",
+            fullName: "",
             institution: "",
-            affiliation: "",
+            department: "",
+            position: "",
             bio: "",
-            website_url: "",
-            google_scholar_url: "",
-            linkedin_url: "",
-            github_url: "",
-            facebook_url: "",
-            orcid_id: "",
+            websiteUrl: "",
+            googleScholarUrl: "",
+            linkedinUrl: "",
+            githubUrl: "",
+            facebookUrl: "",
+            orcidId: "",
+            addressLine1: "",
+            addressLine2: "",
+            city: "",
+            stateProvinceRegion: "",
+            postalCode: "",
             country: "",
             timezone: "",
-            preferred_language: ""
+            languagePreference: ""
           })
         }
       } catch (error) {
@@ -150,20 +161,25 @@ export function AccountContent() {
         // Update form with new data to reflect any server-side changes
         if (result.data) {
           const formData: Partial<UserAccountForm> = {
-            full_name: result.data.full_name || "",
-            address: result.data.address || "",
+            fullName: result.data.fullName || "",
             institution: result.data.institution || "",
-            affiliation: result.data.affiliation || "",
+            department: result.data.department || "",
+            position: result.data.position || "",
             bio: result.data.bio || "",
-            website_url: result.data.website_url || "",
-            google_scholar_url: result.data.google_scholar_url || "",
-            linkedin_url: result.data.linkedin_url || "",
-            github_url: result.data.github_url || "",
-            facebook_url: result.data.facebook_url || "",
-            orcid_id: result.data.orcid_id || "",
+            websiteUrl: result.data.websiteUrl || "",
+            googleScholarUrl: result.data.googleScholarUrl || "",
+            linkedinUrl: result.data.linkedinUrl || "",
+            githubUrl: result.data.githubUrl || "",
+            facebookUrl: result.data.facebookUrl || "",
+            orcidId: result.data.orcidId || "",
+            addressLine1: result.data.addressLine1 || "",
+            addressLine2: result.data.addressLine2 || "",
+            city: result.data.city || "",
+            stateProvinceRegion: result.data.stateProvinceRegion || "",
+            postalCode: result.data.postalCode || "",
             country: result.data.country || "",
             timezone: result.data.timezone || "",
-            preferred_language: result.data.preferred_language || ""
+            languagePreference: result.data.languagePreference || ""
           }
           reset(formData)
         }
@@ -186,20 +202,25 @@ export function AccountContent() {
     if (accountData) {
       // Reset form to original values
       const formData: Partial<UserAccountForm> = {
-        full_name: accountData.full_name || "",
-        address: accountData.address || "",
+        fullName: accountData.fullName || "",
         institution: accountData.institution || "",
-        affiliation: accountData.affiliation || "",
+        department: accountData.department || "",
+        position: accountData.position || "",
         bio: accountData.bio || "",
-        website_url: accountData.website_url || "",
-        google_scholar_url: accountData.google_scholar_url || "",
-        linkedin_url: accountData.linkedin_url || "",
-        github_url: accountData.github_url || "",
-        facebook_url: accountData.facebook_url || "",
-        orcid_id: accountData.orcid_id || "",
+        websiteUrl: accountData.websiteUrl || "",
+        googleScholarUrl: accountData.googleScholarUrl || "",
+        linkedinUrl: accountData.linkedinUrl || "",
+        githubUrl: accountData.githubUrl || "",
+        facebookUrl: accountData.facebookUrl || "",
+        orcidId: accountData.orcidId || "",
+        addressLine1: accountData.addressLine1 || "",
+        addressLine2: accountData.addressLine2 || "",
+        city: accountData.city || "",
+        stateProvinceRegion: accountData.stateProvinceRegion || "",
+        postalCode: accountData.postalCode || "",
         country: accountData.country || "",
         timezone: accountData.timezone || "",
-        preferred_language: accountData.preferred_language || ""
+        languagePreference: accountData.languagePreference || ""
       }
       reset(formData)
     }
@@ -227,7 +248,7 @@ export function AccountContent() {
       const result = await accountApi.uploadProfileImage(file)
       
       if (result.success) {
-        setAccountData(prev => prev ? { ...prev, profile_image_url: result.url } : null)
+        setAccountData(prev => prev ? { ...prev, profileImageUrl: result.url } : null)
         toast.success("Profile image updated successfully!")
       } else {
         toast.error(result.message || "Failed to upload image")
@@ -247,7 +268,7 @@ export function AccountContent() {
       const result = await accountApi.deleteProfileImage()
       
       if (result.success) {
-        setAccountData(prev => prev ? { ...prev, profile_image_url: undefined } : null)
+        setAccountData(prev => prev ? { ...prev, profileImageUrl: undefined } : null)
         toast.success("Profile image removed successfully!")
       } else {
         toast.error(result.message || "Failed to remove image")
@@ -274,6 +295,40 @@ export function AccountContent() {
     return icons[iconName as keyof typeof icons] || User
   }
 
+  const renderDetailItem = (label: string, value?: string | null, icon?: React.ReactNode) => {
+    if (!value || value.trim() === '') return null;
+    return (
+      <div className="flex items-start gap-3">
+        {icon && <div className="mt-1 text-muted-foreground">{icon}</div>}
+        <div className="flex-1">
+          <p className="text-sm text-muted-foreground">{label}</p>
+          <p className="font-medium break-words">{value}</p>
+        </div>
+      </div>
+    );
+  };
+
+  const renderDetailLinkItem = (label: string, value?: string | null, icon?: React.ReactNode) => {
+    if (!value) return null;
+    return (
+      <div className="flex items-start gap-3">
+        {icon && <div className="mt-1 text-muted-foreground">{icon}</div>}
+        <div className="flex-1">
+          <p className="text-sm text-muted-foreground">{label}</p>
+          <a
+            href={value.startsWith('http') ? value : `https://${value}`}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="font-medium text-primary hover:underline flex items-center gap-1.5 break-all"
+          >
+            <span>{value}</span>
+            <ExternalLink className="h-3 w-3 flex-shrink-0" />
+          </a>
+        </div>
+      </div>
+    );
+  };
+
   if (isLoading) {
     return (
       <div className="flex items-center justify-center h-64">
@@ -296,7 +351,7 @@ export function AccountContent() {
         transition={{ duration: 0.6 }}
         className="relative z-10 border-b border-primary/10 bg-background/40 backdrop-blur-xl"
       >
-        <div className="container mx-auto px-6 py-6">
+        <div className="container mx-auto px-6 py-4">
           <div className="flex items-center justify-between">
             <div>
               <h1 className="text-3xl font-bold bg-gradient-to-r from-primary via-blue-500 to-purple-500 bg-clip-text text-transparent flex items-center gap-3">
@@ -350,16 +405,16 @@ export function AccountContent() {
         </div>
       </motion.div>
 
-      {/* Main Content Area with Separate Scrolling */}
-      <div className="relative z-10 flex h-[calc(100vh-140px)]">
-        {/* Left Sidebar - Fixed Scrolling */}
-        <motion.div
-          initial={{ opacity: 0, x: -20 }}
-          animate={{ opacity: 1, x: 0 }}
-          transition={{ duration: 0.6, delay: 0.1 }}
-          className="w-80 bg-background/20 backdrop-blur-xl border-r border-primary/10 overflow-y-auto"
-        >
-          <div className="p-6 space-y-4">
+      {/* Main Content Area */}
+      <main className="relative z-10 container mx-auto p-6">
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+          {/* Left Column */}
+          <motion.div
+            initial={{ opacity: 0, x: -20 }}
+            animate={{ opacity: 1, x: 0 }}
+            transition={{ duration: 0.6, delay: 0.1 }}
+            className="lg:col-span-1 space-y-6"
+          >
             {/* Profile Overview Card */}
             <Card className="bg-background/40 backdrop-blur-xl border border-primary/10 shadow-lg">
               <CardContent className="p-6">
@@ -368,12 +423,12 @@ export function AccountContent() {
                   <div className="relative mb-4">
                     <Avatar className="h-24 w-24">
                       <AvatarImage 
-                        src={accountData?.profile_image_url} 
-                        alt={accountData?.full_name || userData?.email || "Profile"} 
+                        src={accountData?.profileImageUrl} 
+                        alt={accountData?.fullName || userData?.email || "Profile"} 
                       />
                       <AvatarFallback className="text-lg bg-gradient-to-br from-primary/20 to-purple-500/20">
-                        {accountData?.full_name 
-                          ? accountData.full_name.split(' ').map(n => n[0]).join('').toUpperCase()
+                        {accountData?.fullName 
+                          ? accountData.fullName.split(' ').map(n => n[0]).join('').toUpperCase()
                           : userData?.email?.[0].toUpperCase() || 'U'
                         }
                       </AvatarFallback>
@@ -397,7 +452,7 @@ export function AccountContent() {
                           </div>
                         </label>
                         
-                        {accountData?.profile_image_url && (
+                        {accountData?.profileImageUrl && (
                           <Button
                             size="sm"
                             variant="destructive"
@@ -414,32 +469,12 @@ export function AccountContent() {
 
                   {/* User Info */}
                   <h3 className="font-semibold text-lg mb-1">
-                    {accountData?.full_name || "Add your name"}
+                    {accountData?.fullName || "Add your name"}
                   </h3>
                   <p className="text-muted-foreground text-sm mb-2">
                     {userData?.email}
                   </p>
                   
-                  {accountData?.institution && (
-                    <div className="flex items-center gap-1 text-sm text-muted-foreground mb-2">
-                      <Building className="h-3 w-3" />
-                      {accountData.institution}
-                    </div>
-                  )}
-                  
-                  {accountData?.country && (
-                    <div className="flex items-center gap-1 text-sm text-muted-foreground mb-4">
-                      <MapPin className="h-3 w-3" />
-                      {accountData.country}
-                    </div>
-                  )}
-
-                  {/* Bio */}
-                  {accountData?.bio && (
-                    <p className="text-sm text-muted-foreground text-center">
-                      {accountData.bio}
-                    </p>
-                  )}
                 </div>
               </CardContent>
             </Card>
@@ -454,7 +489,7 @@ export function AccountContent() {
               </CardHeader>
               <CardContent className="space-y-3">
                 {SOCIAL_LINKS.map((social) => {
-                  const url = accountData?.[social.url as keyof UserAccount] as string
+                  const url = accountData?.[social.url] as string
                   const Icon = getIcon(social.icon)
                   
                   return (
@@ -479,7 +514,7 @@ export function AccountContent() {
                   )
                 })}
                 
-                {accountData?.website_url && (
+                {accountData?.websiteUrl && (
                   <div className="flex items-center justify-between">
                     <div className="flex items-center gap-2">
                       <Globe className="h-4 w-4 text-green-500" />
@@ -489,7 +524,7 @@ export function AccountContent() {
                       size="sm"
                       variant="ghost"
                       className="h-6 px-2"
-                      onClick={() => window.open(accountData.website_url, '_blank')}
+                      onClick={() => window.open(accountData.websiteUrl, '_blank')}
                     >
                       <ExternalLink className="h-3 w-3" />
                     </Button>
@@ -497,12 +532,10 @@ export function AccountContent() {
                 )}
               </CardContent>
             </Card>
-          </div>
-        </motion.div>
+          </motion.div>
 
-        {/* Right Content Area - Separate Scrolling */}
-        <div className="flex-1 overflow-y-auto">
-          <div className="p-6">
+          {/* Right Column */}
+          <div className="lg:col-span-2">
             <AnimatePresence mode="wait">
               {!isEditMode ? (
                 /* Profile View Mode */
@@ -512,100 +545,66 @@ export function AccountContent() {
                   animate={{ opacity: 1, y: 0 }}
                   exit={{ opacity: 0, y: -20 }}
                   transition={{ duration: 0.3 }}
-                  className="space-y-6"
                 >
-                  {/* Personal Information */}
                   <Card className="bg-background/40 backdrop-blur-xl border border-primary/10 shadow-lg">
                     <CardHeader>
                       <CardTitle className="flex items-center gap-2">
                         <User className="h-5 w-5 text-primary" />
-                        Personal Information
+                        Profile Details
                       </CardTitle>
+                      <CardDescription>
+                        A comprehensive overview of your professional and personal information.
+                      </CardDescription>
                     </CardHeader>
-                    <CardContent className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                      <div>
-                        <label className="text-sm font-medium text-muted-foreground">Full Name</label>
-                        <p className="mt-1">{accountData?.full_name || "Not provided"}</p>
-                      </div>
-                      <div>
-                        <label className="text-sm font-medium text-muted-foreground">Country</label>
-                        <p className="mt-1">{accountData?.country || "Not provided"}</p>
-                      </div>
-                      <div className="md:col-span-2">
-                        <label className="text-sm font-medium text-muted-foreground">Address</label>
-                        <p className="mt-1">{accountData?.address || "Not provided"}</p>
-                      </div>
-                      <div className="md:col-span-2">
-                        <label className="text-sm font-medium text-muted-foreground">Bio</label>
-                        <p className="mt-1">{accountData?.bio || "Not provided"}</p>
-                      </div>
-                    </CardContent>
-                  </Card>
+                    <CardContent className="space-y-6">
+                      {/* About Section */}
+                      {accountData?.bio && (
+                        <div>
+                          <h4 className="font-semibold text-base mb-3">About</h4>
+                          <p className="text-sm text-muted-foreground whitespace-pre-wrap leading-relaxed">{accountData.bio}</p>
+                        </div>
+                      )}
+                      
+                      <Separator />
 
-                  {/* Academic & Professional */}
-                  <Card className="bg-background/40 backdrop-blur-xl border border-primary/10 shadow-lg">
-                    <CardHeader>
-                      <CardTitle className="flex items-center gap-2">
-                        <GraduationCap className="h-5 w-5 text-primary" />
-                        Academic & Professional
-                      </CardTitle>
-                    </CardHeader>
-                    <CardContent className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                      {/* Professional Details Section */}
                       <div>
-                        <label className="text-sm font-medium text-muted-foreground">Institution</label>
-                        <p className="mt-1">{accountData?.institution || "Not provided"}</p>
+                        <h4 className="font-semibold text-base mb-4">Professional & Academic</h4>
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-x-6 gap-y-6">
+                            {renderDetailItem("Institution", accountData?.institution, <Building size={16} />)}
+                            {renderDetailItem("Department", accountData?.department, <GraduationCap size={16} />)}
+                            {renderDetailItem("Position", accountData?.position, <Briefcase size={16} />)}
+                            {renderDetailItem("ORCID iD", accountData?.orcidId)}
+                        </div>
                       </div>
-                      <div>
-                        <label className="text-sm font-medium text-muted-foreground">Affiliation</label>
-                        <p className="mt-1">{accountData?.affiliation || "Not provided"}</p>
-                      </div>
-                      <div>
-                        <label className="text-sm font-medium text-muted-foreground">ORCID iD</label>
-                        <p className="mt-1">{accountData?.orcid_id || "Not provided"}</p>
-                      </div>
-                      <div>
-                        <label className="text-sm font-medium text-muted-foreground">Website</label>
-                        {accountData?.website_url ? (
-                          <div className="mt-1 flex items-center gap-2">
-                            <a 
-                              href={accountData.website_url} 
-                              target="_blank" 
-                              rel="noopener noreferrer"
-                              className="text-primary hover:underline"
-                            >
-                              {accountData.website_url}
-                            </a>
-                            <ExternalLink className="h-3 w-3 text-muted-foreground" />
-                          </div>
-                        ) : (
-                          <p className="mt-1">Not provided</p>
-                        )}
-                      </div>
-                    </CardContent>
-                  </Card>
 
-                  {/* Preferences */}
-                  <Card className="bg-background/40 backdrop-blur-xl border border-primary/10 shadow-lg">
-                    <CardHeader>
-                      <CardTitle className="flex items-center gap-2">
-                        <Settings className="h-5 w-5 text-primary" />
-                        Preferences
-                      </CardTitle>
-                    </CardHeader>
-                    <CardContent className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                      <Separator />
+
+                      {/* Contact Details Section */}
                       <div>
-                        <label className="text-sm font-medium text-muted-foreground flex items-center gap-1">
-                          <Languages className="h-3 w-3" />
-                          Preferred Language
-                        </label>
-                        <p className="mt-1">{accountData?.preferred_language || "Not set"}</p>
+                        <h4 className="font-semibold text-base mb-4">Contact Information</h4>
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-x-6 gap-y-6">
+                            {renderDetailLinkItem("Website", accountData?.websiteUrl, <Globe size={16} />)}
+                            {renderDetailItem("Address", [
+                                accountData?.addressLine1,
+                                accountData?.addressLine2,
+                                accountData?.city,
+                                accountData?.stateProvinceRegion,
+                                accountData?.postalCode,
+                                accountData?.country
+                              ].filter(Boolean).join(', '), <MapPin size={16} />)}
+                        </div>
                       </div>
+                      
+                      <Separator />
+                      
+                      {/* Preferences Section */}
                       <div>
-                        <label className="text-sm font-medium text-muted-foreground flex items-center gap-1">
-                          <Clock className="h-3 w-3" />
-                          Timezone
-                        </label>
-                        <p className="mt-1">{accountData?.timezone || "Not set"}</p>
+                        <h4 className="font-semibold text-base mb-4">Preferences</h4>
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-x-6 gap-y-6">
+                            {renderDetailItem("Preferred Language", accountData?.languagePreference, <Languages size={16} />)}
+                            {renderDetailItem("Timezone", accountData?.timezone, <Clock size={16} />)}
+                        </div>
                       </div>
                     </CardContent>
                   </Card>
@@ -752,7 +751,7 @@ export function AccountContent() {
             </AnimatePresence>
           </div>
         </div>
-      </div>
+      </main>
     </div>
   )
 } 

@@ -9,17 +9,47 @@ export const ACCOUNT_SECTIONS: AccountSection[] = [
     icon: "User",
     fields: [
       {
-        name: "full_name",
+        name: "fullName",
         label: "Full Name",
         type: "text",
         placeholder: "Enter your full name",
         required: true
       },
       {
-        name: "address",
-        label: "Address",
+        name: "bio",
+        label: "Bio",
         type: "textarea",
-        placeholder: "Enter your address"
+        placeholder: "Tell us about yourself, your research interests, and academic background"
+      },
+      {
+        name: "addressLine1",
+        label: "Address Line 1",
+        type: "text",
+        placeholder: "e.g., 1234 Main St"
+      },
+      {
+        name: "addressLine2",
+        label: "Address Line 2",
+        type: "text",
+        placeholder: "e.g., Apartment, studio, or floor"
+      },
+      {
+        name: "city",
+        label: "City",
+        type: "text",
+        placeholder: "e.g., San Francisco"
+      },
+      {
+        name: "stateProvinceRegion",
+        label: "State / Province / Region",
+        type: "text",
+        placeholder: "e.g., California"
+      },
+      {
+        name: "postalCode",
+        label: "ZIP / Postal Code",
+        type: "text",
+        placeholder: "e.g., 94103"
       },
       {
         name: "country",
@@ -37,14 +67,18 @@ export const ACCOUNT_SECTIONS: AccountSection[] = [
           { value: "CN", label: "China" },
           { value: "IN", label: "India" },
           { value: "BR", label: "Brazil" },
+          { value: "MX", label: "Mexico" },
+          { value: "AR", label: "Argentina" },
+          { value: "CO", label: "Colombia" },
+          { value: "CL", label: "Chile" },
+          { value: "PE", label: "Peru" },
+          { value: "ZA", label: "South Africa" },
+          { value: "ZA", label: "South Africa" },
+          { value: "ZA", label: "South Africa" },
+          { value: "ZA", label: "South Africa" },
+          { value: "BD", label: "Bangladesh" },
           // Add more countries as needed
         ]
-      },
-      {
-        name: "bio",
-        label: "Bio",
-        type: "textarea",
-        placeholder: "Tell us about yourself, your research interests, and academic background"
       }
     ]
   },
@@ -61,19 +95,25 @@ export const ACCOUNT_SECTIONS: AccountSection[] = [
         placeholder: "Your university, company, or organization"
       },
       {
-        name: "affiliation",
-        label: "Affiliation",
+        name: "department",
+        label: "Department",
         type: "text",
         placeholder: "Department, school, or division"
       },
       {
-        name: "orcid_id",
+        name: "position",
+        label: "Position",
+        type: "text",
+        placeholder: "e.g. PhD Candidate"
+      },
+      {
+        name: "orcidId",
         label: "ORCID iD",
         type: "text",
         placeholder: "0000-0000-0000-0000"
       },
       {
-        name: "website_url",
+        name: "websiteUrl",
         label: "Personal Website",
         type: "url",
         placeholder: "https://yourwebsite.com"
@@ -87,7 +127,7 @@ export const ACCOUNT_SECTIONS: AccountSection[] = [
     icon: "Settings",
     fields: [
       {
-        name: "preferred_language",
+        name: "languagePreference",
         label: "Preferred Language",
         type: "select",
         placeholder: "Select language",
@@ -131,25 +171,25 @@ export const ACCOUNT_SECTIONS: AccountSection[] = [
 export const SOCIAL_LINKS: SocialLink[] = [
   {
     platform: "Google Scholar",
-    url: "google_scholar_url",
+    url: "googleScholarUrl",
     icon: "GraduationCap",
     color: "text-blue-500"
   },
   {
     platform: "LinkedIn",
-    url: "linkedin_url", 
+    url: "linkedinUrl", 
     icon: "Briefcase",
     color: "text-blue-600"
   },
   {
     platform: "GitHub",
-    url: "github_url",
+    url: "githubUrl",
     icon: "Github", 
     color: "text-gray-700 dark:text-gray-300"
   },
   {
     platform: "Facebook",
-    url: "facebook_url",
+    url: "facebookUrl",
     icon: "Facebook",
     color: "text-blue-700"
   }
