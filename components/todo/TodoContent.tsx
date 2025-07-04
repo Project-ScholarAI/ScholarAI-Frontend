@@ -11,12 +11,14 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog"
 import { Separator } from "@/components/ui/separator"
 import { Label } from "@/components/ui/label"
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover"
+import { Calendar } from "@/components/ui/calendar"
 import { toast } from "sonner"
 import { 
   CheckSquare, 
   Plus, 
   MoreVertical,
-  Calendar,
+  Calendar as CalendarIcon,
   Clock,
   Tag,
   Filter,
@@ -35,7 +37,6 @@ import {
   Users,
   Search,
   X,
-  CalendarDays,
   Timer,
   BookOpen,
   FileText,
@@ -44,11 +45,10 @@ import {
   ArrowUp,
   ArrowDown,
   ArrowLeft,
-  Calendar as CalendarIcon,
   Eye,
   EyeOff
 } from "lucide-react"
-import { format, formatDistance, isAfter, isBefore, isToday, isThisWeek, parseISO } from "date-fns"
+import { format, formatDistance, isAfter, isBefore, isToday, isThisWeek, parseISO, startOfDay } from "date-fns"
 import { cn } from "@/lib/utils/cn"
 import { todosApi } from "@/lib/api/todos"
 import { Todo, TodoFilters, TodoSortOptions, TodoSummary, TodoForm, TodoPlan } from "@/types/todo"
@@ -95,6 +95,30 @@ export function TodoContent() {
     reminders: []
   })
 
+  // Add time state for due date
+  const [dueTime, setDueTime] = useState<string>("12:00")
+
+  // Helper function to combine date and time
+  const combineDateAndTime = (date: Date | undefined, time: string): string => {
+    if (!date) return ""
+    const [hours, minutes] = time.split(":")
+    const newDate = new Date(date)
+    newDate.setHours(parseInt(hours), parseInt(minutes))
+    // Ensure we return the ISO string without timezone offset
+    return newDate.toISOString()
+  }
+
+  // Helper function to format date for display in todo card
+  const formatDateForCard = (dateString: string | undefined): string => {
+    if (!dateString) return ""
+    try {
+      const date = new Date(dateString)
+      return format(date, "MMM d, yyyy 'at' h:mm a") // e.g., "Apr 29, 2024 at 2:00 PM"
+    } catch (error) {
+      return ""
+    }
+  }
+
   // Load todos and plans
   useEffect(() => {
     const loadData = async () => {
@@ -120,7 +144,7 @@ export function TodoContent() {
           },
           overdue: mockData.filter(t => 
             t.due_date && t.status !== 'completed' && 
-            isBefore(parseISO(t.due_date), new Date())
+            isBefore(parseISO(t.due_date), startOfDay(new Date()))
           ).length,
           due_today: mockData.filter(t => 
             t.due_date && isToday(parseISO(t.due_date))
@@ -285,7 +309,7 @@ export function TodoContent() {
         status: 'pending',
         priority: form.priority,
         category: form.category,
-        due_date: form.due_date || undefined,
+        due_date: form.due_date ? new Date(form.due_date).toISOString() : undefined,
         created_at: new Date().toISOString(),
         updated_at: new Date().toISOString(),
         estimated_time: form.estimated_time,
@@ -302,9 +326,7 @@ export function TodoContent() {
       setTodos(prev => [newTodo, ...prev])
       setShowCreateDialog(false)
       resetForm()
-      
-      // API call (uncomment when ready)
-      // await todosApi.createTodo(form)
+      setDueTime("12:00") // Reset time input
       
       toast.success("Todo created successfully")
     } catch (error) {
@@ -455,7 +477,7 @@ export function TodoContent() {
   // Check if todo is overdue
   const isOverdue = (todo: Todo) => {
     return todo.due_date && todo.status !== 'completed' && 
-           isBefore(parseISO(todo.due_date), new Date())
+           isBefore(parseISO(todo.due_date), startOfDay(new Date()))
   }
 
   if (isLoading) {
@@ -581,27 +603,65 @@ export function TodoContent() {
                       </div>
                     </div>
                     
-                    <div className="grid grid-cols-2 gap-4">
-                      <div>
-                        <Label htmlFor="due_date">Due Date</Label>
+                    <div>
+                      <Label htmlFor="due_date">Due Date & Time</Label>
+                      <div className="flex gap-2">
+                        <Popover>
+                          <PopoverTrigger asChild>
+                            <Button
+                              variant="outline"
+                              className={cn(
+                                "w-full justify-start text-left font-normal",
+                                !form.due_date && "text-muted-foreground"
+                              )}
+                            >
+                              <CalendarIcon className="mr-2 h-4 w-4" />
+                              {form.due_date ? formatDateForCard(form.due_date) : <span>Pick a date</span>}
+                            </Button>
+                          </PopoverTrigger>
+                          <PopoverContent className="w-auto p-0" align="start">
+                            <Calendar
+                              mode="single"
+                              selected={form.due_date ? new Date(form.due_date) : undefined}
+                              onSelect={(date) => {
+                                if (date) {
+                                  setForm(prev => ({
+                                    ...prev,
+                                    due_date: combineDateAndTime(date, dueTime)
+                                  }))
+                                }
+                              }}
+                              initialFocus
+                            />
+                          </PopoverContent>
+                        </Popover>
+
                         <Input
-                          id="due_date"
-                          type="datetime-local"
-                          value={form.due_date}
-                          onChange={(e) => setForm(prev => ({ ...prev, due_date: e.target.value }))}
+                          type="time"
+                          value={dueTime}
+                          onChange={(e) => {
+                            setDueTime(e.target.value)
+                            if (form.due_date) {
+                              setForm(prev => ({
+                                ...prev,
+                                due_date: combineDateAndTime(new Date(form.due_date), e.target.value)
+                              }))
+                            }
+                          }}
+                          className="w-[150px]"
                         />
                       </div>
-                      
-                      <div>
-                        <Label htmlFor="estimated_time">Estimated Time (minutes)</Label>
-                        <Input
-                          id="estimated_time"
-                          type="number"
-                          value={form.estimated_time}
-                          onChange={(e) => setForm(prev => ({ ...prev, estimated_time: parseInt(e.target.value) || 0 }))}
-                          min="0"
-                        />
-                      </div>
+                    </div>
+                    
+                    <div>
+                      <Label htmlFor="estimated_time">Estimated Time (minutes)</Label>
+                      <Input
+                        id="estimated_time"
+                        type="number"
+                        value={form.estimated_time}
+                        onChange={(e) => setForm(prev => ({ ...prev, estimated_time: parseInt(e.target.value) || 0 }))}
+                        min="0"
+                      />
                     </div>
                   </div>
                   
@@ -842,6 +902,50 @@ export function TodoContent() {
                               </div>
                               
                               <div className="flex items-center gap-2">
+                                {/* Status Dropdown */}
+                                <Select
+                                  value={todo.status}
+                                  onValueChange={(value: Todo['status']) => handleStatusUpdate(todo.id, value)}
+                                >
+                                  <SelectTrigger className="h-7 w-[130px]">
+                                    <SelectValue />
+                                  </SelectTrigger>
+                                  <SelectContent>
+                                    {Object.entries(STATUS_CONFIG).map(([key, config]) => (
+                                      <SelectItem key={key} value={key}>
+                                        <div className="flex items-center gap-2">
+                                          <config.icon className={cn("h-4 w-4", config.color)} />
+                                          {config.label}
+                                        </div>
+                                      </SelectItem>
+                                    ))}
+                                  </SelectContent>
+                                </Select>
+
+                                <Button
+                                  variant="ghost"
+                                  size="sm"
+                                  className="h-7 w-7 p-0"
+                                  onClick={() => {
+                                    setEditingTodo(todo)
+                                    setForm({
+                                      title: todo.title,
+                                      description: todo.description || '',
+                                      priority: todo.priority,
+                                      category: todo.category,
+                                      due_date: todo.due_date || '',
+                                      estimated_time: todo.estimated_time || 60,
+                                      related_project_id: todo.related_project_id || '',
+                                      tags: todo.tags,
+                                      subtasks: todo.subtasks.map(s => ({ title: s.title })),
+                                      reminders: []
+                                    })
+                                    setShowEditDialog(true)
+                                  }}
+                                >
+                                  <Edit className="h-4 w-4" />
+                                </Button>
+
                                 <Badge 
                                   variant="outline" 
                                   className={cn("text-xs", priority.color, priority.borderColor)}
@@ -860,13 +964,66 @@ export function TodoContent() {
                               </p>
                             )}
 
+                            {/* Subtasks Section */}
+                            {todo.subtasks.length > 0 && (
+                              <div className="mb-3 space-y-2">
+                                <div className="flex items-center justify-between text-sm text-muted-foreground mb-1">
+                                  <span>Subtasks</span>
+                                  <span>{todo.subtasks.filter(s => s.completed).length}/{todo.subtasks.length}</span>
+                                </div>
+                                <div className="space-y-1.5">
+                                  {todo.subtasks.map((subtask) => (
+                                    <div 
+                                      key={subtask.id} 
+                                      className="flex items-center gap-2 text-sm"
+                                      onClick={(e) => {
+                                        e.stopPropagation()
+                                        // Update local state immediately for better UX
+                                        setTodos(prev => prev.map(t => 
+                                          t.id === todo.id 
+                                            ? {
+                                                ...t,
+                                                subtasks: t.subtasks.map(s =>
+                                                  s.id === subtask.id
+                                                    ? { ...s, completed: !s.completed }
+                                                    : s
+                                                )
+                                              }
+                                            : t
+                                        ))
+                                        // API call when backend is ready
+                                        // todosApi.toggleSubtask(todo.id, subtask.id)
+                                      }}
+                                    >
+                                      <div className={cn(
+                                        "w-4 h-4 border rounded-sm cursor-pointer transition-colors flex items-center justify-center",
+                                        subtask.completed 
+                                          ? "bg-primary border-primary" 
+                                          : "border-muted-foreground/30 hover:border-primary/50"
+                                      )}>
+                                        {subtask.completed && (
+                                          <CheckCircle className="h-3 w-3 text-white" />
+                                        )}
+                                      </div>
+                                      <span className={cn(
+                                        "flex-1 cursor-pointer",
+                                        subtask.completed && "line-through text-muted-foreground"
+                                      )}>
+                                        {subtask.title}
+                                      </span>
+                                    </div>
+                                  ))}
+                                </div>
+                              </div>
+                            )}
+
                             {/* Meta Information */}
                             <div className="flex items-center justify-between text-xs text-muted-foreground">
                               <div className="flex items-center gap-4">
                                 {todo.due_date && (
                                   <div className="flex items-center gap-1">
-                                    <Calendar className="h-3 w-3" />
-                                    Due: {format(parseISO(todo.due_date), 'MMM dd, yyyy')}
+                                    <Clock className="h-3 w-3" />
+                                    Due {formatDateForCard(todo.due_date)}
                                   </div>
                                 )}
                                 
@@ -1300,8 +1457,8 @@ export function TodoContent() {
                                 
                                 {todo.due_date && (
                                   <div className="flex items-center gap-1">
-                                    <Calendar className="h-3 w-3" />
-                                    Due: {format(parseISO(todo.due_date), 'MMM dd')}
+                                    <Clock className="h-3 w-3" />
+                                    Due {formatDateForCard(todo.due_date)}
                                   </div>
                                 )}
                                 
@@ -1330,6 +1487,241 @@ export function TodoContent() {
             }}>
               <ArrowLeft className="h-4 w-4 mr-2" />
               Back to Tasks
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Edit Todo Dialog */}
+      <Dialog open={showEditDialog} onOpenChange={setShowEditDialog}>
+        <DialogContent className="sm:max-w-[500px]">
+          <DialogHeader>
+            <DialogTitle>Edit Todo</DialogTitle>
+            <DialogDescription>
+              Modify the todo details
+            </DialogDescription>
+          </DialogHeader>
+          
+          <div className="space-y-4">
+            <div>
+              <Label htmlFor="title">Title *</Label>
+              <Input
+                id="title"
+                value={form.title}
+                onChange={(e) => setForm(prev => ({ ...prev, title: e.target.value }))}
+                placeholder="Enter todo title"
+              />
+            </div>
+            
+            <div>
+              <Label htmlFor="description">Description</Label>
+              <Textarea
+                id="description"
+                value={form.description}
+                onChange={(e) => setForm(prev => ({ ...prev, description: e.target.value }))}
+                placeholder="Enter todo description"
+                rows={3}
+              />
+            </div>
+            
+            <div className="grid grid-cols-2 gap-4">
+              <div>
+                <Label htmlFor="priority">Priority</Label>
+                <Select value={form.priority} onValueChange={(value: any) => setForm(prev => ({ ...prev, priority: value }))}>
+                  <SelectTrigger>
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {Object.entries(PRIORITY_CONFIG).map(([key, config]) => (
+                      <SelectItem key={key} value={key}>
+                        <div className="flex items-center gap-2">
+                          <config.icon className={cn("h-4 w-4", config.color)} />
+                          {config.label}
+                        </div>
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+              
+              <div>
+                <Label htmlFor="category">Category</Label>
+                <Select value={form.category} onValueChange={(value: any) => setForm(prev => ({ ...prev, category: value }))}>
+                  <SelectTrigger>
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {Object.entries(CATEGORY_CONFIG).map(([key, config]) => (
+                      <SelectItem key={key} value={key}>
+                        <div className="flex items-center gap-2">
+                          <config.icon className={cn("h-4 w-4", config.color)} />
+                          {config.label}
+                        </div>
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+            </div>
+            
+            <div>
+              <Label htmlFor="due_date">Due Date & Time</Label>
+              <div className="flex gap-2">
+                <Popover>
+                  <PopoverTrigger asChild>
+                    <Button
+                      variant="outline"
+                      className={cn(
+                        "w-full justify-start text-left font-normal",
+                        !form.due_date && "text-muted-foreground"
+                      )}
+                    >
+                      <CalendarIcon className="mr-2 h-4 w-4" />
+                      {form.due_date ? formatDateForCard(form.due_date) : <span>Pick a date</span>}
+                    </Button>
+                  </PopoverTrigger>
+                  <PopoverContent className="w-auto p-0" align="start">
+                    <Calendar
+                      mode="single"
+                      selected={form.due_date ? new Date(form.due_date) : undefined}
+                      onSelect={(date) => {
+                        if (date) {
+                          setForm(prev => ({
+                            ...prev,
+                            due_date: combineDateAndTime(date, dueTime)
+                          }))
+                        }
+                      }}
+                      initialFocus
+                    />
+                  </PopoverContent>
+                </Popover>
+
+                <Input
+                  type="time"
+                  value={dueTime}
+                  onChange={(e) => {
+                    setDueTime(e.target.value)
+                    if (form.due_date) {
+                      setForm(prev => ({
+                        ...prev,
+                        due_date: combineDateAndTime(new Date(form.due_date), e.target.value)
+                      }))
+                    }
+                  }}
+                  className="w-[150px]"
+                />
+              </div>
+            </div>
+            
+            <div>
+              <Label htmlFor="estimated_time">Estimated Time (minutes)</Label>
+              <Input
+                id="estimated_time"
+                type="number"
+                value={form.estimated_time}
+                onChange={(e) => setForm(prev => ({ ...prev, estimated_time: parseInt(e.target.value) || 0 }))}
+                min="0"
+              />
+            </div>
+
+            {/* Subtasks Section */}
+            <div>
+              <Label className="flex items-center justify-between">
+                <span>Subtasks</span>
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  onClick={() => setForm(prev => ({
+                    ...prev,
+                    subtasks: [...prev.subtasks, { title: '' }]
+                  }))}
+                >
+                  <Plus className="h-4 w-4 mr-1" />
+                  Add Subtask
+                </Button>
+              </Label>
+              <div className="space-y-2 mt-2">
+                {form.subtasks.map((subtask, index) => (
+                  <div key={index} className="flex items-center gap-2">
+                    <Input
+                      value={subtask.title}
+                      onChange={(e) => {
+                        const newSubtasks = [...form.subtasks]
+                        newSubtasks[index].title = e.target.value
+                        setForm(prev => ({ ...prev, subtasks: newSubtasks }))
+                      }}
+                      placeholder="Subtask title"
+                    />
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      size="sm"
+                      className="h-10 w-10 p-0 text-red-500 hover:text-red-600"
+                      onClick={() => {
+                        const newSubtasks = form.subtasks.filter((_, i) => i !== index)
+                        setForm(prev => ({ ...prev, subtasks: newSubtasks }))
+                      }}
+                    >
+                      <X className="h-4 w-4" />
+                    </Button>
+                  </div>
+                ))}
+              </div>
+            </div>
+          </div>
+          
+          <DialogFooter>
+            <Button variant="outline" onClick={() => {
+              setShowEditDialog(false)
+              resetForm()
+            }}>
+              Cancel
+            </Button>
+            <Button onClick={() => {
+              if (editingTodo) {
+                // Update local state
+                setTodos(prev => prev.map(todo => 
+                  todo.id === editingTodo.id
+                    ? {
+                        ...todo,
+                        title: form.title,
+                        description: form.description,
+                        priority: form.priority,
+                        category: form.category,
+                        due_date: form.due_date || undefined,
+                        estimated_time: form.estimated_time,
+                        related_project_id: form.related_project_id,
+                        tags: form.tags,
+                        updated_at: new Date().toISOString(),
+                        subtasks: [
+                          ...todo.subtasks.filter(s => 
+                            form.subtasks.some(fs => fs.title === s.title)
+                          ),
+                          ...form.subtasks
+                            .filter(fs => !todo.subtasks.some(s => s.title === fs.title))
+                            .map(fs => ({
+                              id: `sub_${Date.now()}_${Math.random()}`,
+                              title: fs.title,
+                              completed: false,
+                              created_at: new Date().toISOString()
+                            }))
+                        ]
+                      }
+                    : todo
+                ))
+                
+                // API call when backend is ready
+                // todosApi.updateTodo(editingTodo.id, form)
+                
+                setShowEditDialog(false)
+                resetForm()
+                setEditingTodo(null)
+                toast.success("Todo updated successfully")
+              }
+            }}>
+              Save Changes
             </Button>
           </DialogFooter>
         </DialogContent>
