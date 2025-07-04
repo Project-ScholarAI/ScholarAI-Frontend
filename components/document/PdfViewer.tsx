@@ -22,7 +22,15 @@ import {
   X,
   ChevronUp,
   ChevronDown,
-  Hash
+  Hash,
+  Send,
+  MessageSquarePlus,
+  AtSign,
+  Cloud,
+  Clock,
+  MoreHorizontal,
+  Infinity,
+  Brain
 } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -85,6 +93,9 @@ export function PDFViewer({ documentUrl, documentName = "Document" }: Props) {
   const [totalPages, setTotalPages] = useState(0)
   const [showSearch, setShowSearch] = useState(false)
   const [searchKeyword, setSearchKeyword] = useState('')
+  const [searchResults, setSearchResults] = useState<{ pageIndex: number; snippet: string }[]>([])
+  const [isSearching, setIsSearching] = useState(false)
+  const [pdfDoc, setPdfDoc] = useState<any>(null)
   const [jumpToPage, setJumpToPage] = useState('')
   const [scale, setScale] = useState(1.0)
   const [currentMatchIndex, setCurrentMatchIndex] = useState(0)
@@ -92,10 +103,30 @@ export function PDFViewer({ documentUrl, documentName = "Document" }: Props) {
   const searchInputRef = useRef<HTMLInputElement>(null)
   const containerRef = useRef<HTMLDivElement>(null)
 
-  // Initialize plugins
+  // Chat drawer state
+  const [showChat, setShowChat] = useState(false)
+  const [chatInput, setChatInput] = useState('')
+  const [chatMessages, setChatMessages] = useState<{ role: 'user' | 'assistant'; content: string }[]>([])
+  const [pendingContext, setPendingContext] = useState<string[]>([])
+
+  // Floating add-to-chat button for selected text
+  const [selectionText, setSelectionText] = useState('')
+  const [selectionPos, setSelectionPos] = useState<{ x: number; y: number } | null>(null)
+
+  // Chat metadata and resizing
+  const [chatName, setChatName] = useState('New Chat')
+  const [isEditingName, setIsEditingName] = useState(false)
+  const [chatHistory, setChatHistory] = useState<{ name: string; messages: { role: 'user' | 'assistant'; content: string }[] }[]>([])
+  const [showHistory, setShowHistory] = useState(false)
+  const [chatWidth, setChatWidth] = useState(384)
+  const [isResizing, setIsResizing] = useState(false)
+  const [startX, setStartX] = useState(0)
+  const [startWidth, setStartWidth] = useState(384)
+
   const zoomPluginInstance = zoomPlugin()
   const { zoomTo } = zoomPluginInstance
-  const searchPluginInstance = searchPlugin({ keyword: searchKeyword ? [searchKeyword] : [] })
+
+  const searchPluginInstance = searchPlugin()
   const { clearHighlights, highlight, jumpToNextMatch, jumpToPreviousMatch } = searchPluginInstance
 
   // Load and process PDF URL
@@ -165,6 +196,7 @@ export function PDFViewer({ documentUrl, documentName = "Document" }: Props) {
   const handleDocumentLoad = useCallback((e: any) => {
     console.log('Document loaded successfully:', e)
     setTotalPages(e.doc.numPages)
+    setPdfDoc(e.doc)
     setError(null)
     setScale(1.0)
   }, [])
@@ -233,6 +265,12 @@ export function PDFViewer({ documentUrl, documentName = "Document" }: Props) {
   // Handle keyboard shortcuts
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
+      // Toggle chat with Ctrl+I
+      if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'i') {
+        e.preventDefault()
+        setShowChat((prev) => !prev)
+        return
+      }
       if (e.ctrlKey && e.key === 'f') {
         e.preventDefault()
         setShowSearch(true)
@@ -251,14 +289,55 @@ export function PDFViewer({ documentUrl, documentName = "Document" }: Props) {
     return () => document.removeEventListener('keydown', handleKeyDown)
   }, [showSearch, clearHighlights])
 
-  // Handle search
+  // Listen to selection changes to show Add-to-Chat button
+  useEffect(() => {
+    const handleSelectionChange = () => {
+      const sel = window.getSelection()
+      if (sel && sel.toString().trim().length > 0) {
+        const range = sel.getRangeAt(0)
+        const rect = range.getBoundingClientRect()
+        setSelectionText(sel.toString())
+        setSelectionPos({ x: rect.right, y: rect.bottom })
+      } else {
+        setSelectionPos(null)
+      }
+    }
+    document.addEventListener('selectionchange', handleSelectionChange)
+    return () => document.removeEventListener('selectionchange', handleSelectionChange)
+  }, [])
+
+  const performSearch = async (keyword: string) => {
+    if (!pdfDoc || !keyword.trim()) {
+      setSearchResults([])
+      return
+    }
+    setIsSearching(true)
+    const newResults: { pageIndex: number; snippet: string }[] = []
+    const regex = new RegExp(keyword, 'gi')
+    for (let i = 1; i <= pdfDoc.numPages; i++) {
+      const page = await pdfDoc.getPage(i)
+      const textContent = await page.getTextContent()
+      const text = (textContent.items as any[]).map((it) => it.str).join(' ')
+      let match
+      while ((match = regex.exec(text)) !== null) {
+        const start = Math.max(0, match.index - 30)
+        const snippet = text.substr(start, keyword.length + 60).replace(/\s+/g, ' ')
+        newResults.push({ pageIndex: i - 1, snippet })
+      }
+    }
+    setSearchResults(newResults)
+    setIsSearching(false)
+  }
+
   const handleSearch = (keyword: string) => {
     setSearchKeyword(keyword)
     setCurrentMatchIndex(0)
     if (keyword.trim()) {
       highlight([keyword])
+      performSearch(keyword)
     } else {
       clearHighlights()
+      setSearchResults([])
       setTotalMatches(0)
     }
   }
@@ -418,8 +497,24 @@ export function PDFViewer({ documentUrl, documentName = "Document" }: Props) {
     }
   }
 
+  // Handle resizing of chat drawer
+  useEffect(() => {
+    const onMouseMove = (e: MouseEvent) => {
+      if (!isResizing) return
+      const delta = startX - e.clientX
+      setChatWidth(Math.max(200, Math.min(800, startWidth + delta)))
+    }
+    const onMouseUp = () => setIsResizing(false)
+    window.addEventListener('mousemove', onMouseMove)
+    window.addEventListener('mouseup', onMouseUp)
+    return () => {
+      window.removeEventListener('mousemove', onMouseMove)
+      window.removeEventListener('mouseup', onMouseUp)
+    }
+  }, [isResizing, startX, startWidth])
+
   return (
-    <div className="flex flex-col h-full bg-background">
+    <div className="relative flex flex-col h-full bg-background">
       {/* Compact Header */}
       <div className="flex items-center justify-end h-12 px-4 bg-card border-b border-border">
         <div className="flex items-center gap-2">
@@ -458,54 +553,27 @@ export function PDFViewer({ documentUrl, documentName = "Document" }: Props) {
         </div>
       </div>
 
-      {/* Search Bar */}
-      {showSearch && (
-        <div className="flex items-center gap-2 h-10 px-4 bg-primary/5 border-b border-border">
+      {/* Search Sidebar */}
+      <div className={`absolute left-0 top-0 bottom-0 w-72 bg-card border-r border-border z-40 transform transition-transform duration-300 ease-in-out ${showSearch ? 'translate-x-0' : '-translate-x-full'}`}>
+        {/* Header with input */}
+        <div className="p-3 border-b border-border flex items-center gap-2">
           <Search className="h-4 w-4 text-primary" />
           <Input
             ref={searchInputRef}
             type="text"
             value={searchKeyword}
             onChange={(e) => handleSearch(e.target.value)}
-            placeholder="Search in document..."
-            className="h-8 flex-1 text-sm"
             onKeyDown={(e) => {
               if (e.key === 'Escape') {
                 setShowSearch(false)
                 setSearchKeyword('')
                 clearHighlights()
-              } else if (e.key === 'Enter') {
-                if (e.shiftKey) {
-                  handlePreviousMatch()
-                } else {
-                  handleNextMatch()
-                }
+                setSearchResults([])
               }
             }}
+            placeholder="Keyword search"
+            className="h-8 text-sm flex-1"
           />
-          {searchKeyword && totalMatches > 0 && (
-            <div className="flex items-center gap-1">
-              <span className="text-xs text-muted-foreground">
-                {currentMatchIndex + 1} of {totalMatches}
-              </span>
-              <Button
-                variant="ghost"
-                size="sm"
-                onClick={handlePreviousMatch}
-                className="h-6 w-6 p-0 text-muted-foreground hover:bg-muted hover:text-foreground"
-              >
-                <ChevronUp className="h-3 w-3" />
-              </Button>
-              <Button
-                variant="ghost"
-                size="sm"
-                onClick={handleNextMatch}
-                className="h-6 w-6 p-0 text-muted-foreground hover:bg-muted hover:text-foreground"
-              >
-                <ChevronDown className="h-3 w-3" />
-              </Button>
-            </div>
-          )}
           <Button
             variant="ghost"
             size="sm"
@@ -513,16 +581,62 @@ export function PDFViewer({ documentUrl, documentName = "Document" }: Props) {
               setShowSearch(false)
               setSearchKeyword('')
               clearHighlights()
+              setSearchResults([])
             }}
             className="h-8 w-8 p-0 text-muted-foreground hover:bg-muted hover:text-foreground"
           >
             <X className="h-4 w-4" />
           </Button>
         </div>
+
+        {/* Results */}
+        <div className="flex-1 overflow-auto">
+          {isSearching ? (
+            <div className="flex items-center justify-center h-full text-sm text-muted-foreground">Searching...</div>
+          ) : searchResults.length === 0 ? (
+            <div className="p-4 text-sm text-muted-foreground">No results</div>
+          ) : (
+            searchResults.map((res, idx) => (
+              <button
+                key={`${res.pageIndex}-${idx}`}
+                onClick={() => {
+                  jumpToPageNumber(res.pageIndex)
+                  setShowSearch(false)
+                }}
+                className="w-full text-left px-4 py-2 hover:bg-muted"
+              >
+                <div className="text-xs text-muted-foreground">Page {res.pageIndex + 1}</div>
+                <div className="text-sm truncate" dangerouslySetInnerHTML={{ __html: res.snippet.replace(new RegExp(searchKeyword, 'gi'), `<span class='text-primary font-semibold'>${searchKeyword}</span>`) }} />
+              </button>
+            ))
+          )}
+        </div>
+      </div>
+
+      {/* Floating add-to-chat button */}
+      {selectionPos && (
+        <button
+          style={{ top: selectionPos.y + window.scrollY + 8, left: selectionPos.x + window.scrollX + 8 }}
+          className="fixed z-50 flex items-center gap-1 px-2 py-1 rounded-md bg-primary text-primary-foreground text-xs shadow hover:bg-primary/90"
+          onClick={() => {
+            setPendingContext((ctx) => [...ctx, selectionText])
+            window.getSelection()?.removeAllRanges()
+            setSelectionPos(null)
+            setShowChat(true)
+          }}
+        >
+          <MessageSquarePlus className="h-3 w-3" /> Add to chat
+        </button>
       )}
 
       {/* Document Viewer */}
-      <div className="flex-1 bg-background overflow-auto">
+      <div
+        className={`flex-1 bg-background overflow-auto transition-all ease-in-out ${showSearch ? 'ml-72' : 'ml-0'}`}
+        style={{
+          marginRight: showChat ? `${chatWidth}px` : '0px',
+          transitionDuration: isResizing ? '0ms' : '300ms'
+        }}
+      >
         {isLoading ? (
           <div className="flex items-center justify-center h-full w-full">
             <div className="text-center">
@@ -662,6 +776,148 @@ export function PDFViewer({ documentUrl, documentName = "Document" }: Props) {
           </div>
         </div>
       )}
+
+      {/* Chat Drawer */}
+      <div
+        className={`absolute right-0 top-0 bottom-0 bg-card border-l border-border z-40 flex flex-col transform transition-all ease-in-out ${showChat ? 'translate-x-0' : 'translate-x-full'}`}
+        style={{
+          width: `${chatWidth}px`,
+          transitionDuration: isResizing ? '0ms' : '300ms'
+        }}
+      >
+        {/* Resizer Handle */}
+        <div
+          className="absolute left-0 top-0 bottom-0 w-1 cursor-ew-resize hover:bg-border"
+          onMouseDown={(e) => { setIsResizing(true); setStartX(e.clientX); setStartWidth(chatWidth) }}
+        />
+        {/* Header */}
+        <div className="h-12 flex items-center justify-between px-4 border-b border-border">
+          {isEditingName ? (
+            <Input
+              size="sm"
+              value={chatName}
+              onChange={(e) => setChatName(e.target.value)}
+              onBlur={() => setIsEditingName(false)}
+              onKeyDown={(e) => e.key === 'Enter' && setIsEditingName(false)}
+              className="font-semibold w-32"
+            />
+          ) : (
+            <span onClick={() => setIsEditingName(true)} className="font-semibold cursor-text">{chatName}</span>
+          )}
+          <div className="flex items-center gap-2">
+            {/* New Chat */}
+            <Button
+              variant="ghost"
+              size="sm"
+              className="h-8 w-8 p-0"
+              onClick={() => {
+                setChatHistory((hist) => [...hist, { name: chatName, messages: chatMessages }])
+                setChatName('New Chat')
+                setChatMessages([])
+                setPendingContext([])
+                setChatInput('')
+                setShowHistory(false)
+                setIsEditingName(false)
+              }}
+            ><Plus className="h-4 w-4" /></Button>
+            {/* History Toggle */}
+            <Button variant="ghost" size="sm" className="h-8 w-8 p-0" onClick={() => setShowHistory((v) => !v)}><Clock className="h-4 w-4" /></Button>
+            {/* Close Chat */}
+            <Button variant="ghost" onClick={() => setShowChat(false)} className="h-8 w-8 p-0"><X className="h-4 w-4" /></Button>
+          </div>
+        </div>
+        {/* Content */}
+        {showHistory ? (
+          <div className="flex-1 overflow-auto p-4 space-y-2">
+            {chatHistory.length === 0 ? (
+              <div className="text-sm text-muted-foreground">No chats yet</div>
+            ) : (
+              chatHistory.map((session, idx) => (
+                <button
+                  key={idx}
+                  onClick={() => {
+                    setChatName(session.name)
+                    setChatMessages(session.messages)
+                    setShowHistory(false)
+                  }}
+                  className="w-full text-left px-4 py-2 hover:bg-muted"
+                >
+                  <div className="font-medium">{session.name}</div>
+                  <div className="text-xs text-muted-foreground truncate">{session.messages[0]?.content || ''}</div>
+                </button>
+              ))
+            )}
+          </div>
+        ) : (
+          <>
+            {/* Messages */}
+            <div className="flex-1 overflow-auto p-4 space-y-4">
+              {chatMessages.map((msg, idx) => (
+                <div
+                  key={idx}
+                  className={cn('rounded-lg px-3 py-2 whitespace-pre-wrap text-sm', msg.role === 'user' ? 'bg-primary/10 self-end' : 'bg-muted')}
+                >
+                  {msg.content}
+                </div>
+              ))}
+            </div>
+          </>
+        )}
+        {/* Input Section */}
+        <div className="border-t border-border p-3 flex flex-col gap-2">
+          {/* Context Chips */}
+          {pendingContext.length > 0 && (
+            <div className="flex items-center gap-1 flex-wrap">
+              {pendingContext.map((ctx, i) => (
+                <div key={i} className="flex items-center bg-muted/10 rounded px-2 py-1 text-xs">
+                  <span className="truncate max-w-xs">{ctx}</span>
+                  <button onClick={() => setPendingContext((c) => c.filter((_, idx) => idx !== i))} className="ml-1 text-destructive">
+                    <X className="h-3 w-3" />
+                  </button>
+                </div>
+              ))}
+            </div>
+          )}
+          {/* Input Row */}
+          <div className="flex items-center gap-2">
+            <AtSign className="h-4 w-4 text-muted-foreground" />
+            <Input
+              value={chatInput}
+              onChange={(e) => setChatInput(e.target.value)}
+              placeholder="Ask anything."
+              className="flex-1 h-9 text-sm"
+              onKeyDown={(e) => {
+                if (e.key === 'Enter' && (chatInput.trim() || pendingContext.length)) {
+                  const content = [...pendingContext, chatInput.trim()].filter(Boolean).join('\n\n')
+                  setChatMessages((msgs) => [...msgs, { role: 'user', content }])
+                  setChatInput('')
+                  setPendingContext([])
+                }
+              }}
+            />
+            <Button size="icon" onClick={() => {
+              if (!chatInput.trim() && pendingContext.length === 0) return
+              const content = [...pendingContext, chatInput.trim()].filter(Boolean).join('\n\n')
+              setChatMessages((msgs) => [...msgs, { role: 'user', content }])
+              setChatInput('')
+              setPendingContext([])
+            }}>
+              <Send className="h-4 w-4" />
+            </Button>
+          </div>
+          {/* Footer Toolbar */}
+          <div className="flex items-center justify-between text-xs text-muted-foreground">
+            <div className="flex items-center gap-1">
+              <Infinity className="h-4 w-4" />
+              Agent <kbd className="px-1 bg-muted rounded">Ctrl+I</kbd>
+            </div>
+            <div className="flex items-center gap-1">
+              <Brain className="h-4 w-4" />
+              gemini
+            </div>
+          </div>
+        </div>
+      </div>
     </div>
   )
 }
