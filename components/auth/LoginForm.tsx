@@ -166,7 +166,7 @@ export function LoginForm() {
     const handleSocialLoginSuccess = (data: SocialLoginResponse) => {
         console.log("Social login success in LoginForm:", data)
         if (data.success && data.token && data.user) {
-            console.log("Setting localStorage and updating auth state...")
+            console.log("Setting localStorage and updating auth state......")
             localStorage.setItem("scholarai_token", data.token)
             localStorage.setItem("scholarai_user", JSON.stringify(data.user))
             updateAuthState(data.token, data.user)
