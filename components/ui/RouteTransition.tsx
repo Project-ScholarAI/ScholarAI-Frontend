@@ -25,6 +25,7 @@ export const useNavigationWithLoading = () => {
     const { showLoading, hideLoading } = useLoading()
 
     const navigateWithLoading = (href: string, loadingMessage?: string) => {
+        console.log("navigateWithLoading: Starting navigation to", href)
         const messages = {
             '/login': 'Preparing login interface...',
             '/signup': 'Initializing registration...',
@@ -33,14 +34,17 @@ export const useNavigationWithLoading = () => {
         }
 
         const defaultMessage = messages[href as keyof typeof messages] || loadingMessage || 'Navigating...'
+        console.log("navigateWithLoading: Using message:", defaultMessage)
 
         showLoading(defaultMessage)
 
         // Add artificial delay for smooth UX (optional)
         setTimeout(() => {
+            console.log("navigateWithLoading: Pushing route to", href)
             router.push(href)
             // Hide loading after navigation completes
             setTimeout(() => {
+                console.log("navigateWithLoading: Hiding loading screen")
                 hideLoading()
             }, 800) // Small delay to ensure page loads
         }, 600) // Short delay for loading animation to show

@@ -129,7 +129,7 @@ export const login = async (formData: {
                 email: formData.email.trim(),
                 password: formData.password.trim(),
             }),
-            credentials: "include", //allows storing refresh token in cookies
+            credentials: "include", // Include cookies for refresh token
         });
 
         // Check if response is JSON
@@ -374,6 +374,7 @@ export const handleGoogleSocialLogin = async (
                     "Content-Type": "application/json",
                     Accept: "application/json",
                 },
+                credentials: "include", // Include cookies for refresh token
                 body: JSON.stringify({ idToken }),
             }
         );
@@ -424,8 +425,19 @@ export const handleGoogleSocialLogin = async (
             localStorage.setItem("scholarai_user", JSON.stringify(user));
         }
 
-        // Note: Refresh token is now handled via HttpOnly cookies by the backend
-        // No need to store refresh token in localStorage for security reasons
+        // Note: Refresh token is handled via HttpOnly cookies by the backend
+        console.log("Google Social Login: Checking for refresh token cookie after login");
+        
+        // Check if refresh token cookie was set
+        const refreshTokenCookie = document.cookie
+            .split('; ')
+            .find(row => row.startsWith('refreshToken='));
+        
+        if (refreshTokenCookie) {
+            console.log("Google Social Login: Refresh token cookie found");
+        } else {
+            console.log("Google Social Login: No refresh token cookie found - this might cause middleware issues");
+        }
 
         return {
             success: true,
@@ -469,6 +481,7 @@ export const handleGitHubAuthCallback = async (
                     "Content-Type": "application/json",
                     Accept: "application/json",
                 },
+                credentials: "include", // Include cookies for refresh token
                 body: JSON.stringify({ code }),
             }
         );
@@ -520,7 +533,18 @@ export const handleGitHubAuthCallback = async (
         }
 
         // Note: Refresh token is handled via HttpOnly cookies by the backend
-        // No need to store refresh token in localStorage for security reasons
+        console.log("GitHub Social Login: Checking for refresh token cookie after login");
+        
+        // Check if refresh token cookie was set
+        const refreshTokenCookie = document.cookie
+            .split('; ')
+            .find(row => row.startsWith('refreshToken='));
+        
+        if (refreshTokenCookie) {
+            console.log("GitHub Social Login: Refresh token cookie found");
+        } else {
+            console.log("GitHub Social Login: No refresh token cookie found - this might cause middleware issues");
+        }
 
         return {
             success: true,
