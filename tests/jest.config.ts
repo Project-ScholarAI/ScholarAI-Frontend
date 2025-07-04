@@ -9,7 +9,11 @@ const config: Config = {
     moduleNameMapper: {
         "^@/(.*)$": "<rootDir>/$1",
     },
-    testPathIgnorePatterns: ["<rootDir>/.next/", "<rootDir>/node_modules/"],
+    testPathIgnorePatterns: [
+        "<rootDir>/.next/",
+        "<rootDir>/node_modules/",
+        "<rootDir>/tests/e2e/"
+    ],
     transform: {
         "^.+\\.(t|j)sx?$": [
             "ts-jest",
