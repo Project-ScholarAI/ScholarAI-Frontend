@@ -95,13 +95,7 @@ export function PDFViewer({ documentUrl, documentName = "Document" }: Props) {
   // Initialize plugins
   const zoomPluginInstance = zoomPlugin()
   const { zoomTo } = zoomPluginInstance
-
-  const pageNavigationPluginInstance = pageNavigationPlugin()
-  const { jumpToPage: jumpToPageAPI } = pageNavigationPluginInstance
-
-  const searchPluginInstance = searchPlugin({
-    keyword: searchKeyword ? [searchKeyword] : [],
-  })
+  const searchPluginInstance = searchPlugin({ keyword: searchKeyword ? [searchKeyword] : [] })
   const { clearHighlights, highlight, jumpToNextMatch, jumpToPreviousMatch } = searchPluginInstance
 
   // Load and process PDF URL
@@ -272,16 +266,6 @@ export function PDFViewer({ documentUrl, documentName = "Document" }: Props) {
   // Enhanced page navigation - cleaned up but keeping working logic
   const jumpToPageNumber = (pageIndex: number) => {
     setCurrentPage(pageIndex)
-
-    // Use the page navigation plugin API if available
-    if (jumpToPageAPI) {
-      try {
-        jumpToPageAPI(pageIndex)
-        return
-      } catch (error) {
-        console.warn('Plugin API failed, using fallback:', error)
-      }
-    }
 
     // Fallback: Direct DOM manipulation
     const pageSelectors = [
@@ -567,7 +551,7 @@ export function PDFViewer({ documentUrl, documentName = "Document" }: Props) {
             <Worker workerUrl="/pdfjs/pdf.worker.min.js">
               <Viewer
                 fileUrl={processedUrl}
-                plugins={[zoomPluginInstance, pageNavigationPluginInstance, searchPluginInstance]}
+                plugins={[zoomPluginInstance, searchPluginInstance]}
                 onDocumentLoad={handleDocumentLoad}
                 onPageChange={handlePageChange}
                 theme="dark"
@@ -624,14 +608,7 @@ export function PDFViewer({ documentUrl, documentName = "Document" }: Props) {
                 min="1"
                 max={totalPages.toString()}
               />
-              <Button
-                variant="ghost"
-                size="sm"
-                onClick={handleJumpToPage}
-                className="h-8 px-2 text-muted-foreground hover:bg-muted hover:text-foreground"
-              >
-                Go
-              </Button>
+              <span className="text-sm text-muted-foreground">/ {totalPages}</span>
             </div>
 
             <Button
