@@ -128,9 +128,13 @@ export default function ProjectLibraryPage({ params }: ProjectLibraryPageProps) 
                 getProjectLibraryStats(projectId)
             ])
 
-            // Set papers from library data
+            // Set papers from library data, ensuring abstractText compatibility
             if (libraryData.data.papers) {
-                setAllPapers(libraryData.data.papers)
+                const processedPapers: Paper[] = (libraryData.data.papers as any[]).map((p: any) => ({
+                    ...p,
+                    abstractText: p.abstractText ?? p.abstract ?? null,
+                }))
+                setAllPapers(processedPapers)
             }
 
             // Set library stats

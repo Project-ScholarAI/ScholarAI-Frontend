@@ -331,9 +331,9 @@ export function PaperDetailModal({ paper, isOpen, onClose, onViewPdf }: PaperDet
                                 </CardHeader>
                                 <CardContent className="pt-0">
                                     {paper.abstractText ? (
-                                        <p className="text-foreground/90 leading-relaxed text-base">
+                                        <div className="prose dark:prose-invert max-w-none whitespace-pre-wrap leading-relaxed">
                                             {paper.abstractText}
-                                        </p>
+                                        </div>
                                     ) : (
                                         <div className="text-center py-12">
                                             <FileText className="h-16 w-16 text-muted-foreground/20 mx-auto mb-4" />

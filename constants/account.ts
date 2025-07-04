@@ -73,9 +73,6 @@ export const ACCOUNT_SECTIONS: AccountSection[] = [
           { value: "CL", label: "Chile" },
           { value: "PE", label: "Peru" },
           { value: "ZA", label: "South Africa" },
-          { value: "ZA", label: "South Africa" },
-          { value: "ZA", label: "South Africa" },
-          { value: "ZA", label: "South Africa" },
           { value: "BD", label: "Bangladesh" },
           // Add more countries as needed
         ]
@@ -177,14 +174,14 @@ export const SOCIAL_LINKS: SocialLink[] = [
   },
   {
     platform: "LinkedIn",
-    url: "linkedinUrl", 
+    url: "linkedinUrl",
     icon: "Briefcase",
     color: "text-blue-600"
   },
   {
     platform: "GitHub",
     url: "githubUrl",
-    icon: "Github", 
+    icon: "Github",
     color: "text-gray-700 dark:text-gray-300"
   },
   {

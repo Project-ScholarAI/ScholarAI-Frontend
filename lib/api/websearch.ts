@@ -56,10 +56,24 @@ export const pollSearchResults = async (
 
 export const pollUntilComplete = async (
     correlationId: string,
-    maxAttempts: number = 30,
-    onProgress?: (attempt: number, status: string) => void
+    {
+        onProgress,
+        pollingIntervalMs = 2000,
+        timeoutMs,
+    }: {
+        onProgress?: (attempt: number, status: string) => void;
+        /** Wait time between polls. Defaults to 2 seconds */
+        pollingIntervalMs?: number;
+        /** Abort search after this many milliseconds. Pass `undefined` or `0` for no timeout (infinite). */
+        timeoutMs?: number;
+    } = {}
 ): Promise<WebSearchResponse> => {
-    for (let attempt = 1; attempt <= maxAttempts; attempt++) {
+    const startTime = Date.now();
+    let attempt = 0;
+
+    while (true) {
+        attempt += 1;
+
         const result = await pollSearchResults(correlationId);
 
         onProgress?.(attempt, result.status);
@@ -70,13 +84,13 @@ export const pollUntilComplete = async (
             throw new Error(`Search failed: ${result.message}`);
         }
 
-        // Wait before next poll (exponential backoff)
-        await new Promise((resolve) =>
-            setTimeout(resolve, Math.min(1000 * attempt, 10000))
-        );
-    }
+        // If a timeout was provided and we've exceeded it, abort.
+        if (timeoutMs && timeoutMs > 0 && Date.now() - startTime > timeoutMs) {
+            throw new Error("Search timeout - taking too long");
+        }
 
-    throw new Error("Search timeout - taking too long");
+        await new Promise((resolve) => setTimeout(resolve, pollingIntervalMs));
+    }
 };
 
 export const getAllSearchHistory = async (): Promise<WebSearchResponse[]> => {
