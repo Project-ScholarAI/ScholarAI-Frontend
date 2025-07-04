@@ -166,11 +166,17 @@ export function LoginForm() {
     const handleSocialLoginSuccess = (data: SocialLoginResponse) => {
         console.log("Social login success in LoginForm:", data)
         if (data.success && data.token && data.user) {
+            console.log("Setting localStorage and updating auth state......")
             localStorage.setItem("scholarai_token", data.token)
             localStorage.setItem("scholarai_user", JSON.stringify(data.user))
             updateAuthState(data.token, data.user)
-            setSocialLoginSuccessMessage("Login successful!..")
-            navigateWithLoading('/interface/home', "Accessing neural network...")
+            setSocialLoginSuccessMessage("Login successful! Redirecting...")
+            
+            // Add a small delay to ensure auth state is updated before navigation
+            setTimeout(() => {
+                console.log("Navigating to /interface/home...")
+                navigateWithLoading('/interface/home', "Accessing neural network...")
+            }, 100)
         } else {
             // Handle cases where social login API might return success:false but was handled as success by SocialLogin
             setErrors({
