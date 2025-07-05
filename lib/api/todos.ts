@@ -64,20 +64,20 @@ export const todosApi = {
       return {
         total: summaryData.total ?? 0,
         by_status: {
-          pending: summaryData.byStatus?.pending ?? 0,
-          in_progress: summaryData.byStatus?.inProgress ?? 0,
-          completed: summaryData.byStatus?.completed ?? 0,
-          cancelled: summaryData.byStatus?.cancelled ?? 0
+          pending: summaryData.by_status?.pending ?? 0,
+          in_progress: summaryData.by_status?.in_progress ?? 0,
+          completed: summaryData.by_status?.completed ?? 0,
+          cancelled: summaryData.by_status?.cancelled ?? 0
         },
         by_priority: {
-          urgent: summaryData.byPriority?.urgent ?? 0,
-          high: summaryData.byPriority?.high ?? 0,
-          medium: summaryData.byPriority?.medium ?? 0,
-          low: summaryData.byPriority?.low ?? 0
+          urgent: summaryData.by_priority?.urgent ?? 0,
+          high: summaryData.by_priority?.high ?? 0,
+          medium: summaryData.by_priority?.medium ?? 0,
+          low: summaryData.by_priority?.low ?? 0
         },
         overdue: summaryData.overdue ?? 0,
-        due_today: summaryData.dueToday ?? 0,
-        due_this_week: summaryData.dueThisWeek ?? 0
+        due_today: summaryData.due_today ?? 0,
+        due_this_week: summaryData.due_this_week ?? 0
       }
     } catch (error) {
       console.error("Get summary error:", error)
