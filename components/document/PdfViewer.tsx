@@ -45,6 +45,9 @@ import '@react-pdf-viewer/core/lib/styles/index.css'
 import { thumbnailPlugin } from '@react-pdf-viewer/thumbnail'
 import '@react-pdf-viewer/thumbnail/lib/styles/index.css'
 
+// Search plugin styles (for highlight colors)
+import '@react-pdf-viewer/search/lib/styles/index.css'
+
 type Props = {
   documentUrl?: string
   documentName?: string
@@ -103,6 +106,10 @@ export function PDFViewer({ documentUrl, documentName = "Document" }: Props) {
   const [pdfDoc, setPdfDoc] = useState<any>(null)
   const [jumpToPage, setJumpToPage] = useState('')
   const [scale, setScale] = useState(1.0)
+  const [visualScale, setVisualScale] = useState(1.0)
+  const [isZooming, setIsZooming] = useState(false)
+  const [zoomOrigin, setZoomOrigin] = useState({ x: '50%', y: '50%' })
+  const zoomTimeoutRef = useRef<NodeJS.Timeout | null>(null)
   const [currentMatchIndex, setCurrentMatchIndex] = useState(0)
   const [totalMatches, setTotalMatches] = useState(0)
   const [showThumbnails, setShowThumbnails] = useState(false)
@@ -133,110 +140,110 @@ export function PDFViewer({ documentUrl, documentName = "Document" }: Props) {
   const { zoomTo } = zoomPluginInstance
 
   const searchPluginInstance = searchPlugin()
-  const { clearHighlights, highlight, jumpToNextMatch, jumpToPreviousMatch } = searchPluginInstance
+  const { clearHighlights, highlight, jumpToNextMatch, jumpToPreviousMatch, jumpToMatch } = searchPluginInstance
 
-// Thumbnail plugin instance
-const thumbnailPluginInstance = thumbnailPlugin()
+  // Thumbnail plugin instance
+  const thumbnailPluginInstance = thumbnailPlugin()
 
-// Add thumbnail overlay component
-const ThumbnailOverlay = () => {
-  const [thumbnails, setThumbnails] = useState<{ pageIndex: number; url: string }[]>([])
-  const [loadingThumbnails, setLoadingThumbnails] = useState(true)
+  // Add thumbnail overlay component
+  const ThumbnailOverlay = () => {
+    const [thumbnails, setThumbnails] = useState<{ pageIndex: number; url: string }[]>([])
+    const [loadingThumbnails, setLoadingThumbnails] = useState(true)
 
-  useEffect(() => {
-    const generateThumbnails = async () => {
-      if (!pdfDoc) return
-      
-      setLoadingThumbnails(true)
-      const thumbs: { pageIndex: number; url: string }[] = []
-      
-      try {
-        for (let i = 1; i <= Math.min(pdfDoc.numPages, 100); i++) {
-          const page = await pdfDoc.getPage(i)
-          const viewport = page.getViewport({ scale: 0.5 })
-          const canvas = document.createElement('canvas')
-          const context = canvas.getContext('2d')
-          
-          if (context) {
-            canvas.height = viewport.height
-            canvas.width = viewport.width
-            
-            await page.render({
-              canvasContext: context,
-              viewport: viewport
-            }).promise
-            
-            thumbs.push({
-              pageIndex: i - 1,
-              url: canvas.toDataURL()
-            })
+    useEffect(() => {
+      const generateThumbnails = async () => {
+        if (!pdfDoc) return
+
+        setLoadingThumbnails(true)
+        const thumbs: { pageIndex: number; url: string }[] = []
+
+        try {
+          for (let i = 1; i <= Math.min(pdfDoc.numPages, 100); i++) {
+            const page = await pdfDoc.getPage(i)
+            const viewport = page.getViewport({ scale: 0.5 })
+            const canvas = document.createElement('canvas')
+            const context = canvas.getContext('2d')
+
+            if (context) {
+              canvas.height = viewport.height
+              canvas.width = viewport.width
+
+              await page.render({
+                canvasContext: context,
+                viewport: viewport
+              }).promise
+
+              thumbs.push({
+                pageIndex: i - 1,
+                url: canvas.toDataURL()
+              })
+            }
           }
+
+          setThumbnails(thumbs)
+        } catch (error) {
+          console.error('Error generating thumbnails:', error)
+        } finally {
+          setLoadingThumbnails(false)
         }
-        
-        setThumbnails(thumbs)
-      } catch (error) {
-        console.error('Error generating thumbnails:', error)
-      } finally {
-        setLoadingThumbnails(false)
       }
-    }
 
-    if (showThumbnails && pdfDoc) {
-      generateThumbnails()
-    }
-  }, [showThumbnails, pdfDoc])
+      if (showThumbnails && pdfDoc) {
+        generateThumbnails()
+      }
+    }, [showThumbnails, pdfDoc])
 
-  return (
-    <div className="fixed inset-0 bg-background z-50 overflow-auto">
-      <div className="sticky top-0 flex items-center justify-between p-4 bg-background border-b border-border z-10">
-        <h2 className="text-lg font-semibold">All Pages</h2>
-        <Button
-          variant="ghost"
-          size="sm"
-          onClick={() => setShowThumbnails(false)}
-          className="h-8 w-8 p-0"
-        >
-          <X className="h-4 w-4" />
-        </Button>
-      </div>
-      <div className="p-8 max-w-[1600px] mx-auto">
-        {loadingThumbnails ? (
-          <div className="flex items-center justify-center py-20">
-            <RefreshCw className="h-8 w-8 animate-spin text-primary" />
-            <span className="ml-2 text-sm text-muted-foreground">Generating thumbnails...</span>
-          </div>
-        ) : (
-          <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-4">
-            {thumbnails.map((thumb) => (
-              <div
-                key={thumb.pageIndex}
-                className="cursor-pointer group"
-                onClick={() => {
-                  jumpToPageNumber(thumb.pageIndex)
-                  setShowThumbnails(false)
-                }}
-              >
-                <div className="relative rounded-lg overflow-hidden bg-card border border-border transition-all duration-200 hover:border-primary hover:shadow-lg hover:-translate-y-1">
-                  <div className="aspect-[1/1.4] bg-muted">
-                    <img 
-                      src={thumb.url} 
-                      alt={`Page ${thumb.pageIndex + 1}`}
-                      className="w-full h-full object-contain"
-                    />
+    return (
+      <div className="fixed inset-0 bg-background z-50 overflow-auto">
+        <div className="sticky top-0 flex items-center justify-between p-4 bg-background border-b border-border z-10">
+          <h2 className="text-lg font-semibold">All Pages</h2>
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={() => setShowThumbnails(false)}
+            className="h-8 w-8 p-0"
+          >
+            <X className="h-4 w-4" />
+          </Button>
+        </div>
+        <div className="p-8 max-w-[1600px] mx-auto">
+          {loadingThumbnails ? (
+            <div className="flex items-center justify-center py-20">
+              <RefreshCw className="h-8 w-8 animate-spin text-primary" />
+              <span className="ml-2 text-sm text-muted-foreground">Generating thumbnails...</span>
+            </div>
+          ) : (
+            <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-4">
+              {thumbnails.map((thumb) => (
+                <div
+                  key={thumb.pageIndex}
+                  className="cursor-pointer group"
+                  onClick={() => {
+                    jumpToPageNumber(thumb.pageIndex)
+                    setShowThumbnails(false)
+                  }}
+                >
+                  <div className="relative rounded-lg overflow-hidden bg-card border border-border transition-all duration-200 hover:border-primary hover:shadow-lg hover:-translate-y-1">
+                    <div className="aspect-[1/1.4] bg-muted">
+                      <img
+                        src={thumb.url}
+                        alt={`Page ${thumb.pageIndex + 1}`}
+                        className="w-full h-full object-contain"
+                      />
+                    </div>
+                    <div className="absolute inset-0 bg-black/0 group-hover:bg-black/10 transition-colors" />
                   </div>
-                  <div className="absolute inset-0 bg-black/0 group-hover:bg-black/10 transition-colors" />
+                  <p className="text-center mt-2 text-sm text-muted-foreground group-hover:text-foreground transition-colors">
+                    Page {thumb.pageIndex + 1}
+                  </p>
                 </div>
-                <p className="text-center mt-2 text-sm text-muted-foreground group-hover:text-foreground transition-colors">
-                  Page {thumb.pageIndex + 1}
-                </p>
-              </div>
-            ))}
-          </div>
-        )}
+              ))}
+            </div>
+          )}
+        </div>
       </div>
-    </div>
-  )
-}
+    )
+  }
 
   // Load and process PDF URL
   useEffect(() => {
@@ -449,6 +456,7 @@ const ThumbnailOverlay = () => {
       }
     }
     setSearchResults(newResults)
+    setTotalMatches(newResults.length)
     setIsSearching(false)
   }
 
@@ -528,20 +536,64 @@ const ThumbnailOverlay = () => {
     }
   }
 
-  // Handle zoom with wheel events
+  // Handle zoom with wheel events - smooth implementation
   const handleWheel = useCallback((e: WheelEvent) => {
     if (e.ctrlKey || e.metaKey) {
       e.preventDefault()
 
-      const delta = e.deltaY > 0 ? -0.1 : 0.1
-      const newScale = Math.max(0.5, Math.min(3.0, scale + delta))
+      // Calculate zoom origin based on mouse position
+      const container = containerRef.current
+      if (container) {
+        const rect = container.getBoundingClientRect()
+        const x = ((e.clientX - rect.left) / rect.width) * 100
+        const y = ((e.clientY - rect.top) / rect.height) * 100
+        setZoomOrigin({ x: `${x}%`, y: `${y}%` })
+      }
 
-      setScale(newScale)
-      if (zoomTo) {
-        zoomTo(newScale)
+      // Calculate zoom delta based on wheel movement with smooth acceleration
+      const sensitivity = 0.002 // Adjust this for zoom sensitivity
+      const delta = -e.deltaY * sensitivity
+      const currentVisualScale = visualScale
+      const zoomFactor = Math.exp(delta) // Exponential zoom for smoother feel
+      const newVisualScale = Math.max(0.5, Math.min(3.0, currentVisualScale * zoomFactor))
+
+      // Apply immediate visual zoom using CSS transform
+      setVisualScale(newVisualScale)
+      setIsZooming(true)
+
+      // Clear any existing timeout
+      if (zoomTimeoutRef.current) {
+        clearTimeout(zoomTimeoutRef.current)
+      }
+
+      // Debounce the actual PDF scale update
+      zoomTimeoutRef.current = setTimeout(() => {
+        setScale(newVisualScale)
+        if (zoomTo) {
+          zoomTo(newVisualScale)
+        }
+        setIsZooming(false)
+        // Reset zoom origin after zoom completes
+        setZoomOrigin({ x: '50%', y: '50%' })
+      }, 150) // Reduced from 300ms for more responsive feel
+    }
+  }, [visualScale, zoomTo])
+
+  // Sync visual scale with actual scale when not zooming
+  useEffect(() => {
+    if (!isZooming) {
+      setVisualScale(scale)
+    }
+  }, [scale, isZooming])
+
+  // Cleanup zoom timeout on unmount
+  useEffect(() => {
+    return () => {
+      if (zoomTimeoutRef.current) {
+        clearTimeout(zoomTimeoutRef.current)
       }
     }
-  }, [scale, zoomTo])
+  }, [])
 
   // Add wheel event listener for zoom
   useEffect(() => {
@@ -552,9 +604,132 @@ const ThumbnailOverlay = () => {
     return () => container.removeEventListener('wheel', handleWheel)
   }, [handleWheel])
 
+  // Handle pinch gestures on touchpad/touchscreen
+  useEffect(() => {
+    const container = containerRef.current
+    if (!container) return
+
+    let initialDistance = 0
+    let initialScale = 1
+
+    const handleTouchStart = (e: TouchEvent) => {
+      if (e.touches.length === 2) {
+        const touch1 = e.touches[0]
+        const touch2 = e.touches[1]
+        initialDistance = Math.hypot(
+          touch2.clientX - touch1.clientX,
+          touch2.clientY - touch1.clientY
+        )
+        initialScale = visualScale
+
+        // Calculate center point for zoom origin
+        const centerX = (touch1.clientX + touch2.clientX) / 2
+        const centerY = (touch1.clientY + touch2.clientY) / 2
+        const rect = container.getBoundingClientRect()
+        const x = ((centerX - rect.left) / rect.width) * 100
+        const y = ((centerY - rect.top) / rect.height) * 100
+        setZoomOrigin({ x: `${x}%`, y: `${y}%` })
+      }
+    }
+
+    const handleTouchMove = (e: TouchEvent) => {
+      if (e.touches.length === 2) {
+        e.preventDefault()
+
+        const touch1 = e.touches[0]
+        const touch2 = e.touches[1]
+        const currentDistance = Math.hypot(
+          touch2.clientX - touch1.clientX,
+          touch2.clientY - touch1.clientY
+        )
+
+        const scaleFactor = currentDistance / initialDistance
+        const newScale = Math.max(0.5, Math.min(3.0, initialScale * scaleFactor))
+
+        setVisualScale(newScale)
+        setIsZooming(true)
+
+        // Clear and set new timeout
+        if (zoomTimeoutRef.current) {
+          clearTimeout(zoomTimeoutRef.current)
+        }
+
+        zoomTimeoutRef.current = setTimeout(() => {
+          setScale(newScale)
+          if (zoomTo) {
+            zoomTo(newScale)
+          }
+          setIsZooming(false)
+          setZoomOrigin({ x: '50%', y: '50%' })
+        }, 150)
+      }
+    }
+
+    container.addEventListener('touchstart', handleTouchStart, { passive: true })
+    container.addEventListener('touchmove', handleTouchMove, { passive: false })
+
+    return () => {
+      container.removeEventListener('touchstart', handleTouchStart)
+      container.removeEventListener('touchmove', handleTouchMove)
+    }
+  }, [visualScale, zoomTo])
+
+  // Handle gesture events (Safari and some other browsers)
+  useEffect(() => {
+    const container = containerRef.current
+    if (!container) return
+
+    let initialScale = 1
+
+    const handleGestureStart = (e: any) => {
+      e.preventDefault()
+      initialScale = visualScale
+    }
+
+    const handleGestureChange = (e: any) => {
+      e.preventDefault()
+
+      const newScale = Math.max(0.5, Math.min(3.0, initialScale * e.scale))
+
+      setVisualScale(newScale)
+      setIsZooming(true)
+
+      // Clear and set new timeout
+      if (zoomTimeoutRef.current) {
+        clearTimeout(zoomTimeoutRef.current)
+      }
+
+      zoomTimeoutRef.current = setTimeout(() => {
+        setScale(newScale)
+        if (zoomTo) {
+          zoomTo(newScale)
+        }
+        setIsZooming(false)
+      }, 150)
+    }
+
+    const handleGestureEnd = (e: any) => {
+      e.preventDefault()
+    }
+
+    // Add gesture event listeners if supported
+    if ('GestureEvent' in window) {
+      container.addEventListener('gesturestart', handleGestureStart, { passive: false })
+      container.addEventListener('gesturechange', handleGestureChange, { passive: false })
+      container.addEventListener('gestureend', handleGestureEnd, { passive: false })
+
+      return () => {
+        container.removeEventListener('gesturestart', handleGestureStart)
+        container.removeEventListener('gesturechange', handleGestureChange)
+        container.removeEventListener('gestureend', handleGestureEnd)
+      }
+    }
+  }, [visualScale, zoomTo])
+
   // Handle zoom
   const handleZoomIn = () => {
-    const newScale = Math.min(scale * 1.2, 3.0)
+    const newScale = Math.min(visualScale * 1.2, 3.0)
+    setVisualScale(newScale)
     setScale(newScale)
     if (zoomTo) {
       zoomTo(newScale)
@@ -562,7 +737,8 @@ const ThumbnailOverlay = () => {
   }
 
   const handleZoomOut = () => {
-    const newScale = Math.max(scale / 1.2, 0.5)
+    const newScale = Math.max(visualScale / 1.2, 0.5)
+    setVisualScale(newScale)
     setScale(newScale)
     if (zoomTo) {
       zoomTo(newScale)
@@ -570,6 +746,7 @@ const ThumbnailOverlay = () => {
   }
 
   const handleFitToPage = () => {
+    setVisualScale(1.0)
     setScale(1.0)
     if (zoomTo) {
       zoomTo(1.0)
@@ -680,7 +857,7 @@ const ThumbnailOverlay = () => {
       </div>
 
       {/* Search Sidebar */}
-      <div className={`absolute left-0 top-0 bottom-0 w-72 bg-card border-r border-border z-40 transform transition-transform duration-300 ease-in-out ${showSearch ? 'translate-x-0' : '-translate-x-full'}`}>
+      <div className={`absolute left-0 top-0 bottom-0 w-72 bg-card border-r border-border z-40 transform transition-transform duration-300 ease-in-out ${showSearch ? 'translate-x-0' : '-translate-x-full'} flex flex-col`}>
         {/* Header with input */}
         <div className="p-3 border-b border-border flex items-center gap-2">
           <Search className="h-4 w-4 text-primary" />
@@ -726,13 +903,28 @@ const ThumbnailOverlay = () => {
               <button
                 key={`${res.pageIndex}-${idx}`}
                 onClick={() => {
+                  // 1) Scroll to the page containing the match
                   jumpToPageNumber(res.pageIndex)
-                  setShowSearch(false)
+
+                  // 2) Highlight and jump to this specific match
+                  highlight([searchKeyword]).then(() => {
+                    jumpToMatch(idx + 1) // jumpToMatch is 1-based
+                    setCurrentMatchIndex(idx)
+                  })
+                  // We intentionally keep the search pane open
                 }}
                 className="w-full text-left px-4 py-2 hover:bg-muted"
               >
                 <div className="text-xs text-muted-foreground">Page {res.pageIndex + 1}</div>
-                <div className="text-sm truncate" dangerouslySetInnerHTML={{ __html: res.snippet.replace(new RegExp(searchKeyword, 'gi'), `<span class='text-primary font-semibold'>${searchKeyword}</span>`) }} />
+                <div
+                  className="text-sm truncate"
+                  dangerouslySetInnerHTML={{
+                    __html: res.snippet.replace(
+                      new RegExp(searchKeyword, 'gi'),
+                      `<span class='text-primary font-semibold'>${searchKeyword}</span>`
+                    )
+                  }}
+                />
               </button>
             ))
           )}
@@ -785,8 +977,14 @@ const ThumbnailOverlay = () => {
         ) : processedUrl ? (
           <div
             ref={containerRef}
-            className="pdf-viewer-container"
-            style={{ touchAction: 'pan-x pan-y pinch-zoom' }}
+            className={cn("pdf-viewer-container", isZooming && "zooming")}
+            style={{
+              touchAction: 'pan-x pan-y pinch-zoom',
+              transform: isZooming ? `scale(${visualScale / scale})` : undefined,
+              transformOrigin: isZooming ? `${zoomOrigin.x} ${zoomOrigin.y}` : 'center center',
+              transition: isZooming ? 'none' : 'transform 0.3s ease-out',
+              willChange: isZooming ? 'transform' : 'auto'
+            }}
           >
             <Worker workerUrl="/pdfjs/pdf.worker.min.js">
               <Viewer
@@ -798,12 +996,14 @@ const ThumbnailOverlay = () => {
                 defaultScale={1.0}
                 scrollMode={ScrollMode.Vertical}
                 renderLoader={(percentages: number) => (
-                  <div className="flex items-center justify-center h-full">
-                    <div className="text-center">
-                      <RefreshCw className="h-8 w-8 animate-spin mx-auto mb-4 text-primary" />
-                      <p className="text-sm text-muted-foreground">Loading PDF... {Math.round(percentages)}%</p>
+                  isZooming ? null : (
+                    <div className="flex items-center justify-center h-full">
+                      <div className="text-center">
+                        <RefreshCw className="h-8 w-8 animate-spin mx-auto mb-4 text-primary" />
+                        <p className="text-sm text-muted-foreground">Loading PDF... {Math.round(percentages)}%</p>
+                      </div>
                     </div>
-                  </div>
+                  )
                 )}
               />
             </Worker>
@@ -878,7 +1078,7 @@ const ThumbnailOverlay = () => {
               onClick={handleFitToPage}
               className="h-8 px-2 text-xs font-medium text-muted-foreground hover:bg-muted hover:text-foreground"
             >
-              {Math.round(scale * 100)}%
+              {Math.round(visualScale * 100)}%
             </Button>
 
             <Button

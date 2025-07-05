@@ -790,4 +790,36 @@
     backdrop-filter: blur(10px);
     -webkit-backdrop-filter: blur(10px);
   }
+
+  /* Smooth zoom behavior for PDF viewer */
+.pdf-viewer-container {
+  transform-style: preserve-3d;
+  backface-visibility: hidden;
+}
+
+/* Optimize rendering during zoom */
+.pdf-viewer-container.zooming {
+  will-change: transform;
+}
+
+/* Prevent text selection during zoom */
+.pdf-viewer-container.zooming * {
+  user-select: none !important;
+  -webkit-user-select: none !important;
+}
+
+/* Disable pointer events on PDF content during zoom to prevent navigation */
+.pdf-viewer-container.zooming .rpv-core__inner-pages {
+  pointer-events: none !important;
+}
+
+/* Ensure smooth rendering */
+.pdf-viewer-container .rpv-core__page-layer {
+  will-change: auto;
+}
+
+.pdf-viewer-container.zooming .rpv-core__page-layer {
+  will-change: transform;
+}
+
 }
