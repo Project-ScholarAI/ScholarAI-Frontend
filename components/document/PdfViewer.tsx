@@ -30,7 +30,8 @@ import {
   Clock,
   MoreHorizontal,
   Infinity,
-  Brain
+  Bot,
+  LayoutGrid
 } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -39,6 +40,10 @@ import { downloadPdfWithAuth } from "@/lib/api/pdf"
 
 // Import CSS for react-pdf-viewer
 import '@react-pdf-viewer/core/lib/styles/index.css'
+
+// Thumbnail plugin for grid view
+import { thumbnailPlugin } from '@react-pdf-viewer/thumbnail'
+import '@react-pdf-viewer/thumbnail/lib/styles/index.css'
 
 type Props = {
   documentUrl?: string
@@ -100,6 +105,7 @@ export function PDFViewer({ documentUrl, documentName = "Document" }: Props) {
   const [scale, setScale] = useState(1.0)
   const [currentMatchIndex, setCurrentMatchIndex] = useState(0)
   const [totalMatches, setTotalMatches] = useState(0)
+  const [showThumbnails, setShowThumbnails] = useState(false)
   const searchInputRef = useRef<HTMLInputElement>(null)
   const containerRef = useRef<HTMLDivElement>(null)
 
@@ -128,6 +134,109 @@ export function PDFViewer({ documentUrl, documentName = "Document" }: Props) {
 
   const searchPluginInstance = searchPlugin()
   const { clearHighlights, highlight, jumpToNextMatch, jumpToPreviousMatch } = searchPluginInstance
+
+// Thumbnail plugin instance
+const thumbnailPluginInstance = thumbnailPlugin()
+
+// Add thumbnail overlay component
+const ThumbnailOverlay = () => {
+  const [thumbnails, setThumbnails] = useState<{ pageIndex: number; url: string }[]>([])
+  const [loadingThumbnails, setLoadingThumbnails] = useState(true)
+
+  useEffect(() => {
+    const generateThumbnails = async () => {
+      if (!pdfDoc) return
+      
+      setLoadingThumbnails(true)
+      const thumbs: { pageIndex: number; url: string }[] = []
+      
+      try {
+        for (let i = 1; i <= Math.min(pdfDoc.numPages, 100); i++) {
+          const page = await pdfDoc.getPage(i)
+          const viewport = page.getViewport({ scale: 0.5 })
+          const canvas = document.createElement('canvas')
+          const context = canvas.getContext('2d')
+          
+          if (context) {
+            canvas.height = viewport.height
+            canvas.width = viewport.width
+            
+            await page.render({
+              canvasContext: context,
+              viewport: viewport
+            }).promise
+            
+            thumbs.push({
+              pageIndex: i - 1,
+              url: canvas.toDataURL()
+            })
+          }
+        }
+        
+        setThumbnails(thumbs)
+      } catch (error) {
+        console.error('Error generating thumbnails:', error)
+      } finally {
+        setLoadingThumbnails(false)
+      }
+    }
+
+    if (showThumbnails && pdfDoc) {
+      generateThumbnails()
+    }
+  }, [showThumbnails, pdfDoc])
+
+  return (
+    <div className="fixed inset-0 bg-background z-50 overflow-auto">
+      <div className="sticky top-0 flex items-center justify-between p-4 bg-background border-b border-border z-10">
+        <h2 className="text-lg font-semibold">All Pages</h2>
+        <Button
+          variant="ghost"
+          size="sm"
+          onClick={() => setShowThumbnails(false)}
+          className="h-8 w-8 p-0"
+        >
+          <X className="h-4 w-4" />
+        </Button>
+      </div>
+      <div className="p-8 max-w-[1600px] mx-auto">
+        {loadingThumbnails ? (
+          <div className="flex items-center justify-center py-20">
+            <RefreshCw className="h-8 w-8 animate-spin text-primary" />
+            <span className="ml-2 text-sm text-muted-foreground">Generating thumbnails...</span>
+          </div>
+        ) : (
+          <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-4">
+            {thumbnails.map((thumb) => (
+              <div
+                key={thumb.pageIndex}
+                className="cursor-pointer group"
+                onClick={() => {
+                  jumpToPageNumber(thumb.pageIndex)
+                  setShowThumbnails(false)
+                }}
+              >
+                <div className="relative rounded-lg overflow-hidden bg-card border border-border transition-all duration-200 hover:border-primary hover:shadow-lg hover:-translate-y-1">
+                  <div className="aspect-[1/1.4] bg-muted">
+                    <img 
+                      src={thumb.url} 
+                      alt={`Page ${thumb.pageIndex + 1}`}
+                      className="w-full h-full object-contain"
+                    />
+                  </div>
+                  <div className="absolute inset-0 bg-black/0 group-hover:bg-black/10 transition-colors" />
+                </div>
+                <p className="text-center mt-2 text-sm text-muted-foreground group-hover:text-foreground transition-colors">
+                  Page {thumb.pageIndex + 1}
+                </p>
+              </div>
+            ))}
+          </div>
+        )}
+      </div>
+    </div>
+  )
+}
 
   // Load and process PDF URL
   useEffect(() => {
@@ -183,13 +292,27 @@ export function PDFViewer({ documentUrl, documentName = "Document" }: Props) {
 
   // Handle PDF download
   const handleDownload = async () => {
-    if (!documentUrl) return
+    const urlForDownload = processedUrl || documentUrl
+    if (!urlForDownload) return
 
     try {
-      await downloadPdfWithAuth(documentUrl, documentName)
+      await downloadPdfWithAuth(urlForDownload, documentName)
     } catch (error) {
       console.error('Download failed:', error)
-      setError(error instanceof Error ? error.message : 'Download failed. Please try again.')
+
+      // Fallback: Attempt to open the PDF in a new tab for download
+      try {
+        const link = document.createElement('a')
+        link.href = urlForDownload
+        link.download = `${documentName}.pdf`
+        link.target = '_blank'
+        document.body.appendChild(link)
+        link.click()
+        document.body.removeChild(link)
+      } catch (fallbackError) {
+        console.error('Fallback download also failed:', fallbackError)
+        setError('Failed to download PDF. Please try again or check your connection.')
+      }
     }
   }
 
@@ -545,10 +668,13 @@ export function PDFViewer({ documentUrl, documentName = "Document" }: Props) {
           <Button
             variant="ghost"
             size="sm"
-            onClick={() => setIsFullscreen(!isFullscreen)}
-            className="h-8 w-8 p-0 text-muted-foreground hover:bg-muted hover:text-foreground"
+            onClick={() => setShowChat(!showChat)}
+            className={cn(
+              "h-8 w-8 p-0",
+              showChat ? "bg-primary/10 text-primary" : "text-muted-foreground hover:bg-muted hover:text-foreground"
+            )}
           >
-            {isFullscreen ? <Minimize className="h-4 w-4" /> : <Maximize className="h-4 w-4" />}
+            <Bot className="h-4 w-4" />
           </Button>
         </div>
       </div>
@@ -665,7 +791,7 @@ export function PDFViewer({ documentUrl, documentName = "Document" }: Props) {
             <Worker workerUrl="/pdfjs/pdf.worker.min.js">
               <Viewer
                 fileUrl={processedUrl}
-                plugins={[zoomPluginInstance, searchPluginInstance]}
+                plugins={[zoomPluginInstance, searchPluginInstance, thumbnailPluginInstance]}
                 onDocumentLoad={handleDocumentLoad}
                 onPageChange={handlePageChange}
                 theme="dark"
@@ -694,9 +820,9 @@ export function PDFViewer({ documentUrl, documentName = "Document" }: Props) {
 
       {/* Footer Controls - Drawboard style */}
       {processedUrl && !isLoading && !error && (
-        <div className="flex items-center justify-between h-14 px-6 bg-card border-t border-border pdf-footer-controls">
-          {/* Page Navigation */}
-          <div className="flex items-center gap-2">
+        <div className="flex items-center h-10 px-4 bg-card border-t border-border pdf-footer-controls">
+          {/* Centered Page Navigation */}
+          <div className="flex-1 flex items-center justify-center gap-2">
             <Button
               variant="ghost"
               size="sm"
@@ -707,23 +833,20 @@ export function PDFViewer({ documentUrl, documentName = "Document" }: Props) {
               <ChevronLeft className="h-4 w-4" />
             </Button>
 
-            <div className="flex items-center gap-2">
-              <Input
-                type="number"
-                value={jumpToPage}
-                onChange={(e) => setJumpToPage(e.target.value)}
-                onKeyDown={(e) => {
-                  if (e.key === 'Enter') {
-                    handleJumpToPage()
-                  }
-                }}
-                className="w-16 h-8 text-center text-sm"
-                placeholder={(currentPage + 1).toString()}
-                min="1"
-                max={totalPages.toString()}
-              />
-              <span className="text-sm text-muted-foreground">/ {totalPages}</span>
-            </div>
+            <Input
+              type="number"
+              value={jumpToPage}
+              onChange={(e) => setJumpToPage(e.target.value)}
+              onKeyDown={(e) => {
+                if (e.key === 'Enter') {
+                  handleJumpToPage()
+                }
+              }}
+              className="w-14 h-8 text-center text-xs"
+              placeholder={(currentPage + 1).toString()}
+              min="1"
+              max={totalPages.toString()}
+            />
 
             <Button
               variant="ghost"
@@ -736,8 +859,9 @@ export function PDFViewer({ documentUrl, documentName = "Document" }: Props) {
             </Button>
           </div>
 
-          {/* Zoom Controls */}
-          <div className="flex items-center gap-2">
+          {/* Zoom Controls - aligned right with separators */}
+          <div className="ml-auto flex items-center gap-2">
+            <div className="border-l border-border h-6 mx-2" />
             <Button
               variant="ghost"
               size="sm"
@@ -752,7 +876,7 @@ export function PDFViewer({ documentUrl, documentName = "Document" }: Props) {
               variant="ghost"
               size="sm"
               onClick={handleFitToPage}
-              className="h-8 px-3 text-sm font-medium text-muted-foreground hover:bg-muted hover:text-foreground"
+              className="h-8 px-2 text-xs font-medium text-muted-foreground hover:bg-muted hover:text-foreground"
             >
               {Math.round(scale * 100)}%
             </Button>
@@ -766,13 +890,17 @@ export function PDFViewer({ documentUrl, documentName = "Document" }: Props) {
             >
               <Plus className="h-4 w-4" />
             </Button>
-          </div>
+            <div className="border-l border-border h-6 mx-2" />
 
-          {/* Page Debug Info */}
-          <div className="flex items-center gap-2">
-            <span className="text-sm text-muted-foreground">
-              Page {currentPage + 1} of {totalPages}
-            </span>
+            {/* View all pages / Thumbnail grid button */}
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={() => setShowThumbnails(true)}
+              className="h-8 w-8 p-0 text-muted-foreground hover:bg-muted hover:text-foreground"
+            >
+              <LayoutGrid className="h-4 w-4" />
+            </Button>
           </div>
         </div>
       )}
@@ -794,7 +922,6 @@ export function PDFViewer({ documentUrl, documentName = "Document" }: Props) {
         <div className="h-12 flex items-center justify-between px-4 border-b border-border">
           {isEditingName ? (
             <Input
-              size="sm"
               value={chatName}
               onChange={(e) => setChatName(e.target.value)}
               onBlur={() => setIsEditingName(false)}
@@ -912,12 +1039,15 @@ export function PDFViewer({ documentUrl, documentName = "Document" }: Props) {
               Agent <kbd className="px-1 bg-muted rounded">Ctrl+I</kbd>
             </div>
             <div className="flex items-center gap-1">
-              <Brain className="h-4 w-4" />
+              <Bot className="h-4 w-4" />
               gemini
             </div>
           </div>
         </div>
       </div>
+
+      {/* Add thumbnail overlay */}
+      {showThumbnails && <ThumbnailOverlay />}
     </div>
   )
 }
