@@ -246,6 +246,9 @@ export function TodoContent() {
         toast.error(result.message || "Failed to update todo status")
       } else {
         toast.success(`Todo marked as ${status.replace('_', ' ')}`)
+        // Refresh summary after status update
+        const summaryResult = await todosApi.getSummary()
+        setSummary(summaryResult)
       }
     } catch (error) {
       console.error("Failed to update todo status:", error)
