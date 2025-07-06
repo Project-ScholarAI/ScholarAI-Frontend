@@ -15,9 +15,11 @@ type ChatContainerProps = {
      * the visibility of the chat interface.
      */
     onClose?: () => void
+    externalContexts?: string[]
+    onExternalContextsCleared?: () => void
 }
 
-export function ChatContainer({ onClose }: ChatContainerProps) {
+export function ChatContainer({ onClose, externalContexts = [], onExternalContextsCleared }: ChatContainerProps) {
     const [messages, setMessages] = useState<Message[]>([])
     const [isLoading, setIsLoading] = useState(false)
     const [chatName, setChatName] = useState("New Chat")
@@ -174,7 +176,7 @@ export function ChatContainer({ onClose }: ChatContainerProps) {
                     <div className="max-w-3xl mx-auto">
                         {messages.length === 0 ? (
                             <div className="mt-8 px-4">
-                                <ChatComposer onSend={handleSend} isLoading={isLoading} />
+                                <ChatComposer onSend={handleSend} isLoading={isLoading} externalContexts={externalContexts} onExternalContextsCleared={onExternalContextsCleared} />
                             </div>
                         ) : (
                             <>
@@ -198,7 +200,7 @@ export function ChatContainer({ onClose }: ChatContainerProps) {
                                 {/* Input at bottom when there are messages */}
                                 <div className="sticky bottom-0 bg-background border-t border-border">
                                     <div className="max-w-3xl mx-auto p-4">
-                                        <ChatComposer onSend={handleSend} isLoading={isLoading} />
+                                        <ChatComposer onSend={handleSend} isLoading={isLoading} externalContexts={externalContexts} onExternalContextsCleared={onExternalContextsCleared} />
                                     </div>
                                 </div>
                             </>

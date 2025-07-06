@@ -8,7 +8,6 @@ import {
   X,
   Plus,
   Infinity,
-  Upload,
   AtSign
 } from "lucide-react"
 import { Button } from "@/components/ui/button"
@@ -18,9 +17,11 @@ import { useDocument } from "@/lib/hooks/useDocument"
 type Props = {
   onSend: (message: string, context?: string[]) => void
   isLoading?: boolean
+  externalContexts?: string[]
+  onExternalContextsCleared?: () => void
 }
 
-export function ChatComposer({ onSend, isLoading = false }: Props) {
+export function ChatComposer({ onSend, isLoading = false, externalContexts = [], onExternalContextsCleared }: Props) {
   const [message, setMessage] = useState("")
   const [isFocused, setIsFocused] = useState(false)
   const [showMentions, setShowMentions] = useState(false)
@@ -32,11 +33,13 @@ export function ChatComposer({ onSend, isLoading = false }: Props) {
   const { documents } = useDocument()
 
   const handleSend = () => {
-    if (message.trim() && !isLoading) {
-      onSend(message, selectedContexts.length > 0 ? selectedContexts : undefined)
+    if ((message.trim() || externalContexts.length > 0) && !isLoading) {
+      const combinedContexts = [...externalContexts, ...selectedContexts]
+      onSend(message, combinedContexts.length > 0 ? combinedContexts : undefined)
       setMessage("")
       setSelectedContexts([])
       setUploadedImage(null)
+      if (onExternalContextsCleared) onExternalContextsCleared()
 
       if (textareaRef.current) {
         textareaRef.current.style.height = "auto"
@@ -137,6 +140,16 @@ export function ChatComposer({ onSend, isLoading = false }: Props) {
           <span>Add Context</span>
         </div>
 
+        {/* External context chips */}
+        {externalContexts.map((ctx, idx) => (
+          <div
+            key={`ext-${idx}`}
+            className="inline-flex items-center gap-1.5 bg-muted/20 text-foreground px-2 py-1 rounded text-xs"
+          >
+            {ctx.length > 40 ? ctx.slice(0, 37) + '…' : ctx}
+          </div>
+        ))}
+
         {selectedContexts.map((docId) => {
           const doc = documents.find((d) => d.id === docId)
           return doc ? (
@@ -213,20 +226,11 @@ export function ChatComposer({ onSend, isLoading = false }: Props) {
             <ImageIcon className="h-4 w-4" />
           </Button>
 
-          {/* Upload */}
-          <Button
-            variant="ghost"
-            size="icon"
-            className="h-8 w-8 text-muted-foreground hover:text-foreground"
-          >
-            <Upload className="h-4 w-4" />
-          </Button>
-
           {/* Send Button */}
           <Button
             size="icon"
             onClick={handleSend}
-            disabled={(!message.trim() && selectedContexts.length === 0) || isLoading}
+            disabled={(!message.trim() && selectedContexts.length === 0 && externalContexts.length === 0) || isLoading}
             className="h-8 w-8 bg-primary text-primary-foreground hover:bg-primary/90 disabled:opacity-50"
           >
             <Send className="h-4 w-4" />

@@ -110,7 +110,7 @@ export function PDFViewer({ documentUrl, documentName = "Document" }: Props) {
   const [showChat, setShowChat] = useState(false)
   const [chatInput, setChatInput] = useState('')
   const [chatMessages, setChatMessages] = useState<{ role: 'user' | 'assistant'; content: string }[]>([])
-  const [pendingContext, setPendingContext] = useState<string[]>([])
+  const [externalContexts, setExternalContexts] = useState<string[]>([])
 
   // Floating add-to-chat button for selected text
   const [selectionText, setSelectionText] = useState('')
@@ -927,7 +927,7 @@ export function PDFViewer({ documentUrl, documentName = "Document" }: Props) {
           style={{ top: selectionPos.y + window.scrollY + 8, left: selectionPos.x + window.scrollX + 8 }}
           className="fixed z-50 flex items-center gap-1 px-2 py-1 rounded-md bg-primary text-primary-foreground text-xs shadow hover:bg-primary/90"
           onClick={() => {
-            setPendingContext((ctx) => [...ctx, selectionText])
+            setExternalContexts((ctx) => [...ctx, selectionText])
             window.getSelection()?.removeAllRanges()
             setSelectionPos(null)
             setShowChat(true)
@@ -1110,7 +1110,7 @@ export function PDFViewer({ documentUrl, documentName = "Document" }: Props) {
         />
 
         {/* Chat Interface */}
-        <ChatContainer onClose={() => setShowChat(false)} />
+        <ChatContainer onClose={() => setShowChat(false)} externalContexts={externalContexts} onExternalContextsCleared={() => setExternalContexts([])} />
       </div>
 
       {/* Add thumbnail overlay */}
