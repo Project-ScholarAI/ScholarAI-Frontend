@@ -86,23 +86,4 @@ export interface TodoForm {
   tags: string[]
   subtasks: { title: string }[]
   reminders: { remind_at: string; message: string }[]
-}
-
-export interface TodoPlan {
-  id: string
-  title: string
-  description: string
-  todo_ids: string[]
-  estimated_total_time: number
-  priority_score: number
-  suggested_order: string[]
-  created_at: string
-  updated_at: string
-}
-
-export interface PlanGenerationRequest {
-  todo_ids: string[]
-  optimization_type: 'time' | 'priority' | 'deadline' | 'balanced'
-  include_breaks: boolean
-  max_daily_hours?: number
 } 

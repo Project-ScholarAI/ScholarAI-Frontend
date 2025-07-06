@@ -11,12 +11,14 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog"
 import { Separator } from "@/components/ui/separator"
 import { Label } from "@/components/ui/label"
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover"
+import { Calendar } from "@/components/ui/calendar"
 import { toast } from "sonner"
 import { 
   CheckSquare, 
   Plus, 
   MoreVertical,
-  Calendar,
+  Calendar as CalendarIcon,
   Clock,
   Tag,
   Filter,
@@ -35,7 +37,6 @@ import {
   Users,
   Search,
   X,
-  CalendarDays,
   Timer,
   BookOpen,
   FileText,
@@ -44,42 +45,31 @@ import {
   ArrowUp,
   ArrowDown,
   ArrowLeft,
-  Calendar as CalendarIcon,
   Eye,
   EyeOff
 } from "lucide-react"
-import { format, formatDistance, isAfter, isBefore, isToday, isThisWeek, parseISO } from "date-fns"
+import { format, formatDistance, isAfter, isBefore, isToday, isThisWeek, parseISO, startOfDay } from "date-fns"
 import { cn } from "@/lib/utils/cn"
 import { todosApi } from "@/lib/api/todos"
-import { Todo, TodoFilters, TodoSortOptions, TodoSummary, TodoForm, TodoPlan } from "@/types/todo"
+import { Todo, TodoFilters, TodoSortOptions, TodoSummary, TodoForm } from "@/types/todo"
 import { STATUS_CONFIG, PRIORITY_CONFIG, CATEGORY_CONFIG, SORT_OPTIONS, MOCK_TODOS } from "@/constants/todos"
 
 export function TodoContent() {
   const [todos, setTodos] = useState<Todo[]>([])
   const [summary, setSummary] = useState<TodoSummary | null>(null)
-  const [plans, setPlans] = useState<TodoPlan[]>([])
   const [isLoading, setIsLoading] = useState(true)
   const [selectedTodos, setSelectedTodos] = useState<string[]>([])
   const [showCompleted, setShowCompleted] = useState(true)
   
-  // Tab management
-  const [activeTab, setActiveTab] = useState<'tasks' | 'plans'>('tasks')
-  
   // Filters and sorting
   const [filters, setFilters] = useState<TodoFilters>({})
   const [sort, setSort] = useState<TodoSortOptions>({ field: 'created_at', direction: 'desc' })
-  const [planSort, setPlanSort] = useState<'created_at' | 'updated_at' | 'priority_score' | 'estimated_total_time'>('created_at')
-  const [planSortDirection, setPlanSortDirection] = useState<'asc' | 'desc'>('desc')
   const [searchQuery, setSearchQuery] = useState('')
   
   // Dialogs
   const [showCreateDialog, setShowCreateDialog] = useState(false)
   const [showEditDialog, setShowEditDialog] = useState(false)
-  const [showPlanDialog, setShowPlanDialog] = useState(false)
-  const [showPlanDetailDialog, setShowPlanDetailDialog] = useState(false)
   const [editingTodo, setEditingTodo] = useState<Todo | null>(null)
-  const [viewingPlan, setViewingPlan] = useState<TodoPlan | null>(null)
-  const [generatedPlan, setGeneratedPlan] = useState<TodoPlan | null>(null)
   
   // Form state
   const [form, setForm] = useState<TodoForm>({
@@ -95,90 +85,80 @@ export function TodoContent() {
     reminders: []
   })
 
-  // Load todos and plans
+  // Add time state for due date
+  const [dueTime, setDueTime] = useState<string>("12:00")
+
+  // Helper function to combine date and time
+  const combineDateAndTime = (date: Date | undefined, time: string): string => {
+    if (!date || isNaN(date.getTime()) || typeof time !== 'string' || !/^\d{2}:\d{2}$/.test(time)) return ""
+    const [hours, minutes] = time.split(":")
+    const newDate = new Date(date)
+    newDate.setHours(parseInt(hours), parseInt(minutes))
+    if (isNaN(newDate.getTime())) return ""
+    // Return ISO string without milliseconds to match backend expectations
+    return newDate.toISOString().replace(/\.\d{3}Z$/, 'Z')
+  }
+
+  // Helper function to format date for display in todo card
+  const formatDateForCard = (dateString: string | undefined): string => {
+    if (!dateString) return ""
+    try {
+      const date = new Date(dateString)
+      return format(date, "MMM d, yyyy 'at' h:mm a") // e.g., "Apr 29, 2024 at 2:00 PM"
+    } catch (error) {
+      return ""
+    }
+  }
+
+  // Load todos and summary
   useEffect(() => {
     const loadData = async () => {
       try {
-        // Using mock data for now - replace with API calls when backend is ready
-        const mockData = MOCK_TODOS
-        setTodos(mockData)
+        setIsLoading(true)
         
-        // Calculate summary from mock data
+        // Load todos and summary from API
+        const [todosResult, summaryResult] = await Promise.all([
+          todosApi.getTodos(filters, sort),
+          todosApi.getSummary()
+        ])
+        
+        console.log("Todos loaded:", todosResult.todos.length)
+        console.log("Summary loaded:", summaryResult)
+        
+        setTodos(todosResult.todos)
+        setSummary(summaryResult)
+      } catch (error) {
+        console.error("Failed to load todos:", error)
+        toast.error("Failed to load todos from server, using mock data")
+        
+        // Fallback to mock data for development
+        setTodos(MOCK_TODOS)
         const mockSummary: TodoSummary = {
-          total: mockData.length,
+          total: MOCK_TODOS.length,
           by_status: {
-            pending: mockData.filter(t => t.status === 'pending').length,
-            in_progress: mockData.filter(t => t.status === 'in_progress').length,
-            completed: mockData.filter(t => t.status === 'completed').length,
-            cancelled: mockData.filter(t => t.status === 'cancelled').length
+            pending: MOCK_TODOS.filter(t => t.status === 'pending').length,
+            in_progress: MOCK_TODOS.filter(t => t.status === 'in_progress').length,
+            completed: MOCK_TODOS.filter(t => t.status === 'completed').length,
+            cancelled: MOCK_TODOS.filter(t => t.status === 'cancelled').length
           },
           by_priority: {
-            urgent: mockData.filter(t => t.priority === 'urgent').length,
-            high: mockData.filter(t => t.priority === 'high').length,
-            medium: mockData.filter(t => t.priority === 'medium').length,
-            low: mockData.filter(t => t.priority === 'low').length
+            urgent: MOCK_TODOS.filter(t => t.priority === 'urgent').length,
+            high: MOCK_TODOS.filter(t => t.priority === 'high').length,
+            medium: MOCK_TODOS.filter(t => t.priority === 'medium').length,
+            low: MOCK_TODOS.filter(t => t.priority === 'low').length
           },
-          overdue: mockData.filter(t => 
+          overdue: MOCK_TODOS.filter(t => 
             t.due_date && t.status !== 'completed' && 
-            isBefore(parseISO(t.due_date), new Date())
+            isBefore(parseISO(t.due_date), startOfDay(new Date()))
           ).length,
-          due_today: mockData.filter(t => 
+          due_today: MOCK_TODOS.filter(t => 
             t.due_date && isToday(parseISO(t.due_date))
           ).length,
-          due_this_week: mockData.filter(t => 
+          due_this_week: MOCK_TODOS.filter(t => 
             t.due_date && isThisWeek(parseISO(t.due_date))
           ).length
         }
-        
         setSummary(mockSummary)
-        
-        // Mock plans with more comprehensive data
-        const mockPlans: TodoPlan[] = [
-          {
-            id: 'plan_1',
-            title: 'Research Sprint Plan',
-            description: 'Optimized plan for completing literature review and analysis tasks efficiently',
-            todo_ids: ['1', '5'],
-            estimated_total_time: 960,
-            priority_score: 85,
-            suggested_order: ['1', '5'],
-            created_at: '2024-01-15T10:00:00Z',
-            updated_at: '2024-01-15T10:00:00Z'
-          },
-          {
-            id: 'plan_2',
-            title: 'Academic Writing Marathon',
-            description: 'Comprehensive plan for completing writing tasks with optimized schedule',
-            todo_ids: ['2', '4'],
-            estimated_total_time: 600,
-            priority_score: 92,
-            suggested_order: ['2', '4'],
-            created_at: '2024-01-14T09:00:00Z',
-            updated_at: '2024-01-14T09:00:00Z'
-          },
-          {
-            id: 'plan_3',
-            title: 'Review & Meeting Focus',
-            description: 'Strategic plan for handling review tasks and team coordination',
-            todo_ids: ['3', '6'],
-            estimated_total_time: 360,
-            priority_score: 75,
-            suggested_order: ['3', '6'],
-            created_at: '2024-01-13T14:00:00Z',
-            updated_at: '2024-01-13T14:00:00Z'
-          }
-        ]
-        setPlans(mockPlans)
-        
-        // Uncomment when API is ready:
-        // const result = await todosApi.getTodos(filters, sort)
-        // setTodos(result.todos)
-        // setSummary(result.summary)
-        // const plansResult = await todosApi.getPlans()
-        // setPlans(plansResult)
-      } catch (error) {
-        console.error("Failed to load todos:", error)
-        toast.error("Failed to load todos")
       } finally {
         setIsLoading(false)
       }
@@ -260,10 +240,16 @@ export function TodoContent() {
         )
       )
       
-      // API call (uncomment when ready)
-      // await todosApi.updateTodoStatus(todoId, status)
-      
-      toast.success(`Todo marked as ${status.replace('_', ' ')}`)
+      // API call
+      const result = await todosApi.updateTodoStatus(todoId, status)
+      if (!result.success) {
+        toast.error(result.message || "Failed to update todo status")
+      } else {
+        toast.success(`Todo marked as ${status.replace('_', ' ')}`)
+        // Refresh summary after status update
+        const summaryResult = await todosApi.getSummary()
+        setSummary(summaryResult)
+      }
     } catch (error) {
       console.error("Failed to update todo status:", error)
       toast.error("Failed to update todo status")
@@ -278,154 +264,62 @@ export function TodoContent() {
         return
       }
       
-      const newTodo: Todo = {
-        id: `todo_${Date.now()}`,
-        title: form.title,
-        description: form.description,
-        status: 'pending',
-        priority: form.priority,
-        category: form.category,
-        due_date: form.due_date || undefined,
-        created_at: new Date().toISOString(),
-        updated_at: new Date().toISOString(),
-        estimated_time: form.estimated_time,
-        tags: form.tags,
-        subtasks: form.subtasks.map((s, i) => ({
-          id: `sub_${Date.now()}_${i}`,
-          title: s.title,
-          completed: false,
-          created_at: new Date().toISOString()
-        })),
-        reminders: []
+      // Debug authentication
+      const token = localStorage.getItem("scholarai_token");
+      const userData = localStorage.getItem("scholarai_user");
+      console.log("Auth token exists:", !!token);
+      console.log("User data:", userData ? JSON.parse(userData) : null);
+      
+      if (!token) {
+        toast.error("You must be logged in to create todos");
+        return;
       }
       
-      setTodos(prev => [newTodo, ...prev])
-      setShowCreateDialog(false)
-      resetForm()
+      console.log("Creating todo with form data:", form);
       
-      // API call (uncomment when ready)
-      // await todosApi.createTodo(form)
+      const result = await todosApi.createTodo(form)
       
-      toast.success("Todo created successfully")
+      if (result.success && result.data) {
+        setTodos(prev => [result.data!, ...prev])
+        setShowCreateDialog(false)
+        resetForm()
+        setDueTime("12:00") // Reset time input
+        
+        // Refresh summary
+        const summaryResult = await todosApi.getSummary()
+        setSummary(summaryResult)
+        
+        toast.success("Todo created successfully")
+      } else {
+        toast.error(result.message || "Failed to create todo")
+      }
     } catch (error) {
       console.error("Failed to create todo:", error)
       toast.error("Failed to create todo")
     }
   }
 
-  // Handle generate plan
-  const handleGeneratePlan = async (optimizationType: string = 'balanced', includeBreaks: boolean = true) => {
+  // Handle delete todo
+  const handleDeleteTodo = async (todoId: string) => {
     try {
-      if (selectedTodos.length === 0) {
-        toast.error("Please select at least one todo to create a plan")
-        return
-      }
+      const result = await todosApi.deleteTodo(todoId)
       
-      // Mock plan generation with more detailed planning
-      const selectedTodoItems = todos.filter(t => selectedTodos.includes(t.id))
-      const totalTime = selectedTodoItems.reduce((sum, t) => sum + (t.estimated_time || 0), 0)
-      
-      // Sort by optimization type
-      let sortedTodos = [...selectedTodos]
-      switch (optimizationType) {
-        case 'priority':
-          sortedTodos.sort((a, b) => {
-            const todoA = todos.find(t => t.id === a)!
-            const todoB = todos.find(t => t.id === b)!
-            return PRIORITY_CONFIG[todoA.priority].order - PRIORITY_CONFIG[todoB.priority].order
-          })
-          break
-        case 'deadline':
-          sortedTodos.sort((a, b) => {
-            const todoA = todos.find(t => t.id === a)!
-            const todoB = todos.find(t => t.id === b)!
-            if (!todoA.due_date) return 1
-            if (!todoB.due_date) return -1
-            return new Date(todoA.due_date).getTime() - new Date(todoB.due_date).getTime()
-          })
-          break
-        case 'time':
-          sortedTodos.sort((a, b) => {
-            const todoA = todos.find(t => t.id === a)!
-            const todoB = todos.find(t => t.id === b)!
-            return (todoA.estimated_time || 0) - (todoB.estimated_time || 0)
-          })
-          break
-        default: // balanced
-          sortedTodos.sort((a, b) => {
-            const todoA = todos.find(t => t.id === a)!
-            const todoB = todos.find(t => t.id === b)!
-            const scoreA = PRIORITY_CONFIG[todoA.priority].order + (todoA.estimated_time || 0) / 60
-            const scoreB = PRIORITY_CONFIG[todoB.priority].order + (todoB.estimated_time || 0) / 60
-            return scoreA - scoreB
-          })
-      }
-      
-      const avgPriority = selectedTodoItems.reduce((sum, t) => sum + PRIORITY_CONFIG[t.priority].order, 0) / selectedTodoItems.length
-      
-      const newPlan: TodoPlan = {
-        id: `plan_${Date.now()}`,
-        title: `${optimizationType.charAt(0).toUpperCase() + optimizationType.slice(1)} Plan - ${selectedTodoItems.length} Tasks`,
-        description: `AI-generated ${optimizationType} optimized plan for selected tasks. Estimated completion time: ${Math.round(totalTime / 60)}h ${totalTime % 60}m${includeBreaks ? ' (includes break time)' : ''}`,
-        todo_ids: selectedTodos,
-        estimated_total_time: includeBreaks ? Math.round(totalTime * 1.2) : totalTime, // Add 20% for breaks
-        priority_score: Math.round((5 - avgPriority) * 20), // Convert to 0-100 scale
-        suggested_order: sortedTodos,
-        created_at: new Date().toISOString(),
-        updated_at: new Date().toISOString()
-      }
-      
-      setGeneratedPlan(newPlan)
-      
-      // Don't close dialog yet - show the generated plan first
-      toast.success("Plan generated successfully! Review and save below.")
-    } catch (error) {
-      console.error("Failed to generate plan:", error)
-      toast.error("Failed to generate plan")
-    }
-  }
-
-  // Handle save generated plan
-  const handleSavePlan = () => {
-    if (generatedPlan) {
-      setPlans(prev => [generatedPlan, ...prev])
-      setSelectedTodos([])
-      setGeneratedPlan(null)
-      setShowPlanDialog(false)
-      setActiveTab('plans') // Switch to plans tab to see saved plan
-      toast.success("Plan saved successfully!")
-    }
-  }
-
-  // Handle delete plan
-  const handleDeletePlan = async (planId: string) => {
-    try {
-      setPlans(prev => prev.filter(p => p.id !== planId))
-      toast.success("Plan deleted successfully")
-    } catch (error) {
-      console.error("Failed to delete plan:", error)
-      toast.error("Failed to delete plan")
-    }
-  }
-
-  // Get sorted plans
-  const sortedPlans = useMemo(() => {
-    return [...plans].sort((a, b) => {
-      let aValue: any = a[planSort]
-      let bValue: any = b[planSort]
-      
-      if (planSort === 'created_at' || planSort === 'updated_at') {
-        aValue = new Date(aValue).getTime()
-        bValue = new Date(bValue).getTime()
-      }
-      
-      if (planSortDirection === 'asc') {
-        return aValue > bValue ? 1 : -1
+      if (result.success) {
+        setTodos(prev => prev.filter(t => t.id !== todoId))
+        
+        // Refresh summary
+        const summaryResult = await todosApi.getSummary()
+        setSummary(summaryResult)
+        
+        toast.success("Todo deleted successfully")
       } else {
-        return aValue < bValue ? 1 : -1
+        toast.error(result.message || "Failed to delete todo")
       }
-    })
-  }, [plans, planSort, planSortDirection])
+    } catch (error) {
+      console.error("Failed to delete todo:", error)
+      toast.error("Failed to delete todo")
+    }
+  }
 
   // Reset form
   const resetForm = () => {
@@ -455,7 +349,7 @@ export function TodoContent() {
   // Check if todo is overdue
   const isOverdue = (todo: Todo) => {
     return todo.due_date && todo.status !== 'completed' && 
-           isBefore(parseISO(todo.due_date), new Date())
+           isBefore(parseISO(todo.due_date), startOfDay(new Date()))
   }
 
   if (isLoading) {
@@ -488,22 +382,12 @@ export function TodoContent() {
                 Todo Management
               </h1>
               <p className="text-muted-foreground mt-1">
-                Organize tasks, track progress, and generate AI-powered plans
+                Organize tasks and track progress efficiently
               </p>
             </div>
             
             {/* Action Buttons */}
             <div className="flex items-center gap-3">
-              <Button
-                variant="outline"
-                onClick={() => setShowPlanDialog(true)}
-                disabled={selectedTodos.length === 0}
-                className="flex items-center gap-2"
-              >
-                <Brain className="h-4 w-4" />
-                Generate Plan ({selectedTodos.length})
-              </Button>
-              
               <Dialog open={showCreateDialog} onOpenChange={setShowCreateDialog}>
                 <DialogTrigger asChild>
                   <Button className="bg-gradient-to-r from-primary to-blue-600 text-white flex items-center gap-2">
@@ -581,27 +465,65 @@ export function TodoContent() {
                       </div>
                     </div>
                     
-                    <div className="grid grid-cols-2 gap-4">
-                      <div>
-                        <Label htmlFor="due_date">Due Date</Label>
+                    <div>
+                      <Label htmlFor="due_date">Due Date & Time</Label>
+                      <div className="flex gap-2">
+                        <Popover>
+                          <PopoverTrigger asChild>
+                            <Button
+                              variant="outline"
+                              className={cn(
+                                "w-full justify-start text-left font-normal",
+                                !form.due_date && "text-muted-foreground"
+                              )}
+                            >
+                              <CalendarIcon className="mr-2 h-4 w-4" />
+                              {form.due_date ? formatDateForCard(form.due_date) : <span>Pick a date</span>}
+                            </Button>
+                          </PopoverTrigger>
+                          <PopoverContent className="w-auto p-0" align="start">
+                            <Calendar
+                              mode="single"
+                              selected={form.due_date ? new Date(form.due_date) : undefined}
+                              onSelect={(date) => {
+                                if (date) {
+                                  setForm(prev => ({
+                                    ...prev,
+                                    due_date: combineDateAndTime(date, dueTime)
+                                  }))
+                                }
+                              }}
+                              initialFocus
+                            />
+                          </PopoverContent>
+                        </Popover>
+
                         <Input
-                          id="due_date"
-                          type="datetime-local"
-                          value={form.due_date}
-                          onChange={(e) => setForm(prev => ({ ...prev, due_date: e.target.value }))}
+                          type="time"
+                          value={dueTime}
+                          onChange={(e) => {
+                            setDueTime(e.target.value)
+                            if (form.due_date) {
+                              setForm(prev => ({
+                                ...prev,
+                                due_date: combineDateAndTime(new Date(form.due_date), e.target.value)
+                              }))
+                            }
+                          }}
+                          className="w-[150px]"
                         />
                       </div>
-                      
-                      <div>
-                        <Label htmlFor="estimated_time">Estimated Time (minutes)</Label>
-                        <Input
-                          id="estimated_time"
-                          type="number"
-                          value={form.estimated_time}
-                          onChange={(e) => setForm(prev => ({ ...prev, estimated_time: parseInt(e.target.value) || 0 }))}
-                          min="0"
-                        />
-                      </div>
+                    </div>
+                    
+                    <div>
+                      <Label htmlFor="estimated_time">Estimated Time (minutes)</Label>
+                      <Input
+                        id="estimated_time"
+                        type="number"
+                        value={form.estimated_time}
+                        onChange={(e) => setForm(prev => ({ ...prev, estimated_time: parseInt(e.target.value) || 0 }))}
+                        min="0"
+                      />
                     </div>
                   </div>
                   
@@ -672,664 +594,531 @@ export function TodoContent() {
             </div>
           )}
 
-          {/* Search & Filters - only show for tasks tab */}
-          {activeTab === 'tasks' && (
-            <div className="flex flex-wrap items-center gap-4">
-              <div className="flex-1 min-w-[300px]">
-                <div className="relative">
-                  <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                  <Input
-                    placeholder="Search todos..."
-                    value={searchQuery}
-                    onChange={(e) => setSearchQuery(e.target.value)}
-                    className="pl-10"
-                  />
-                </div>
+          {/* Search & Filters */}
+          <div className="flex flex-wrap items-center gap-4">
+            <div className="flex-1 min-w-[300px]">
+              <div className="relative">
+                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                <Input
+                  placeholder="Search todos..."
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                  className="pl-10"
+                />
               </div>
-              
-              <Select value={`${sort.field}-${sort.direction}`} onValueChange={(value) => {
-                const option = SORT_OPTIONS.find(o => o.value === value)
-                if (option) {
-                  setSort({ field: option.field, direction: option.direction })
-                }
-              }}>
-                <SelectTrigger className="w-[180px]">
-                  <SortAsc className="h-4 w-4 mr-2" />
-                  <SelectValue placeholder="Sort by..." />
-                </SelectTrigger>
-                <SelectContent>
-                  {SORT_OPTIONS.map(option => (
-                    <SelectItem key={option.value} value={option.value}>
-                      {option.label}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-              
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={() => setShowCompleted(!showCompleted)}
-                className={cn(
-                  !showCompleted && "bg-primary/10 border-primary/20"
-                )}
-              >
-                {showCompleted ? <EyeOff className="h-4 w-4 mr-2" /> : <Eye className="h-4 w-4 mr-2" />}
-                {showCompleted ? 'Hide Completed' : 'Show Completed'}
-              </Button>
             </div>
-          )}
+            
+            <Select value={`${sort.field}-${sort.direction}`} onValueChange={(value) => {
+              const option = SORT_OPTIONS.find(o => o.value === value)
+              if (option) {
+                setSort({ field: option.field, direction: option.direction })
+              }
+            }}>
+              <SelectTrigger className="w-[180px]">
+                <SortAsc className="h-4 w-4 mr-2" />
+                <SelectValue placeholder="Sort by..." />
+              </SelectTrigger>
+              <SelectContent>
+                {SORT_OPTIONS.map(option => (
+                  <SelectItem key={option.value} value={option.value}>
+                    {option.label}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+            
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => setShowCompleted(!showCompleted)}
+              className={cn(
+                !showCompleted && "bg-primary/10 border-primary/20"
+              )}
+            >
+              {showCompleted ? <EyeOff className="h-4 w-4 mr-2" /> : <Eye className="h-4 w-4 mr-2" />}
+              {showCompleted ? 'Hide Completed' : 'Show Completed'}
+            </Button>
+          </div>
         </div>
       </motion.div>
 
       {/* Content Area */}
       <div className="relative z-10 container mx-auto px-6 py-6">
-        <AnimatePresence mode="wait">
-          <motion.div
-            key={activeTab}
-            initial={{ opacity: 0, x: 20 }}
-            animate={{ opacity: 1, x: 0 }}
-            exit={{ opacity: 0, x: -20 }}
-            transition={{ duration: 0.3 }}
-            className="space-y-4"
-          >
-            {activeTab === 'tasks' ? (
-              <>
-                {filteredTodos.length === 0 ? (
-              <Card className="bg-background/40 backdrop-blur-xl border border-primary/10 shadow-lg">
-                <CardContent className="p-12 text-center">
-                  <CheckSquare className="h-16 w-16 text-muted-foreground mx-auto mb-4" />
-                  <h3 className="text-xl font-semibold mb-2">No Todos Found</h3>
-                  <p className="text-muted-foreground">
-                    {searchQuery ? "No todos match your search criteria." : "Create your first todo to get started."}
-                  </p>
-                  {!searchQuery && (
-                    <Button 
-                      className="mt-4" 
-                      onClick={() => setShowCreateDialog(true)}
-                    >
-                      <Plus className="h-4 w-4 mr-2" />
-                      Add Your First Todo
-                    </Button>
-                  )}
-                </CardContent>
-              </Card>
-            ) : (
-              filteredTodos.map((todo) => {
-                const { status, priority, category } = getTodoStyling(todo)
-                const isSelected = selectedTodos.includes(todo.id)
-                const overdue = isOverdue(todo)
-                
-                return (
-                  <motion.div
-                    key={todo.id}
-                    initial={{ opacity: 0, y: 20 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    transition={{ duration: 0.3 }}
+        <div className="space-y-4">
+          {filteredTodos.length === 0 ? (
+            <Card className="bg-background/40 backdrop-blur-xl border border-primary/10 shadow-lg">
+              <CardContent className="p-12 text-center">
+                <CheckSquare className="h-16 w-16 text-muted-foreground mx-auto mb-4" />
+                <h3 className="text-xl font-semibold mb-2">No Todos Found</h3>
+                <p className="text-muted-foreground">
+                  {searchQuery ? "No todos match your search criteria." : "Create your first todo to get started."}
+                </p>
+                {!searchQuery && (
+                  <Button 
+                    className="mt-4" 
+                    onClick={() => setShowCreateDialog(true)}
                   >
-                    <Card 
-                      className={cn(
-                        "bg-background/40 backdrop-blur-xl border shadow-lg cursor-pointer transition-all hover:shadow-xl",
-                        status.borderColor,
-                        overdue && "border-red-500/30 bg-red-500/5",
-                        isSelected && "ring-2 ring-primary/50",
-                        todo.status === 'completed' && "opacity-75"
-                      )}
-                    >
-                      <CardContent className="p-6">
-                        <div className="flex items-start gap-4">
-                          {/* Selection Checkbox */}
-                          <div 
-                            className="mt-1"
-                            onClick={(e) => {
-                              e.stopPropagation()
-                              setSelectedTodos(prev => 
-                                prev.includes(todo.id)
-                                  ? prev.filter(id => id !== todo.id)
-                                  : [...prev, todo.id]
-                              )
-                            }}
+                    <Plus className="h-4 w-4 mr-2" />
+                    Add Your First Todo
+                  </Button>
+                )}
+              </CardContent>
+            </Card>
+          ) : (
+            filteredTodos.map((todo) => {
+              const { status, priority, category } = getTodoStyling(todo)
+              const overdue = isOverdue(todo)
+              
+              return (
+                <motion.div
+                  key={todo.id}
+                  initial={{ opacity: 0, y: 20 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ duration: 0.3 }}
+                >
+                  <Card 
+                    className={cn(
+                      "bg-background/40 backdrop-blur-xl border shadow-lg cursor-pointer transition-all hover:shadow-xl",
+                      status.borderColor,
+                      overdue && "border-red-500/30 bg-red-500/5",
+                      todo.status === 'completed' && "opacity-75"
+                    )}
+                  >
+                    <CardContent className="p-6">
+                      <div className="flex items-start gap-4">
+                        {/* Status Toggle */}
+                        <div 
+                          className="mt-1"
+                          onClick={(e) => {
+                            e.stopPropagation()
+                            const newStatus = todo.status === 'completed' ? 'pending' : 'completed'
+                            handleStatusUpdate(todo.id, newStatus)
+                          }}
+                        >
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            className="h-6 w-6 p-0"
                           >
-                            <div className={cn(
-                              "w-4 h-4 border rounded cursor-pointer transition-colors",
-                              isSelected 
-                                ? "bg-primary border-primary" 
-                                : "border-muted-foreground/30 hover:border-primary/50"
-                            )}>
-                              {isSelected && (
-                                <CheckCircle className="h-3 w-3 text-white m-0.5" />
-                              )}
-                            </div>
-                          </div>
-
-                          {/* Status Toggle */}
-                          <div 
-                            className="mt-1"
-                            onClick={(e) => {
-                              e.stopPropagation()
-                              const newStatus = todo.status === 'completed' ? 'pending' : 'completed'
-                              handleStatusUpdate(todo.id, newStatus)
-                            }}
-                          >
-                            <Button
-                              variant="ghost"
-                              size="sm"
-                              className="h-6 w-6 p-0"
-                            >
-                              {todo.status === 'completed' ? (
-                                <CheckCircle className="h-5 w-5 text-green-500" />
-                              ) : (
-                                <Square className="h-5 w-5 text-muted-foreground hover:text-primary" />
-                              )}
-                            </Button>
-                          </div>
-
-                          {/* Todo Content */}
-                          <div className="flex-1 min-w-0">
-                            <div className="flex items-center justify-between mb-2">
-                              <div className="flex items-center gap-2">
-                                <h4 className={cn(
-                                  "font-semibold",
-                                  todo.status === 'completed' && "line-through text-muted-foreground"
-                                )}>
-                                  {todo.title}
-                                </h4>
-                                {overdue && (
-                                  <Badge variant="destructive" className="text-xs">
-                                    Overdue
-                                  </Badge>
-                                )}
-                              </div>
-                              
-                              <div className="flex items-center gap-2">
-                                <Badge 
-                                  variant="outline" 
-                                  className={cn("text-xs", priority.color, priority.borderColor)}
-                                >
-                                  {priority.label}
-                                </Badge>
-                                <Badge variant="outline" className="text-xs">
-                                  {category.label}
-                                </Badge>
-                              </div>
-                            </div>
-
-                            {todo.description && (
-                              <p className="text-muted-foreground text-sm mb-3">
-                                {todo.description}
-                              </p>
+                            {todo.status === 'completed' ? (
+                              <CheckCircle className="h-5 w-5 text-green-500" />
+                            ) : (
+                              <Square className="h-5 w-5 text-muted-foreground hover:text-primary" />
                             )}
-
-                            {/* Meta Information */}
-                            <div className="flex items-center justify-between text-xs text-muted-foreground">
-                              <div className="flex items-center gap-4">
-                                {todo.due_date && (
-                                  <div className="flex items-center gap-1">
-                                    <Calendar className="h-3 w-3" />
-                                    Due: {format(parseISO(todo.due_date), 'MMM dd, yyyy')}
-                                  </div>
-                                )}
-                                
-                                {todo.estimated_time && (
-                                  <div className="flex items-center gap-1">
-                                    <Clock className="h-3 w-3" />
-                                    {Math.round(todo.estimated_time / 60)}h {todo.estimated_time % 60}m
-                                  </div>
-                                )}
-
-                                {todo.subtasks.length > 0 && (
-                                  <div className="flex items-center gap-1">
-                                    <CheckSquare className="h-3 w-3" />
-                                    {todo.subtasks.filter(s => s.completed).length}/{todo.subtasks.length} subtasks
-                                  </div>
-                                )}
-                              </div>
-                              
-                              <div className="flex items-center gap-2">
-                                <Badge 
-                                  variant="outline" 
-                                  className={cn("text-xs", status.color, status.borderColor)}
-                                >
-                                  {status.label}
-                                </Badge>
-                                <span>
-                                  {formatDistance(parseISO(todo.created_at), new Date(), { addSuffix: true })}
-                                </span>
-                              </div>
-                            </div>
-
-                            {/* Tags */}
-                            {todo.tags.length > 0 && (
-                              <div className="flex items-center gap-1 mt-3">
-                                <Tag className="h-3 w-3 text-muted-foreground" />
-                                {todo.tags.map(tag => (
-                                  <Badge key={tag} variant="secondary" className="text-xs">
-                                    {tag}
-                                  </Badge>
-                                ))}
-                              </div>
-                            )}
-                          </div>
+                          </Button>
                         </div>
-                      </CardContent>
-                    </Card>
-                  </motion.div>
-                )
-              })
-            )}
-              </>
-            ) : (
-              /* Plans View */
-              <>
-                {sortedPlans.length === 0 ? (
-                  <Card className="bg-background/40 backdrop-blur-xl border border-primary/10 shadow-lg">
-                    <CardContent className="p-12 text-center">
-                      <Brain className="h-16 w-16 text-muted-foreground mx-auto mb-4" />
-                      <h3 className="text-xl font-semibold mb-2">No Plans Created</h3>
-                      <p className="text-muted-foreground">
-                        Select some tasks and generate your first AI-powered plan to get started.
-                      </p>
-                      <Button 
-                        className="mt-4" 
-                        onClick={() => setActiveTab('tasks')}
-                      >
-                        <CheckSquare className="h-4 w-4 mr-2" />
-                        Go to Tasks
-                      </Button>
-                    </CardContent>
-                  </Card>
-                ) : (
-                  sortedPlans.map((plan) => (
-                    <motion.div
-                      key={plan.id}
-                      initial={{ opacity: 0, y: 20 }}
-                      animate={{ opacity: 1, y: 0 }}
-                      transition={{ duration: 0.3 }}
-                    >
-                      <Card className="bg-background/40 backdrop-blur-xl border border-primary/10 shadow-lg hover:shadow-xl transition-all">
-                        <CardContent className="p-6">
-                          <div className="flex items-start justify-between mb-4">
-                            <div className="flex-1">
-                              <div className="flex items-center gap-3 mb-2">
-                                <Brain className="h-5 w-5 text-primary" />
-                                <h3 className="text-lg font-semibold">{plan.title}</h3>
-                                <Badge 
-                                  variant="outline" 
-                                  className={cn(
-                                    "text-xs",
-                                    plan.priority_score >= 80 ? "border-red-500/30 text-red-500" :
-                                    plan.priority_score >= 60 ? "border-orange-500/30 text-orange-500" :
-                                    plan.priority_score >= 40 ? "border-yellow-500/30 text-yellow-500" :
-                                    "border-green-500/30 text-green-500"
-                                  )}
-                                >
-                                  {plan.priority_score}% Priority
+
+                        {/* Todo Content */}
+                        <div className="flex-1 min-w-0">
+                          <div className="flex items-center justify-between mb-2">
+                            <div className="flex items-center gap-2">
+                              <h4 className={cn(
+                                "font-semibold",
+                                todo.status === 'completed' && "line-through text-muted-foreground"
+                              )}>
+                                {todo.title}
+                              </h4>
+                              {overdue && (
+                                <Badge variant="destructive" className="text-xs">
+                                  Overdue
                                 </Badge>
-                              </div>
-                              <p className="text-muted-foreground text-sm mb-3">
-                                {plan.description}
-                              </p>
+                              )}
                             </div>
                             
                             <div className="flex items-center gap-2">
+                              {/* Status Dropdown */}
+                              <Select
+                                value={todo.status}
+                                onValueChange={(value: Todo['status']) => handleStatusUpdate(todo.id, value)}
+                              >
+                                <SelectTrigger className="h-7 w-[130px]">
+                                  <SelectValue />
+                                </SelectTrigger>
+                                <SelectContent>
+                                  {Object.entries(STATUS_CONFIG).map(([key, config]) => (
+                                    <SelectItem key={key} value={key}>
+                                      <div className="flex items-center gap-2">
+                                        <config.icon className={cn("h-4 w-4", config.color)} />
+                                        {config.label}
+                                      </div>
+                                    </SelectItem>
+                                  ))}
+                                </SelectContent>
+                              </Select>
+
                               <Button
-                                variant="outline"
+                                variant="ghost"
                                 size="sm"
+                                className="h-7 w-7 p-0"
                                 onClick={() => {
-                                  setViewingPlan(plan)
-                                  setShowPlanDetailDialog(true)
+                                  setEditingTodo(todo)
+                                  setForm({
+                                    title: todo.title,
+                                    description: todo.description || '',
+                                    priority: todo.priority,
+                                    category: todo.category,
+                                    due_date: todo.due_date || '',
+                                    estimated_time: todo.estimated_time || 60,
+                                    related_project_id: todo.related_project_id || '',
+                                    tags: todo.tags,
+                                    subtasks: todo.subtasks.map(s => ({ title: s.title })),
+                                    reminders: []
+                                  })
+                                  setShowEditDialog(true)
                                 }}
                               >
-                                <Eye className="h-4 w-4 mr-1" />
-                                View
+                                <Edit className="h-4 w-4" />
                               </Button>
+
                               <Button
-                                variant="outline"
+                                variant="ghost"
                                 size="sm"
-                                onClick={() => handleDeletePlan(plan.id)}
-                                className="text-red-500 hover:text-red-600"
+                                className="h-7 w-7 p-0 text-red-500 hover:text-red-600"
+                                onClick={() => handleDeleteTodo(todo.id)}
                               >
                                 <Trash2 className="h-4 w-4" />
                               </Button>
+
+                              <Badge 
+                                variant="outline" 
+                                className={cn("text-xs", priority.color, priority.borderColor)}
+                              >
+                                {priority.label}
+                              </Badge>
+                              <Badge variant="outline" className="text-xs">
+                                {category.label}
+                              </Badge>
                             </div>
                           </div>
 
-                          {/* Plan Stats */}
-                          <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-4">
-                            <div className="text-center p-3 bg-primary/5 rounded-lg">
-                              <div className="text-lg font-bold text-primary">{plan.todo_ids.length}</div>
-                              <div className="text-xs text-muted-foreground">Tasks</div>
-                            </div>
-                            <div className="text-center p-3 bg-blue-500/5 rounded-lg">
-                              <div className="text-lg font-bold text-blue-500">
-                                {Math.round(plan.estimated_total_time / 60)}h {plan.estimated_total_time % 60}m
-                              </div>
-                              <div className="text-xs text-muted-foreground">Duration</div>
-                            </div>
-                            <div className="text-center p-3 bg-purple-500/5 rounded-lg">
-                              <div className="text-lg font-bold text-purple-500">
-                                {format(parseISO(plan.created_at), 'MMM dd')}
-                              </div>
-                              <div className="text-xs text-muted-foreground">Created</div>
-                            </div>
-                            <div className="text-center p-3 bg-green-500/5 rounded-lg">
-                              <div className="text-lg font-bold text-green-500">
-                                {plan.suggested_order.length}
-                              </div>
-                              <div className="text-xs text-muted-foreground">Steps</div>
-                            </div>
-                          </div>
+                          {todo.description && (
+                            <p className="text-muted-foreground text-sm mb-3">
+                              {todo.description}
+                            </p>
+                          )}
 
-                          {/* Task Preview */}
-                          <div className="space-y-2">
-                            <h4 className="text-sm font-medium text-muted-foreground mb-2">Included Tasks:</h4>
-                            <div className="flex flex-wrap gap-2">
-                              {plan.todo_ids.slice(0, 3).map(todoId => {
-                                const todo = todos.find(t => t.id === todoId)
-                                if (!todo) return null
-                                return (
-                                  <Badge key={todoId} variant="secondary" className="text-xs">
-                                    {todo.title.length > 30 ? todo.title.substring(0, 30) + '...' : todo.title}
-                                  </Badge>
-                                )
-                              })}
-                              {plan.todo_ids.length > 3 && (
-                                <Badge variant="outline" className="text-xs">
-                                  +{plan.todo_ids.length - 3} more
-                                </Badge>
+                          {/* Subtasks Section */}
+                          {todo.subtasks.length > 0 && (
+                            <div className="mb-3 space-y-2">
+                              <div className="flex items-center justify-between text-sm text-muted-foreground mb-1">
+                                <span>Subtasks</span>
+                                <span>{todo.subtasks.filter(s => s.completed).length}/{todo.subtasks.length}</span>
+                              </div>
+                              <div className="space-y-1.5">
+                                {todo.subtasks.map((subtask) => (
+                                  <div 
+                                    key={subtask.id} 
+                                    className="flex items-center gap-2 text-sm"
+                                    onClick={(e) => {
+                                      e.stopPropagation()
+                                      // Update local state immediately for better UX
+                                      setTodos(prev => prev.map(t => 
+                                        t.id === todo.id 
+                                          ? {
+                                              ...t,
+                                              subtasks: t.subtasks.map(s =>
+                                                s.id === subtask.id
+                                                  ? { ...s, completed: !s.completed }
+                                                  : s
+                                              )
+                                            }
+                                          : t
+                                      ))
+                                      // API call
+                                      todosApi.toggleSubtask(todo.id, subtask.id)
+                                    }}
+                                  >
+                                    <div className={cn(
+                                      "w-4 h-4 border rounded-sm cursor-pointer transition-colors flex items-center justify-center",
+                                      subtask.completed 
+                                        ? "bg-primary border-primary" 
+                                        : "border-muted-foreground/30 hover:border-primary/50"
+                                    )}>
+                                      {subtask.completed && (
+                                        <CheckCircle className="h-3 w-3 text-white" />
+                                      )}
+                                    </div>
+                                    <span className={cn(
+                                      "flex-1 cursor-pointer",
+                                      subtask.completed && "line-through text-muted-foreground"
+                                    )}>
+                                      {subtask.title}
+                                    </span>
+                                  </div>
+                                ))}
+                              </div>
+                            </div>
+                          )}
+
+                          {/* Meta Information */}
+                          <div className="flex items-center justify-between text-xs text-muted-foreground">
+                            <div className="flex items-center gap-4">
+                              {todo.due_date && (
+                                <div className="flex items-center gap-1">
+                                  <Clock className="h-3 w-3" />
+                                  Due {formatDateForCard(todo.due_date)}
+                                </div>
+                              )}
+                              
+                              {todo.estimated_time && (
+                                <div className="flex items-center gap-1">
+                                  <Clock className="h-3 w-3" />
+                                  {Math.round(todo.estimated_time / 60)}h {todo.estimated_time % 60}m
+                                </div>
+                              )}
+
+                              {todo.subtasks.length > 0 && (
+                                <div className="flex items-center gap-1">
+                                  <CheckSquare className="h-3 w-3" />
+                                  {todo.subtasks.filter(s => s.completed).length}/{todo.subtasks.length} subtasks
+                                </div>
                               )}
                             </div>
+                            
+                            <div className="flex items-center gap-2">
+                              <Badge 
+                                variant="outline" 
+                                className={cn("text-xs", status.color, status.borderColor)}
+                              >
+                                {status.label}
+                              </Badge>
+                              <span>
+                                {todo.created_at && !isNaN(new Date(todo.created_at).getTime()) 
+                                  ? formatDistance(parseISO(todo.created_at), new Date(), { addSuffix: true })
+                                  : ""}
+                              </span>
+                            </div>
                           </div>
-                        </CardContent>
-                      </Card>
-                    </motion.div>
-                  ))
-                )}
-              </>
-            )}
-          </motion.div>
-        </AnimatePresence>
+
+                          {/* Tags */}
+                          {todo.tags.length > 0 && (
+                            <div className="flex items-center gap-1 mt-3">
+                              <Tag className="h-3 w-3 text-muted-foreground" />
+                              {todo.tags.map(tag => (
+                                <Badge key={tag} variant="secondary" className="text-xs">
+                                  {tag}
+                                </Badge>
+                              ))}
+                            </div>
+                          )}
+                        </div>
+                      </div>
+                    </CardContent>
+                  </Card>
+                </motion.div>
+              )
+            })
+          )}
+        </div>
       </div>
 
-            {/* Plan Generation Dialog */}
-      <Dialog open={showPlanDialog} onOpenChange={setShowPlanDialog}>
-        <DialogContent className="sm:max-w-[700px] max-h-[80vh] overflow-y-auto">
+      {/* Edit Todo Dialog */}
+      <Dialog open={showEditDialog} onOpenChange={setShowEditDialog}>
+        <DialogContent className="sm:max-w-[500px]">
           <DialogHeader>
-            <DialogTitle className="flex items-center gap-2">
-              <Brain className="h-5 w-5" />
-              Generate AI Plan
-            </DialogTitle>
+            <DialogTitle>Edit Todo</DialogTitle>
             <DialogDescription>
-              Create an optimized plan for {selectedTodos.length} selected tasks
+              Modify the todo details
             </DialogDescription>
           </DialogHeader>
           
-          <div className="space-y-6">
-            <div className="p-4 bg-primary/5 rounded-lg">
-              <h4 className="font-medium mb-2">Selected Tasks:</h4>
-              <div className="space-y-2">
-                {selectedTodos.map(todoId => {
-                  const todo = todos.find(t => t.id === todoId)
-                  if (!todo) return null
-                  return (
-                    <div key={todoId} className="flex items-center justify-between text-sm">
-                      <span className="flex-1">{todo.title}</span>
-                      <div className="flex items-center gap-2">
-                        <Badge variant="outline" className="text-xs">
-                          {PRIORITY_CONFIG[todo.priority].label}
-                        </Badge>
-                        {todo.estimated_time && (
-                          <span className="text-muted-foreground">
-                            {Math.round(todo.estimated_time / 60)}h {todo.estimated_time % 60}m
-                          </span>
-                        )}
-                      </div>
-                    </div>
-                  )
-                })}
+          <div className="space-y-4">
+            <div>
+              <Label htmlFor="title">Title *</Label>
+              <Input
+                id="title"
+                value={form.title}
+                onChange={(e) => setForm(prev => ({ ...prev, title: e.target.value }))}
+                placeholder="Enter todo title"
+              />
+            </div>
+            
+            <div>
+              <Label htmlFor="description">Description</Label>
+              <Textarea
+                id="description"
+                value={form.description}
+                onChange={(e) => setForm(prev => ({ ...prev, description: e.target.value }))}
+                placeholder="Enter todo description"
+                rows={3}
+              />
+            </div>
+            
+            <div className="grid grid-cols-2 gap-4">
+              <div>
+                <Label htmlFor="priority">Priority</Label>
+                <Select value={form.priority} onValueChange={(value: any) => setForm(prev => ({ ...prev, priority: value }))}>
+                  <SelectTrigger>
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {Object.entries(PRIORITY_CONFIG).map(([key, config]) => (
+                      <SelectItem key={key} value={key}>
+                        <div className="flex items-center gap-2">
+                          <config.icon className={cn("h-4 w-4", config.color)} />
+                          {config.label}
+                        </div>
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+              
+              <div>
+                <Label htmlFor="category">Category</Label>
+                <Select value={form.category} onValueChange={(value: any) => setForm(prev => ({ ...prev, category: value }))}>
+                  <SelectTrigger>
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {Object.entries(CATEGORY_CONFIG).map(([key, config]) => (
+                      <SelectItem key={key} value={key}>
+                        <div className="flex items-center gap-2">
+                          <config.icon className={cn("h-4 w-4", config.color)} />
+                          {config.label}
+                        </div>
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
               </div>
             </div>
             
-            {!generatedPlan ? (
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <Label>Optimization Type</Label>
-                  <Select defaultValue="balanced" onValueChange={(value) => {
-                    // Store optimization type for generation
-                    (window as any).optimizationType = value
-                  }}>
-                    <SelectTrigger>
-                      <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="time">Minimize Time</SelectItem>
-                      <SelectItem value="priority">Priority First</SelectItem>
-                      <SelectItem value="deadline">Deadline Focused</SelectItem>
-                      <SelectItem value="balanced">Balanced</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </div>
-                
-                <div>
-                  <Label>Include Breaks</Label>
-                  <Select defaultValue="true" onValueChange={(value) => {
-                    // Store breaks option for generation
-                    (window as any).includeBreaks = value === 'true'
-                  }}>
-                    <SelectTrigger>
-                      <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="true">Yes</SelectItem>
-                      <SelectItem value="false">No</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </div>
+            <div>
+              <Label htmlFor="due_date">Due Date & Time</Label>
+              <div className="flex gap-2">
+                <Popover>
+                  <PopoverTrigger asChild>
+                    <Button
+                      variant="outline"
+                      className={cn(
+                        "w-full justify-start text-left font-normal",
+                        !form.due_date && "text-muted-foreground"
+                      )}
+                    >
+                      <CalendarIcon className="mr-2 h-4 w-4" />
+                      {form.due_date ? formatDateForCard(form.due_date) : <span>Pick a date</span>}
+                    </Button>
+                  </PopoverTrigger>
+                  <PopoverContent className="w-auto p-0" align="start">
+                    <Calendar
+                      mode="single"
+                      selected={form.due_date ? new Date(form.due_date) : undefined}
+                      onSelect={(date) => {
+                        if (date) {
+                          setForm(prev => ({
+                            ...prev,
+                            due_date: combineDateAndTime(date, dueTime)
+                          }))
+                        }
+                      }}
+                      initialFocus
+                    />
+                  </PopoverContent>
+                </Popover>
+
+                <Input
+                  type="time"
+                  value={dueTime}
+                  onChange={(e) => {
+                    setDueTime(e.target.value)
+                    if (form.due_date) {
+                      setForm(prev => ({
+                        ...prev,
+                        due_date: combineDateAndTime(new Date(form.due_date), e.target.value)
+                      }))
+                    }
+                  }}
+                  className="w-[150px]"
+                />
               </div>
-            ) : (
-              /* Generated Plan Preview */
-              <div className="space-y-4">
-                <div className="flex items-center gap-2 text-green-600">
-                  <CheckCircle className="h-5 w-5" />
-                  <span className="font-medium">Plan Generated Successfully!</span>
-                </div>
-                
-                <Card className="bg-gradient-to-r from-primary/5 to-blue-500/5 border border-primary/20">
-                  <CardContent className="p-4">
-                    <div className="flex items-center gap-3 mb-3">
-                      <Brain className="h-5 w-5 text-primary" />
-                      <h3 className="font-semibold">{generatedPlan.title}</h3>
-                      <Badge variant="outline" className="text-xs">
-                        {generatedPlan.priority_score}% Priority Score
-                      </Badge>
-                    </div>
-                    
-                    <p className="text-sm text-muted-foreground mb-4">
-                      {generatedPlan.description}
-                    </p>
-                    
-                    <div className="grid grid-cols-3 gap-4 mb-4">
-                      <div className="text-center p-2 bg-background/50 rounded">
-                        <div className="font-bold text-primary">{generatedPlan.todo_ids.length}</div>
-                        <div className="text-xs text-muted-foreground">Tasks</div>
-                      </div>
-                      <div className="text-center p-2 bg-background/50 rounded">
-                        <div className="font-bold text-blue-500">
-                          {Math.round(generatedPlan.estimated_total_time / 60)}h {generatedPlan.estimated_total_time % 60}m
-                        </div>
-                        <div className="text-xs text-muted-foreground">Duration</div>
-                      </div>
-                      <div className="text-center p-2 bg-background/50 rounded">
-                        <div className="font-bold text-green-500">{generatedPlan.suggested_order.length}</div>
-                        <div className="text-xs text-muted-foreground">Steps</div>
-                      </div>
-                    </div>
-                    
-                    <div>
-                      <h4 className="text-sm font-medium mb-2">Suggested Order:</h4>
-                      <div className="space-y-2">
-                        {generatedPlan.suggested_order.map((todoId, index) => {
-                          const todo = todos.find(t => t.id === todoId)
-                          if (!todo) return null
-                          return (
-                            <div key={todoId} className="flex items-center gap-3 text-sm">
-                              <div className="w-6 h-6 bg-primary/20 rounded-full flex items-center justify-center text-xs font-medium">
-                                {index + 1}
-                              </div>
-                              <span className="flex-1">{todo.title}</span>
-                              <Badge variant="outline" className="text-xs">
-                                {PRIORITY_CONFIG[todo.priority].label}
-                              </Badge>
-                            </div>
-                          )
-                        })}
-                      </div>
-                    </div>
-                  </CardContent>
-                </Card>
+            </div>
+            
+            <div>
+              <Label htmlFor="estimated_time">Estimated Time (minutes)</Label>
+              <Input
+                id="estimated_time"
+                type="number"
+                value={form.estimated_time}
+                onChange={(e) => setForm(prev => ({ ...prev, estimated_time: parseInt(e.target.value) || 0 }))}
+                min="0"
+              />
+            </div>
+
+            {/* Subtasks Section */}
+            <div>
+              <Label className="flex items-center justify-between">
+                <span>Subtasks</span>
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  onClick={() => setForm(prev => ({
+                    ...prev,
+                    subtasks: [...prev.subtasks, { title: '' }]
+                  }))}
+                >
+                  <Plus className="h-4 w-4 mr-1" />
+                  Add Subtask
+                </Button>
+              </Label>
+              <div className="space-y-2 mt-2">
+                {form.subtasks.map((subtask, index) => (
+                  <div key={index} className="flex items-center gap-2">
+                    <Input
+                      value={subtask.title}
+                      onChange={(e) => {
+                        const newSubtasks = [...form.subtasks]
+                        newSubtasks[index].title = e.target.value
+                        setForm(prev => ({ ...prev, subtasks: newSubtasks }))
+                      }}
+                      placeholder="Subtask title"
+                    />
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      size="sm"
+                      className="h-10 w-10 p-0 text-red-500 hover:text-red-600"
+                      onClick={() => {
+                        const newSubtasks = form.subtasks.filter((_, i) => i !== index)
+                        setForm(prev => ({ ...prev, subtasks: newSubtasks }))
+                      }}
+                    >
+                      <X className="h-4 w-4" />
+                    </Button>
+                  </div>
+                ))}
               </div>
-            )}
+            </div>
           </div>
           
           <DialogFooter>
             <Button variant="outline" onClick={() => {
-              setShowPlanDialog(false)
-              setGeneratedPlan(null)
+              setShowEditDialog(false)
+              resetForm()
             }}>
-              {generatedPlan ? 'Close' : 'Cancel'}
+              Cancel
             </Button>
-            {!generatedPlan ? (
-              <Button onClick={() => handleGeneratePlan(
-                (window as any).optimizationType || 'balanced',
-                (window as any).includeBreaks !== false
-              )}>
-                <Sparkles className="h-4 w-4 mr-2" />
-                Generate Plan
-              </Button>
-            ) : (
-              <Button onClick={handleSavePlan} className="bg-green-600 hover:bg-green-700">
-                <CheckCircle className="h-4 w-4 mr-2" />
-                Save Plan
-              </Button>
-            )}
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
-
-      {/* Plan Detail Dialog */}
-      <Dialog open={showPlanDetailDialog} onOpenChange={setShowPlanDetailDialog}>
-        <DialogContent className="sm:max-w-[700px] max-h-[80vh] overflow-y-auto">
-          <DialogHeader>
-            <DialogTitle className="flex items-center gap-2">
-              <Brain className="h-5 w-5" />
-              Plan Details
-            </DialogTitle>
-            <DialogDescription>
-              {viewingPlan?.description}
-            </DialogDescription>
-          </DialogHeader>
-          
-          {viewingPlan && (
-            <div className="space-y-6">
-              <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-                <div className="text-center p-3 bg-primary/5 rounded-lg">
-                  <div className="text-xl font-bold text-primary">{viewingPlan.todo_ids.length}</div>
-                  <div className="text-xs text-muted-foreground">Tasks</div>
-                </div>
-                <div className="text-center p-3 bg-blue-500/5 rounded-lg">
-                  <div className="text-xl font-bold text-blue-500">
-                    {Math.round(viewingPlan.estimated_total_time / 60)}h {viewingPlan.estimated_total_time % 60}m
-                  </div>
-                  <div className="text-xs text-muted-foreground">Duration</div>
-                </div>
-                <div className="text-center p-3 bg-purple-500/5 rounded-lg">
-                  <div className="text-xl font-bold text-purple-500">
-                    {viewingPlan.priority_score}%
-                  </div>
-                  <div className="text-xs text-muted-foreground">Priority</div>
-                </div>
-                <div className="text-center p-3 bg-green-500/5 rounded-lg">
-                  <div className="text-xl font-bold text-green-500">
-                    {format(parseISO(viewingPlan.created_at), 'MMM dd')}
-                  </div>
-                  <div className="text-xs text-muted-foreground">Created</div>
-                </div>
-              </div>
-
-              <div>
-                <h3 className="text-lg font-semibold mb-4">Execution Plan</h3>
-                <div className="space-y-3">
-                  {viewingPlan.suggested_order.map((todoId, index) => {
-                    const todo = todos.find(t => t.id === todoId)
-                    if (!todo) return null
-                    
-                    const { status, priority, category } = getTodoStyling(todo)
-                    
-                    return (
-                      <Card key={todoId} className="bg-background/40 border border-primary/10">
-                        <CardContent className="p-4">
-                          <div className="flex items-center gap-4">
-                            <div className="w-8 h-8 bg-gradient-to-r from-primary to-blue-500 rounded-full flex items-center justify-center text-white font-medium">
-                              {index + 1}
-                            </div>
-                            
-                            <div className="flex-1">
-                              <div className="flex items-center gap-2 mb-1">
-                                <h4 className="font-medium">{todo.title}</h4>
-                                <Badge variant="outline" className={cn("text-xs", priority.color)}>
-                                  {priority.label}
-                                </Badge>
-                                <Badge variant="outline" className="text-xs">
-                                  {category.label}
-                                </Badge>
-                              </div>
-                              
-                              {todo.description && (
-                                <p className="text-sm text-muted-foreground mb-2">
-                                  {todo.description}
-                                </p>
-                              )}
-                              
-                              <div className="flex items-center gap-4 text-xs text-muted-foreground">
-                                {todo.estimated_time && (
-                                  <div className="flex items-center gap-1">
-                                    <Clock className="h-3 w-3" />
-                                    {Math.round(todo.estimated_time / 60)}h {todo.estimated_time % 60}m
-                                  </div>
-                                )}
-                                
-                                {todo.due_date && (
-                                  <div className="flex items-center gap-1">
-                                    <Calendar className="h-3 w-3" />
-                                    Due: {format(parseISO(todo.due_date), 'MMM dd')}
-                                  </div>
-                                )}
-                                
-                                <Badge variant="outline" className={cn("text-xs", status.color)}>
-                                  {status.label}
-                                </Badge>
-                              </div>
-                            </div>
-                          </div>
-                        </CardContent>
-                      </Card>
-                    )
-                  })}
-                </div>
-              </div>
-            </div>
-          )}
-          
-          <DialogFooter>
-            <Button variant="outline" onClick={() => setShowPlanDetailDialog(false)}>
-              Close
-            </Button>
-            <Button onClick={() => {
-              setShowPlanDetailDialog(false)
-              setActiveTab('tasks')
+            <Button onClick={async () => {
+              if (editingTodo) {
+                const result = await todosApi.updateTodo(editingTodo.id, form)
+                
+                if (result.success && result.data) {
+                  // Update local state
+                  setTodos(prev => prev.map(todo => 
+                    todo.id === editingTodo.id ? result.data! : todo
+                  ))
+                  
+                  setShowEditDialog(false)
+                  resetForm()
+                  setEditingTodo(null)
+                  toast.success("Todo updated successfully")
+                } else {
+                  toast.error(result.message || "Failed to update todo")
+                }
+              }
             }}>
-              <ArrowLeft className="h-4 w-4 mr-2" />
-              Back to Tasks
+              Save Changes
             </Button>
           </DialogFooter>
         </DialogContent>
