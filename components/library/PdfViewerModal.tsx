@@ -45,9 +45,9 @@ export function PdfViewerModal({ paper, isOpen, onClose }: PdfViewerModalProps) 
                     }`}
             >
                 {/* Header */}
-                <div className="flex items-center justify-between p-4 border-b border-border bg-muted/20">
+                <div className="flex items-center justify-between px-3 py-2 border-b border-border bg-muted/20">
                     <div className="flex-1 min-w-0">
-                        <h2 className="text-lg font-semibold line-clamp-1 pr-4">
+                        <h2 className="text-base font-semibold line-clamp-1 pr-4">
                             {paper.title}
                         </h2>
                         <p className="text-sm text-muted-foreground">

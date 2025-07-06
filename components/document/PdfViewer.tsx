@@ -12,24 +12,13 @@ import {
   FileText,
   AlertCircle,
   RefreshCw,
-  Maximize,
-  Minimize,
   Search,
   Plus,
   Minus,
   ChevronLeft,
   ChevronRight,
   X,
-  ChevronUp,
-  ChevronDown,
-  Hash,
-  Send,
   MessageSquarePlus,
-  AtSign,
-  Cloud,
-  Clock,
-  MoreHorizontal,
-  Infinity,
   Bot,
   LayoutGrid
 } from "lucide-react"
@@ -37,6 +26,7 @@ import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { cn } from "@/lib/utils/cn"
 import { downloadPdfWithAuth } from "@/lib/api/pdf"
+import { ChatContainer } from "@/components/chat/ChatContainer"
 
 // Import CSS for react-pdf-viewer
 import '@react-pdf-viewer/core/lib/styles/index.css'
@@ -816,7 +806,7 @@ export function PDFViewer({ documentUrl, documentName = "Document" }: Props) {
   return (
     <div className="relative flex flex-col h-full bg-background">
       {/* Compact Header */}
-      <div className="flex items-center justify-end h-12 px-4 bg-card border-b border-border">
+      <div className="flex items-center justify-end h-10 px-2 bg-card border-b border-border">
         <div className="flex items-center gap-2">
           <Button
             variant="ghost"
@@ -996,7 +986,7 @@ export function PDFViewer({ documentUrl, documentName = "Document" }: Props) {
                 defaultScale={1.0}
                 scrollMode={ScrollMode.Vertical}
                 renderLoader={(percentages: number) => (
-                  isZooming ? null : (
+                  isZooming ? <></> : (
                     <div className="flex items-center justify-center h-full">
                       <div className="text-center">
                         <RefreshCw className="h-8 w-8 animate-spin mx-auto mb-4 text-primary" />
@@ -1107,7 +1097,7 @@ export function PDFViewer({ documentUrl, documentName = "Document" }: Props) {
 
       {/* Chat Drawer */}
       <div
-        className={`absolute right-0 top-0 bottom-0 bg-card border-l border-border z-40 flex flex-col transform transition-all ease-in-out ${showChat ? 'translate-x-0' : 'translate-x-full'}`}
+        className={`absolute right-0 top-0 bottom-0 bg-card border-l border-border z-40 transform transition-all ease-in-out ${showChat ? 'translate-x-0' : 'translate-x-full'}`}
         style={{
           width: `${chatWidth}px`,
           transitionDuration: isResizing ? '0ms' : '300ms'
@@ -1118,132 +1108,9 @@ export function PDFViewer({ documentUrl, documentName = "Document" }: Props) {
           className="absolute left-0 top-0 bottom-0 w-1 cursor-ew-resize hover:bg-border"
           onMouseDown={(e) => { setIsResizing(true); setStartX(e.clientX); setStartWidth(chatWidth) }}
         />
-        {/* Header */}
-        <div className="h-12 flex items-center justify-between px-4 border-b border-border">
-          {isEditingName ? (
-            <Input
-              value={chatName}
-              onChange={(e) => setChatName(e.target.value)}
-              onBlur={() => setIsEditingName(false)}
-              onKeyDown={(e) => e.key === 'Enter' && setIsEditingName(false)}
-              className="font-semibold w-32"
-            />
-          ) : (
-            <span onClick={() => setIsEditingName(true)} className="font-semibold cursor-text">{chatName}</span>
-          )}
-          <div className="flex items-center gap-2">
-            {/* New Chat */}
-            <Button
-              variant="ghost"
-              size="sm"
-              className="h-8 w-8 p-0"
-              onClick={() => {
-                setChatHistory((hist) => [...hist, { name: chatName, messages: chatMessages }])
-                setChatName('New Chat')
-                setChatMessages([])
-                setPendingContext([])
-                setChatInput('')
-                setShowHistory(false)
-                setIsEditingName(false)
-              }}
-            ><Plus className="h-4 w-4" /></Button>
-            {/* History Toggle */}
-            <Button variant="ghost" size="sm" className="h-8 w-8 p-0" onClick={() => setShowHistory((v) => !v)}><Clock className="h-4 w-4" /></Button>
-            {/* Close Chat */}
-            <Button variant="ghost" onClick={() => setShowChat(false)} className="h-8 w-8 p-0"><X className="h-4 w-4" /></Button>
-          </div>
-        </div>
-        {/* Content */}
-        {showHistory ? (
-          <div className="flex-1 overflow-auto p-4 space-y-2">
-            {chatHistory.length === 0 ? (
-              <div className="text-sm text-muted-foreground">No chats yet</div>
-            ) : (
-              chatHistory.map((session, idx) => (
-                <button
-                  key={idx}
-                  onClick={() => {
-                    setChatName(session.name)
-                    setChatMessages(session.messages)
-                    setShowHistory(false)
-                  }}
-                  className="w-full text-left px-4 py-2 hover:bg-muted"
-                >
-                  <div className="font-medium">{session.name}</div>
-                  <div className="text-xs text-muted-foreground truncate">{session.messages[0]?.content || ''}</div>
-                </button>
-              ))
-            )}
-          </div>
-        ) : (
-          <>
-            {/* Messages */}
-            <div className="flex-1 overflow-auto p-4 space-y-4">
-              {chatMessages.map((msg, idx) => (
-                <div
-                  key={idx}
-                  className={cn('rounded-lg px-3 py-2 whitespace-pre-wrap text-sm', msg.role === 'user' ? 'bg-primary/10 self-end' : 'bg-muted')}
-                >
-                  {msg.content}
-                </div>
-              ))}
-            </div>
-          </>
-        )}
-        {/* Input Section */}
-        <div className="border-t border-border p-3 flex flex-col gap-2">
-          {/* Context Chips */}
-          {pendingContext.length > 0 && (
-            <div className="flex items-center gap-1 flex-wrap">
-              {pendingContext.map((ctx, i) => (
-                <div key={i} className="flex items-center bg-muted/10 rounded px-2 py-1 text-xs">
-                  <span className="truncate max-w-xs">{ctx}</span>
-                  <button onClick={() => setPendingContext((c) => c.filter((_, idx) => idx !== i))} className="ml-1 text-destructive">
-                    <X className="h-3 w-3" />
-                  </button>
-                </div>
-              ))}
-            </div>
-          )}
-          {/* Input Row */}
-          <div className="flex items-center gap-2">
-            <AtSign className="h-4 w-4 text-muted-foreground" />
-            <Input
-              value={chatInput}
-              onChange={(e) => setChatInput(e.target.value)}
-              placeholder="Ask anything."
-              className="flex-1 h-9 text-sm"
-              onKeyDown={(e) => {
-                if (e.key === 'Enter' && (chatInput.trim() || pendingContext.length)) {
-                  const content = [...pendingContext, chatInput.trim()].filter(Boolean).join('\n\n')
-                  setChatMessages((msgs) => [...msgs, { role: 'user', content }])
-                  setChatInput('')
-                  setPendingContext([])
-                }
-              }}
-            />
-            <Button size="icon" onClick={() => {
-              if (!chatInput.trim() && pendingContext.length === 0) return
-              const content = [...pendingContext, chatInput.trim()].filter(Boolean).join('\n\n')
-              setChatMessages((msgs) => [...msgs, { role: 'user', content }])
-              setChatInput('')
-              setPendingContext([])
-            }}>
-              <Send className="h-4 w-4" />
-            </Button>
-          </div>
-          {/* Footer Toolbar */}
-          <div className="flex items-center justify-between text-xs text-muted-foreground">
-            <div className="flex items-center gap-1">
-              <Infinity className="h-4 w-4" />
-              Agent <kbd className="px-1 bg-muted rounded">Ctrl+I</kbd>
-            </div>
-            <div className="flex items-center gap-1">
-              <Bot className="h-4 w-4" />
-              gemini
-            </div>
-          </div>
-        </div>
+
+        {/* Chat Interface */}
+        <ChatContainer onClose={() => setShowChat(false)} />
       </div>
 
       {/* Add thumbnail overlay */}
