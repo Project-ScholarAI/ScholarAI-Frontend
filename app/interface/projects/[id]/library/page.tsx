@@ -536,7 +536,7 @@ export default function ProjectLibraryPage({ params }: ProjectLibraryPageProps) 
 
                                                             {!webSearch.isSearching && filteredAndSortedPapers.map((paper, index) => (
                                                                 <StreamingPaperCard
-                                                                    key={`${paper.title}-${index}`}
+                                                                    key={paper.id}
                                                                     paper={paper}
                                                                     index={index}
                                                                     onSelect={handlePaperSelect}
@@ -551,7 +551,7 @@ export default function ProjectLibraryPage({ params }: ProjectLibraryPageProps) 
                                                         <AnimatePresence mode="popLayout">
                                                             {filteredAndSortedPapers.map((paper, index) => (
                                                                 <PaperCard
-                                                                    key={`${paper.title}-${index}`}
+                                                                    key={paper.id}
                                                                     paper={paper}
                                                                     index={index}
                                                                     onSelect={handlePaperSelect}
@@ -704,7 +704,7 @@ export default function ProjectLibraryPage({ params }: ProjectLibraryPageProps) 
                                                         <AnimatePresence mode="popLayout">
                                                             {filteredAndSortedPapers.map((paper, index) => (
                                                                 <StreamingPaperCard
-                                                                    key={`${paper.title}-${index}`}
+                                                                    key={paper.id}
                                                                     paper={paper}
                                                                     index={index}
                                                                     onSelect={handlePaperSelect}
@@ -719,7 +719,7 @@ export default function ProjectLibraryPage({ params }: ProjectLibraryPageProps) 
                                                         <AnimatePresence mode="popLayout">
                                                             {filteredAndSortedPapers.map((paper, index) => (
                                                                 <PaperCard
-                                                                    key={`${paper.title}-${index}`}
+                                                                    key={paper.id}
                                                                     paper={paper}
                                                                     index={index}
                                                                     onSelect={handlePaperSelect}
