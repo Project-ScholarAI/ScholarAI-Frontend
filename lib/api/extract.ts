@@ -26,4 +26,19 @@ export async function getStructuredFacts(paperId: string) {
         throw new Error(`Failed to get structured facts: ${response.status}`);
     }
     return response.json();
+}
+
+// New: Check if paper has structured facts
+export async function hasStructuredFacts(paperId: string) {
+    const url = getApiUrl(`/api/papers/${paperId}/has-structured-data`);
+    const response = await fetch(url, {
+        method: "GET",
+        headers: {
+            "Content-Type": "application/json",
+        },
+    });
+    if (!response.ok) {
+        throw new Error(`Failed to check structured facts: ${response.status}`);
+    }
+    return response.json();
 } 

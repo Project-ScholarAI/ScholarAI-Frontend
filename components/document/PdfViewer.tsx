@@ -27,6 +27,7 @@ import { Input } from "@/components/ui/input"
 import { cn } from "@/lib/utils/cn"
 import { downloadPdfWithAuth } from "@/lib/api/pdf"
 import { ChatContainer } from "@/components/chat/ChatContainer"
+import { postPaperChat } from "@/lib/api/qa"
 
 // Import CSS for react-pdf-viewer
 import '@react-pdf-viewer/core/lib/styles/index.css'
@@ -125,6 +126,12 @@ export function PDFViewer({ documentUrl, documentName = "Document" }: Props) {
   const [isResizing, setIsResizing] = useState(false)
   const [startX, setStartX] = useState(0)
   const [startWidth, setStartWidth] = useState(384)
+
+  // Q/A chat state
+  const [qaLoading, setQaLoading] = useState(false)
+  const [qaError, setQaError] = useState<string | null>(null)
+  const [qaUserMessage, setQaUserMessage] = useState<string | null>(null)
+  const [qaAssistantMessage, setQaAssistantMessage] = useState<string | null>(null)
 
   const zoomPluginInstance = zoomPlugin()
   const { zoomTo } = zoomPluginInstance
@@ -803,6 +810,31 @@ export function PDFViewer({ documentUrl, documentName = "Document" }: Props) {
     }
   }, [isResizing, startX, startWidth])
 
+  // Handler for sending a message
+  const handleQaSend = async (message: string) => {
+    if (!documentName) return;
+    setQaLoading(true);
+    setQaError(null);
+    setQaUserMessage(message);
+    setQaAssistantMessage(null);
+    try {
+      const sessionId = typeof crypto !== 'undefined' && crypto.randomUUID ? crypto.randomUUID() : Math.random().toString(36).slice(2);
+      const res = await postPaperChat(
+        documentUrl || '',
+        {
+          message,
+          sessionId,
+          sessionTitle: documentName,
+        }
+      );
+      setQaAssistantMessage(res.response);
+    } catch (e) {
+      setQaError('Failed to send message');
+    } finally {
+      setQaLoading(false);
+    }
+  };
+
   return (
     <div className="relative flex flex-col h-full bg-background">
       {/* Compact Header */}
@@ -1109,8 +1141,56 @@ export function PDFViewer({ documentUrl, documentName = "Document" }: Props) {
           onMouseDown={(e) => { setIsResizing(true); setStartX(e.clientX); setStartWidth(chatWidth) }}
         />
 
-        {/* Chat Interface */}
-        <ChatContainer onClose={() => setShowChat(false)} externalContexts={externalContexts} onExternalContextsCleared={() => setExternalContexts([])} />
+        {/* Q/A Chat Interface */}
+        <div className="flex flex-col h-full">
+          <div className="flex items-center justify-between px-4 py-2 border-b border-border">
+            <h2 className="text-base font-semibold truncate">PDF Q/A Chat</h2>
+            <Button variant="ghost" size="icon" onClick={() => setShowChat(false)}><X className="h-4 w-4" /></Button>
+          </div>
+          <div className="flex-1 overflow-y-auto px-4 py-2">
+            {qaLoading && <div className="text-muted-foreground text-sm py-2">Loading...</div>}
+            {qaError && <div className="text-destructive text-sm py-2">{qaError}</div>}
+            {qaUserMessage && (
+              <div className="mb-3 flex justify-end">
+                <div className="rounded-lg px-3 py-2 max-w-[80%] text-sm bg-primary text-primary-foreground">
+                  {qaUserMessage}
+                </div>
+              </div>
+            )}
+            {qaAssistantMessage && (
+              <div className="mb-3 flex justify-start">
+                <div className="rounded-lg px-3 py-2 max-w-[80%] text-sm bg-muted text-foreground">
+                  {qaAssistantMessage}
+                </div>
+              </div>
+            )}
+          </div>
+          <div className="p-2 border-t border-border">
+            <form
+              onSubmit={e => {
+                e.preventDefault();
+                const form = e.target as HTMLFormElement;
+                const input = form.elements.namedItem('qaInput') as HTMLInputElement;
+                const value = input.value.trim();
+                if (value) {
+                  handleQaSend(value);
+                  input.value = '';
+                }
+              }}
+              className="flex gap-2"
+            >
+              <input
+                name="qaInput"
+                type="text"
+                className="flex-1 rounded border border-border px-3 py-2 text-sm bg-background"
+                placeholder="Ask a question about this paper..."
+                autoComplete="off"
+                disabled={qaLoading}
+              />
+              <Button type="submit" disabled={qaLoading}>Send</Button>
+            </form>
+          </div>
+        </div>
       </div>
 
       {/* Add thumbnail overlay */}

@@ -43,7 +43,7 @@ import { cn } from "@/lib/utils"
 import { downloadPdfWithAuth } from "@/lib/api/pdf"
 import type { Paper } from "@/types/websearch"
 import { useState } from "react"
-import { extractPaper, getStructuredFacts } from "@/lib/api/extract"
+import { extractPaper, getStructuredFacts, hasStructuredFacts } from "@/lib/api/extract"
 
 interface PaperDetailModalProps {
     paper: Paper | null
@@ -144,6 +144,23 @@ export function PaperDetailModal({ paper, isOpen, onClose, onViewPdf }: PaperDet
         } finally {
             setIsSummarizing(false)
         }
+    }
+
+    const handleViewPdf = async (paper: Paper) => {
+        // Start the structured facts check in the background
+        (async () => {
+            try {
+                const res = await hasStructuredFacts(paper.id);
+                if (!res.hasStructuredFacts) {
+                    await extractPaper(paper.id);
+                }
+            } catch (e) {
+                // Optionally log or ignore
+                // console.error('Background structured facts check failed', e);
+            }
+        })();
+        // Continue with the original onViewPdf logic
+        if (onViewPdf) onViewPdf(paper);
     }
 
     const facts = summaryData?.structuredFacts?.facts || {}
@@ -279,7 +296,7 @@ export function PaperDetailModal({ paper, isOpen, onClose, onViewPdf }: PaperDet
                     >
                         {(paper.pdfUrl || paper.pdfContentUrl) && onViewPdf && (
                             <Button
-                                onClick={() => onViewPdf(paper)}
+                                onClick={() => handleViewPdf(paper)}
                                 size="lg"
                                 className="bg-gradient-to-r from-primary to-purple-600 text-white hover:from-primary/90 hover:to-purple-600/90 shadow-lg hover:shadow-xl transition-all duration-300 px-8 py-3"
                             >
