@@ -41,6 +41,7 @@ import '@react-pdf-viewer/search/lib/styles/index.css'
 type Props = {
   documentUrl?: string
   documentName?: string
+  paperId?: string
 }
 
 // Helper function to handle PDF URL processing
@@ -81,7 +82,7 @@ const processPdfUrl = async (url: string): Promise<string> => {
   }
 }
 
-export function PDFViewer({ documentUrl, documentName = "Document" }: Props) {
+export function PDFViewer({ documentUrl, documentName = "Document", paperId }: Props) {
   const [isFullscreen, setIsFullscreen] = useState(false)
   const [viewMode, setViewMode] = useState<'read' | 'edit'>('read')
   const [processedUrl, setProcessedUrl] = useState<string | null>(null)
@@ -1110,7 +1111,7 @@ export function PDFViewer({ documentUrl, documentName = "Document" }: Props) {
         />
 
         {/* Chat Interface */}
-        <ChatContainer onClose={() => setShowChat(false)} externalContexts={externalContexts} onExternalContextsCleared={() => setExternalContexts([])} />
+        <ChatContainer onClose={() => setShowChat(false)} externalContexts={externalContexts} onExternalContextsCleared={() => setExternalContexts([])} paperId={paperId} />
       </div>
 
       {/* Add thumbnail overlay */}

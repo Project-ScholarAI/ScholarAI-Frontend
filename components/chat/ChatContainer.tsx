@@ -7,6 +7,7 @@ import { Button } from "@/components/ui/button"
 import { Plus, Cloud, Clock, MoreHorizontal, X } from "lucide-react"
 import { cn } from "@/lib/utils/cn"
 import type { Message } from "@/types/chat"
+import { chatWithPaper } from "@/lib/api/chat"
 
 type ChatContainerProps = {
     /**
@@ -17,9 +18,10 @@ type ChatContainerProps = {
     onClose?: () => void
     externalContexts?: string[]
     onExternalContextsCleared?: () => void
+    paperId?: string
 }
 
-export function ChatContainer({ onClose, externalContexts = [], onExternalContextsCleared }: ChatContainerProps) {
+export function ChatContainer({ onClose, externalContexts = [], onExternalContextsCleared, paperId }: ChatContainerProps) {
     const [messages, setMessages] = useState<Message[]>([])
     const [isLoading, setIsLoading] = useState(false)
     const [chatName, setChatName] = useState("New Chat")
@@ -51,16 +53,32 @@ export function ChatContainer({ onClose, externalContexts = [], onExternalContex
         setMessages((prev) => [...prev, userMessage])
         setIsLoading(true)
 
-        // Simulate AI response
-        setTimeout(() => {
+        try {
+            if (!paperId) {
+                throw new Error("Paper ID is required for chat")
+            }
+
+            const response = await chatWithPaper(paperId, message)
+            
             const aiMessage: Message = {
+                id: response.sessionId || Date.now().toString(),
+                role: "assistant",
+                content: response.response || "No response received",
+                timestamp: response.timestamp ? new Date(response.timestamp) : new Date()
+            }
+            
+            setMessages((prev) => [...prev, aiMessage])
+        } catch (error) {
+            console.error("Chat error:", error)
+            const errorMessage: Message = {
                 id: (Date.now() + 1).toString(),
                 role: "assistant",
-                content: "I'll help you with that. Let me analyze your request..."
+                content: "Sorry, I encountered an error while processing your request. Please try again."
             }
-            setMessages((prev) => [...prev, aiMessage])
+            setMessages((prev) => [...prev, errorMessage])
+        } finally {
             setIsLoading(false)
-        }, 1000)
+        }
     }
 
     return (

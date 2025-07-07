@@ -19,16 +19,42 @@ import { Button } from "@/components/ui/button"
 import { Textarea } from "@/components/ui/textarea"
 import { ChatMessage } from "@/components/chat/ChatMessage"
 import { ChatComposer } from "@/components/chat/ChatComposer"
-import { useChat } from "@/lib/hooks/useChat"
+import { chatWithPaper } from "@/lib/api/chat"
+import type { Message } from "@/types/chat"
 import { cn } from "@/lib/utils/cn"
 
 type Props = {
   isOpen: boolean
   onClose: () => void
+  paperId?: string
 }
 
-export function ChatPanel({ isOpen, onClose }: Props) {
-  const { messages, sendMessage, isLoading, currentChat, startNewChat, chatHistory } = useChat()
+export function ChatPanel({ isOpen, onClose, paperId }: Props) {
+  const [messages, setMessages] = useState<Message[]>([
+    {
+      id: "1",
+      role: "system",
+      content: "Hello! I am ScholarAI, your research assistant. How can I help you today?",
+    },
+  ])
+  const [isLoading, setIsLoading] = useState(false)
+  const [currentChat, setCurrentChat] = useState({
+    id: "current",
+    title: "Chat with Paper",
+    lastUpdated: new Date().toISOString(),
+  })
+  const [chatHistory, setChatHistory] = useState([
+    {
+      id: "1",
+      title: "Research Paper Analysis",
+      lastUpdated: new Date().toISOString(),
+    },
+    {
+      id: "2",
+      title: "Literature Review Help",
+      lastUpdated: new Date(Date.now() - 86400000).toISOString(),
+    },
+  ])
   const messagesEndRef = useRef<HTMLDivElement>(null)
   const panelRef = useRef<HTMLDivElement>(null)
   const [width, setWidth] = useState(400)
@@ -77,6 +103,61 @@ export function ChatPanel({ isOpen, onClose }: Props) {
       document.body.style.cursor = ""
     }
   }, [isDragging])
+
+  const sendMessage = async (content: string, context?: string[]) => {
+    if (!paperId) {
+      console.error("Paper ID is required for chat")
+      return
+    }
+
+    const userMessage: Message = {
+      id: Date.now().toString(),
+      role: "user",
+      content,
+      context,
+    }
+
+    setMessages((prev) => [...prev, userMessage])
+    setIsLoading(true)
+
+    try {
+      const response = await chatWithPaper(paperId, content)
+      
+      const aiMessage: Message = {
+        id: response.sessionId,
+        role: "assistant",
+        content: response.response,
+        timestamp: new Date(response.timestamp)
+      }
+      
+      setMessages((prev) => [...prev, aiMessage])
+    } catch (error) {
+      console.error("Chat error:", error)
+      const errorMessage: Message = {
+        id: (Date.now() + 1).toString(),
+        role: "assistant",
+        content: "Sorry, I encountered an error while processing your request. Please try again."
+      }
+      setMessages((prev) => [...prev, errorMessage])
+    } finally {
+      setIsLoading(false)
+    }
+  }
+
+  const startNewChat = () => {
+    setMessages([
+      {
+        id: "1",
+        role: "system",
+        content: "Hello! I am ScholarAI, your research assistant. How can I help you today?",
+      },
+    ])
+    setCurrentChat({
+      id: Date.now().toString(),
+      title: "New Chat",
+      lastUpdated: new Date().toISOString(),
+    })
+  }
 
   if (!isOpen) return null
 
