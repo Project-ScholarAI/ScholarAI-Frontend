@@ -42,6 +42,7 @@ import '@react-pdf-viewer/search/lib/styles/index.css'
 type Props = {
   documentUrl?: string
   documentName?: string
+  paperId?: string
 }
 
 // Helper function to handle PDF URL processing
@@ -82,7 +83,7 @@ const processPdfUrl = async (url: string): Promise<string> => {
   }
 }
 
-export function PDFViewer({ documentUrl, documentName = "Document" }: Props) {
+export function PDFViewer({ documentUrl, documentName = "Document", paperId }: Props) {
   const [isFullscreen, setIsFullscreen] = useState(false)
   const [viewMode, setViewMode] = useState<'read' | 'edit'>('read')
   const [processedUrl, setProcessedUrl] = useState<string | null>(null)
@@ -1141,56 +1142,8 @@ export function PDFViewer({ documentUrl, documentName = "Document" }: Props) {
           onMouseDown={(e) => { setIsResizing(true); setStartX(e.clientX); setStartWidth(chatWidth) }}
         />
 
-        {/* Q/A Chat Interface */}
-        <div className="flex flex-col h-full">
-          <div className="flex items-center justify-between px-4 py-2 border-b border-border">
-            <h2 className="text-base font-semibold truncate">PDF Q/A Chat</h2>
-            <Button variant="ghost" size="icon" onClick={() => setShowChat(false)}><X className="h-4 w-4" /></Button>
-          </div>
-          <div className="flex-1 overflow-y-auto px-4 py-2">
-            {qaLoading && <div className="text-muted-foreground text-sm py-2">Loading...</div>}
-            {qaError && <div className="text-destructive text-sm py-2">{qaError}</div>}
-            {qaUserMessage && (
-              <div className="mb-3 flex justify-end">
-                <div className="rounded-lg px-3 py-2 max-w-[80%] text-sm bg-primary text-primary-foreground">
-                  {qaUserMessage}
-                </div>
-              </div>
-            )}
-            {qaAssistantMessage && (
-              <div className="mb-3 flex justify-start">
-                <div className="rounded-lg px-3 py-2 max-w-[80%] text-sm bg-muted text-foreground">
-                  {qaAssistantMessage}
-                </div>
-              </div>
-            )}
-          </div>
-          <div className="p-2 border-t border-border">
-            <form
-              onSubmit={e => {
-                e.preventDefault();
-                const form = e.target as HTMLFormElement;
-                const input = form.elements.namedItem('qaInput') as HTMLInputElement;
-                const value = input.value.trim();
-                if (value) {
-                  handleQaSend(value);
-                  input.value = '';
-                }
-              }}
-              className="flex gap-2"
-            >
-              <input
-                name="qaInput"
-                type="text"
-                className="flex-1 rounded border border-border px-3 py-2 text-sm bg-background"
-                placeholder="Ask a question about this paper..."
-                autoComplete="off"
-                disabled={qaLoading}
-              />
-              <Button type="submit" disabled={qaLoading}>Send</Button>
-            </form>
-          </div>
-        </div>
+        {/* Chat Interface */}
+        <ChatContainer onClose={() => setShowChat(false)} externalContexts={externalContexts} onExternalContextsCleared={() => setExternalContexts([])} paperId={paperId} />
       </div>
 
       {/* Add thumbnail overlay */}
