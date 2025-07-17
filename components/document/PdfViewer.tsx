@@ -816,19 +816,25 @@ export function PDFViewer({ documentUrl, documentName = "Document", paperId }: P
     if (!documentName) return;
     setQaLoading(true);
     setQaError(null);
-    setQaUserMessage(message);
+    // Prepend external context if present
+    let fullMessage = message;
+    if (externalContexts.length > 0) {
+      fullMessage = externalContexts.join('\n') + '\n' + message;
+    }
+    setQaUserMessage(fullMessage);
     setQaAssistantMessage(null);
     try {
       const sessionId = typeof crypto !== 'undefined' && crypto.randomUUID ? crypto.randomUUID() : Math.random().toString(36).slice(2);
       const res = await postPaperChat(
         documentUrl || '',
         {
-          message,
+          message: fullMessage,
           sessionId,
           sessionTitle: documentName,
         }
       );
       setQaAssistantMessage(res.response);
+      setExternalContexts([]); // Clear after sending
     } catch (e) {
       setQaError('Failed to send message');
     } finally {
