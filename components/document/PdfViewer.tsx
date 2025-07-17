@@ -27,6 +27,7 @@ import { Input } from "@/components/ui/input"
 import { cn } from "@/lib/utils/cn"
 import { downloadPdfWithAuth } from "@/lib/api/pdf"
 import { ChatContainer } from "@/components/chat/ChatContainer"
+import { postPaperChat } from "@/lib/api/qa"
 
 // Import CSS for react-pdf-viewer
 import '@react-pdf-viewer/core/lib/styles/index.css'
@@ -126,6 +127,12 @@ export function PDFViewer({ documentUrl, documentName = "Document", paperId }: P
   const [isResizing, setIsResizing] = useState(false)
   const [startX, setStartX] = useState(0)
   const [startWidth, setStartWidth] = useState(384)
+
+  // Q/A chat state
+  const [qaLoading, setQaLoading] = useState(false)
+  const [qaError, setQaError] = useState<string | null>(null)
+  const [qaUserMessage, setQaUserMessage] = useState<string | null>(null)
+  const [qaAssistantMessage, setQaAssistantMessage] = useState<string | null>(null)
 
   const zoomPluginInstance = zoomPlugin()
   const { zoomTo } = zoomPluginInstance
@@ -803,6 +810,37 @@ export function PDFViewer({ documentUrl, documentName = "Document", paperId }: P
       window.removeEventListener('mouseup', onMouseUp)
     }
   }, [isResizing, startX, startWidth])
+
+  // Handler for sending a message
+  const handleQaSend = async (message: string) => {
+    if (!documentName) return;
+    setQaLoading(true);
+    setQaError(null);
+    // Prepend external context if present
+    let fullMessage = message;
+    if (externalContexts.length > 0) {
+      fullMessage = externalContexts.join('\n') + '\n' + message;
+    }
+    setQaUserMessage(fullMessage);
+    setQaAssistantMessage(null);
+    try {
+      const sessionId = typeof crypto !== 'undefined' && crypto.randomUUID ? crypto.randomUUID() : Math.random().toString(36).slice(2);
+      const res = await postPaperChat(
+        documentUrl || '',
+        {
+          message: fullMessage,
+          sessionId,
+          sessionTitle: documentName,
+        }
+      );
+      setQaAssistantMessage(res.response);
+      setExternalContexts([]); // Clear after sending
+    } catch (e) {
+      setQaError('Failed to send message');
+    } finally {
+      setQaLoading(false);
+    }
+  };
 
   return (
     <div className="relative flex flex-col h-full bg-background">

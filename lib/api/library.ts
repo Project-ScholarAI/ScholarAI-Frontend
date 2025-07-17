@@ -1,5 +1,6 @@
 import { getApiUrl } from "@/lib/config/api-config";
 import { authenticatedFetch } from "@/lib/api/auth";
+import type { Paper } from "@/types/websearch";
 
 /**
  * Library API Functions
@@ -19,7 +20,7 @@ export interface LibraryResponse {
     status: number;
     message: string;
     data: LibraryStats & {
-        papers: any[]; // Empty array for /stats endpoint
+        papers: Paper[];
     };
 }
 
