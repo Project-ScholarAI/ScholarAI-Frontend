@@ -12,13 +12,13 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { Badge } from "@/components/ui/badge"
 import { Separator } from "@/components/ui/separator"
 import { toast } from "sonner"
-import { 
-  User, 
-  GraduationCap, 
-  Settings, 
-  Camera, 
-  Save, 
-  Edit3, 
+import {
+  User,
+  GraduationCap,
+  Settings,
+  Camera,
+  Save,
+  Edit3,
   ExternalLink,
   MapPin,
   Building,
@@ -67,7 +67,7 @@ export function AccountContent() {
       try {
         const account = await accountApi.getAccount()
         setAccountData(account)
-        
+
         if (account) {
           // Create form data from account data, preserving existing values
           const formData: Partial<UserAccountForm> = {
@@ -91,7 +91,7 @@ export function AccountContent() {
             timezone: account.timezone || "",
             languagePreference: account.languagePreference || ""
           }
-          
+
           // Reset form with existing data
           reset(formData)
         } else {
@@ -140,13 +140,13 @@ export function AccountContent() {
     try {
       // Only send changed fields that have values
       const updateData: Partial<UserAccountForm> = {}
-      
+
       // Get current form values and existing account data
       Object.keys(data).forEach((key) => {
         const fieldKey = key as keyof UserAccountForm
         const newValue = data[fieldKey]?.trim()
         const existingValue = accountData?.[fieldKey] || ""
-        
+
         // Include field if it has a value or if it's different from existing
         if (newValue !== undefined && (newValue !== "" || existingValue !== "")) {
           updateData[fieldKey] = newValue
@@ -154,10 +154,10 @@ export function AccountContent() {
       })
 
       const result = await accountApi.updateAccount(updateData)
-      
+
       if (result.success) {
         setAccountData(result.data || null)
-        
+
         // Update form with new data to reflect any server-side changes
         if (result.data) {
           const formData: Partial<UserAccountForm> = {
@@ -183,7 +183,7 @@ export function AccountContent() {
           }
           reset(formData)
         }
-        
+
         setIsEditMode(false)
         toast.success("Account updated successfully!")
       } else {
@@ -245,16 +245,30 @@ export function AccountContent() {
 
     setIsUploadingImage(true)
     try {
+      // Create a preview URL for immediate display
+      const previewUrl = URL.createObjectURL(file)
+
+      // Optimistically update the UI
+      setAccountData(prev => prev ? { ...prev, profileImageUrl: previewUrl } : null)
+
       const result = await accountApi.uploadProfileImage(file)
-      
+
       if (result.success) {
+        // Update with the actual B2 URL
         setAccountData(prev => prev ? { ...prev, profileImageUrl: result.url } : null)
         toast.success("Profile image updated successfully!")
       } else {
+        // Revert to previous image if upload failed
+        setAccountData(prev => prev ? { ...prev, profileImageUrl: accountData?.profileImageUrl } : null)
         toast.error(result.message || "Failed to upload image")
       }
+
+      // Clean up preview URL
+      URL.revokeObjectURL(previewUrl)
     } catch (error) {
       console.error("Image upload error:", error)
+      // Revert to previous image if upload failed
+      setAccountData(prev => prev ? { ...prev, profileImageUrl: accountData?.profileImageUrl } : null)
       toast.error("Failed to upload image")
     } finally {
       setIsUploadingImage(false)
@@ -265,16 +279,22 @@ export function AccountContent() {
   const handleImageDelete = async () => {
     setIsUploadingImage(true)
     try {
-      const result = await accountApi.deleteProfileImage()
+      // Optimistically remove the image from UI
+      setAccountData(prev => prev ? { ...prev, profileImageUrl: undefined } : null)
       
+      const result = await accountApi.deleteProfileImage()
+
       if (result.success) {
-        setAccountData(prev => prev ? { ...prev, profileImageUrl: undefined } : null)
         toast.success("Profile image removed successfully!")
       } else {
+        // Revert if deletion failed
+        setAccountData(prev => prev ? { ...prev, profileImageUrl: accountData?.profileImageUrl } : null)
         toast.error(result.message || "Failed to remove image")
       }
     } catch (error) {
       console.error("Image delete error:", error)
+      // Revert if deletion failed
+      setAccountData(prev => prev ? { ...prev, profileImageUrl: accountData?.profileImageUrl } : null)
       toast.error("Failed to remove image")
     } finally {
       setIsUploadingImage(false)
@@ -354,7 +374,7 @@ export function AccountContent() {
         <div className="container mx-auto px-6 py-4">
           <div className="flex items-center justify-between">
             <div>
-              <h1 className="text-3xl font-bold bg-gradient-to-r from-primary via-blue-500 to-purple-500 bg-clip-text text-transparent flex items-center gap-3">
+              <h1 className="text-3xl font-bold text-gradient-primary flex items-center gap-3">
                 <User className="h-8 w-8 text-primary" />
                 Account Settings
               </h1>
@@ -362,12 +382,12 @@ export function AccountContent() {
                 {isEditMode ? "Edit your profile and account preferences" : "View and manage your profile information"}
               </p>
             </div>
-            
+
             <div className="flex items-center gap-3">
               {!isEditMode ? (
                 <Button
                   onClick={() => setIsEditMode(true)}
-                  className="bg-gradient-to-r from-primary to-blue-600 hover:from-primary/90 hover:to-blue-700 text-white"
+                  className="gradient-primary-to-accent text-white"
                 >
                   <Edit3 className="mr-2 h-4 w-4" />
                   Edit Profile
@@ -384,7 +404,7 @@ export function AccountContent() {
                   <Button
                     onClick={handleSubmit(onSubmit)}
                     disabled={isUpdating}
-                    className="bg-gradient-to-r from-green-500 to-green-600 hover:from-green-600 hover:to-green-700 text-white"
+                    className="gradient-primary-to-accent text-white"
                   >
                     {isUpdating ? (
                       <>
@@ -422,49 +442,48 @@ export function AccountContent() {
                   {/* Profile Image */}
                   <div className="relative mb-4">
                     <Avatar className="h-24 w-24">
-                      <AvatarImage 
-                        src={accountData?.profileImageUrl} 
-                        alt={accountData?.fullName || userData?.email || "Profile"} 
+                      <AvatarImage
+                        src={accountData?.profileImageUrl}
+                        alt={accountData?.fullName || userData?.email || "Profile"}
                       />
                       <AvatarFallback className="text-lg bg-gradient-to-br from-primary/20 to-purple-500/20">
-                        {accountData?.fullName 
+                        {accountData?.fullName
                           ? accountData.fullName.split(' ').map(n => n[0]).join('').toUpperCase()
                           : userData?.email?.[0].toUpperCase() || 'U'
                         }
                       </AvatarFallback>
                     </Avatar>
-                    
-                    {isEditMode && (
-                      <div className="absolute -bottom-2 -right-2 flex gap-1">
-                        <label className="cursor-pointer">
-                          <input
-                            type="file"
-                            accept="image/*"
-                            onChange={handleImageUpload}
-                            className="hidden"
-                          />
-                          <div className="flex items-center justify-center w-8 h-8 bg-primary rounded-full hover:bg-primary/90 transition-colors">
-                            {isUploadingImage ? (
-                              <Loader2 className="h-4 w-4 text-white animate-spin" />
-                            ) : (
-                              <Camera className="h-4 w-4 text-white" />
-                            )}
-                          </div>
-                        </label>
-                        
-                        {accountData?.profileImageUrl && (
-                          <Button
-                            size="sm"
-                            variant="destructive"
-                            className="w-8 h-8 p-0"
-                            onClick={handleImageDelete}
-                            disabled={isUploadingImage}
-                          >
-                            <Trash2 className="h-4 w-4" />
-                          </Button>
-                        )}
-                      </div>
-                    )}
+
+                    {/* Upload/Delete Controls */}
+                    <div className="absolute -bottom-2 -right-2 flex gap-1">
+                      <label className="cursor-pointer">
+                        <input
+                          type="file"
+                          accept="image/*"
+                          onChange={handleImageUpload}
+                          className="hidden"
+                        />
+                        <div className="flex items-center justify-center w-8 h-8 bg-primary rounded-full hover:bg-primary/90 transition-colors">
+                          {isUploadingImage ? (
+                            <Loader2 className="h-4 w-4 text-white animate-spin" />
+                          ) : (
+                            <Camera className="h-4 w-4 text-white" />
+                          )}
+                        </div>
+                      </label>
+
+                      {accountData?.profileImageUrl && (
+                        <Button
+                          size="sm"
+                          variant="destructive"
+                          className="w-8 h-8 p-0"
+                          onClick={handleImageDelete}
+                          disabled={isUploadingImage}
+                        >
+                          <Trash2 className="h-4 w-4" />
+                        </Button>
+                      )}
+                    </div>
                   </div>
 
                   {/* User Info */}
@@ -474,7 +493,7 @@ export function AccountContent() {
                   <p className="text-muted-foreground text-sm mb-2">
                     {userData?.email}
                   </p>
-                  
+
                 </div>
               </CardContent>
             </Card>
@@ -491,7 +510,7 @@ export function AccountContent() {
                 {SOCIAL_LINKS.map((social) => {
                   const url = accountData?.[social.url] as string
                   const Icon = getIcon(social.icon)
-                  
+
                   return (
                     <div key={social.platform} className="flex items-center justify-between">
                       <div className="flex items-center gap-2">
@@ -513,7 +532,7 @@ export function AccountContent() {
                     </div>
                   )
                 })}
-                
+
                 {accountData?.websiteUrl && (
                   <div className="flex items-center justify-between">
                     <div className="flex items-center gap-2">
@@ -564,17 +583,17 @@ export function AccountContent() {
                           <p className="text-sm text-muted-foreground whitespace-pre-wrap leading-relaxed">{accountData.bio}</p>
                         </div>
                       )}
-                      
+
                       <Separator />
 
                       {/* Professional Details Section */}
                       <div>
                         <h4 className="font-semibold text-base mb-4">Professional & Academic</h4>
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-x-6 gap-y-6">
-                            {renderDetailItem("Institution", accountData?.institution, <Building size={16} />)}
-                            {renderDetailItem("Department", accountData?.department, <GraduationCap size={16} />)}
-                            {renderDetailItem("Position", accountData?.position, <Briefcase size={16} />)}
-                            {renderDetailItem("ORCID iD", accountData?.orcidId)}
+                          {renderDetailItem("Institution", accountData?.institution, <Building size={16} />)}
+                          {renderDetailItem("Department", accountData?.department, <GraduationCap size={16} />)}
+                          {renderDetailItem("Position", accountData?.position, <Briefcase size={16} />)}
+                          {renderDetailItem("ORCID iD", accountData?.orcidId)}
                         </div>
                       </div>
 
@@ -584,26 +603,26 @@ export function AccountContent() {
                       <div>
                         <h4 className="font-semibold text-base mb-4">Contact Information</h4>
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-x-6 gap-y-6">
-                            {renderDetailLinkItem("Website", accountData?.websiteUrl, <Globe size={16} />)}
-                            {renderDetailItem("Address", [
-                                accountData?.addressLine1,
-                                accountData?.addressLine2,
-                                accountData?.city,
-                                accountData?.stateProvinceRegion,
-                                accountData?.postalCode,
-                                accountData?.country
-                              ].filter(Boolean).join(', '), <MapPin size={16} />)}
+                          {renderDetailLinkItem("Website", accountData?.websiteUrl, <Globe size={16} />)}
+                          {renderDetailItem("Address", [
+                            accountData?.addressLine1,
+                            accountData?.addressLine2,
+                            accountData?.city,
+                            accountData?.stateProvinceRegion,
+                            accountData?.postalCode,
+                            accountData?.country
+                          ].filter(Boolean).join(', '), <MapPin size={16} />)}
                         </div>
                       </div>
-                      
+
                       <Separator />
-                      
+
                       {/* Preferences Section */}
                       <div>
                         <h4 className="font-semibold text-base mb-4">Preferences</h4>
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-x-6 gap-y-6">
-                            {renderDetailItem("Preferred Language", accountData?.languagePreference, <Languages size={16} />)}
-                            {renderDetailItem("Timezone", accountData?.timezone, <Clock size={16} />)}
+                          {renderDetailItem("Preferred Language", accountData?.languagePreference, <Languages size={16} />)}
+                          {renderDetailItem("Timezone", accountData?.timezone, <Clock size={16} />)}
                         </div>
                       </div>
                     </CardContent>
@@ -632,7 +651,7 @@ export function AccountContent() {
                           className={cn(
                             "flex items-center gap-2",
                             activeSection === section.id
-                              ? "bg-gradient-to-r from-primary to-blue-600 text-white"
+                              ? "gradient-primary-to-accent text-white"
                               : "border-primary/20 hover:bg-primary/5"
                           )}
                         >
@@ -647,9 +666,9 @@ export function AccountContent() {
                   <AnimatePresence mode="wait">
                     {ACCOUNT_SECTIONS.map((section) => {
                       if (activeSection !== section.id) return null
-                      
+
                       const Icon = getIcon(section.icon)
-                      
+
                       return (
                         <motion.div
                           key={section.id}
@@ -677,7 +696,7 @@ export function AccountContent() {
                                       {field.label}
                                       {field.required && <span className="text-red-500 ml-1">*</span>}
                                     </label>
-                                    
+
                                     {field.type === 'textarea' ? (
                                       <Textarea
                                         {...register(field.name, { required: field.required })}
@@ -707,7 +726,7 @@ export function AccountContent() {
                                         placeholder={field.placeholder}
                                       />
                                     )}
-                                    
+
                                     {errors[field.name] && (
                                       <p className="text-red-500 text-sm mt-1">
                                         {field.label} is required

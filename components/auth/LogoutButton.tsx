@@ -31,7 +31,7 @@ export const LogoutButton = ({ className = '', children }: LogoutButtonProps) =>
         <button
             onClick={handleLogout}
             disabled={isLoading}
-            className={`flex items-center justify-center transition-colors disabled:opacity-50 disabled:cursor-not-allowed ${className}`}
+            className={`flex items-center transition-colors disabled:opacity-50 disabled:cursor-not-allowed ${className}`}
         >
             {isLoading ? (
                 <>

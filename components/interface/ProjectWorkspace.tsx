@@ -1,6 +1,7 @@
 "use client"
 
 import { useState, useEffect } from "react"
+import { useRouter } from "next/navigation"
 import { motion, AnimatePresence } from "framer-motion"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
@@ -70,6 +71,7 @@ interface ProjectWorkspaceProps {
 }
 
 export function ProjectWorkspace({ projectId }: ProjectWorkspaceProps) {
+    const router = useRouter()
     const [project, setProject] = useState<Project | null>(null)
     const [papers, setPapers] = useState<Paper[]>([])
     const [isLoading, setIsLoading] = useState(true)
@@ -284,7 +286,10 @@ export function ProjectWorkspace({ projectId }: ProjectWorkspaceProps) {
                                 <MessageSquare className="mr-2 h-4 w-4" />
                                 QA Chat {selectedPaper ? `(${selectedPaper.title.substring(0, 20)}...)` : ""}
                             </Button>
-                            <Button className="bg-gradient-to-r from-primary to-purple-600 hover:from-primary/90 hover:to-purple-700 text-white">
+                            <Button
+                                className="bg-gradient-to-r from-primary to-purple-600 hover:from-primary/90 hover:to-purple-700 text-white"
+                                onClick={() => router.push(`/interface/projects/${projectId}/settings`)}
+                            >
                                 <Settings className="mr-2 h-4 w-4" />
                                 Settings
                             </Button>
@@ -695,9 +700,9 @@ export function ProjectWorkspace({ projectId }: ProjectWorkspaceProps) {
             </div>
 
             {/* QA Chat Panel - UC-08 */}
-            <ChatPanel 
-                isOpen={isChatOpen} 
-                onClose={() => setIsChatOpen(false)} 
+            <ChatPanel
+                isOpen={isChatOpen}
+                onClose={() => setIsChatOpen(false)}
                 paperId={chatPaperId || undefined}
             />
 

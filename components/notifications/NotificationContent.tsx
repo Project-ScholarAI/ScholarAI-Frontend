@@ -7,10 +7,10 @@ import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
 import { Separator } from "@/components/ui/separator"
 import { toast } from "sonner"
-import { 
-  Bell, 
-  GraduationCap, 
-  Settings, 
+import {
+  Bell,
+  GraduationCap,
+  Settings,
   MoreVertical,
   ExternalLink,
   Check,
@@ -53,13 +53,13 @@ export function NotificationContent() {
           ...MOCK_ACADEMIC_NOTIFICATIONS,
           ...MOCK_GENERAL_NOTIFICATIONS
         ]
-        
+
         setNotifications(mockData)
-        
+
         // Calculate summary from mock data
         const academicNotifications = mockData.filter(n => n.type === 'academic')
         const generalNotifications = mockData.filter(n => n.type === 'general')
-        
+
         const mockSummary: NotificationSummary = {
           total: mockData.length,
           unread: mockData.filter(n => n.status === 'unread').length,
@@ -82,9 +82,9 @@ export function NotificationContent() {
             low: mockData.filter(n => n.priority === 'low').length
           }
         }
-        
+
         setSummary(mockSummary)
-        
+
         // Uncomment when API is ready:
         // const result = await notificationsApi.getNotifications()
         // setNotifications(result.notifications)
@@ -104,14 +104,14 @@ export function NotificationContent() {
   const handleMarkAsRead = async (notificationId: string) => {
     try {
       // Update local state immediately for better UX
-      setNotifications(prev => 
-        prev.map(n => 
-          n.id === notificationId 
+      setNotifications(prev =>
+        prev.map(n =>
+          n.id === notificationId
             ? { ...n, status: 'read' as const, read_at: new Date().toISOString() }
             : n
         )
       )
-      
+
       // Update summary
       if (summary) {
         setSummary(prev => ({
@@ -126,10 +126,10 @@ export function NotificationContent() {
           }
         }))
       }
-      
+
       // Make API call (uncomment when ready)
       // await notificationsApi.markAsRead(notificationId)
-      
+
       toast.success("Notification marked as read")
     } catch (error) {
       console.error("Failed to mark notification as read:", error)
@@ -140,22 +140,22 @@ export function NotificationContent() {
   // Handle bulk mark as read
   const handleBulkMarkAsRead = async () => {
     if (selectedNotifications.length === 0) return
-    
+
     try {
       // Update local state
-      setNotifications(prev => 
-        prev.map(n => 
-          selectedNotifications.includes(n.id) 
+      setNotifications(prev =>
+        prev.map(n =>
+          selectedNotifications.includes(n.id)
             ? { ...n, status: 'read' as const, read_at: new Date().toISOString() }
             : n
         )
       )
-      
+
       setSelectedNotifications([])
-      
+
       // Make API call (uncomment when ready)
       // await notificationsApi.markMultipleAsRead(selectedNotifications)
-      
+
       toast.success(`${selectedNotifications.length} notifications marked as read`)
     } catch (error) {
       console.error("Failed to mark notifications as read:", error)
@@ -170,17 +170,17 @@ export function NotificationContent() {
       const statusMatch = showUnreadOnly ? n.status === 'unread' : true
       return typeMatch && statusMatch
     })
-    
+
     return filtered.sort((a, b) => {
       // Sort by priority first, then by date
       const priorityOrder = { urgent: 0, high: 1, medium: 2, low: 3 }
       const aPriority = priorityOrder[a.priority]
       const bPriority = priorityOrder[b.priority]
-      
+
       if (aPriority !== bPriority) {
         return aPriority - bPriority
       }
-      
+
       return new Date(b.created_at).getTime() - new Date(a.created_at).getTime()
     })
   }
@@ -203,7 +203,7 @@ export function NotificationContent() {
     if (notification.status === 'unread') {
       handleMarkAsRead(notification.id)
     }
-    
+
     if (notification.action_url) {
       if (notification.action_url.startsWith('http')) {
         window.open(notification.action_url, '_blank')
@@ -240,7 +240,7 @@ export function NotificationContent() {
         <div className="container mx-auto px-6 py-6">
           <div className="flex items-center justify-between">
             <div>
-              <h1 className="text-3xl font-bold bg-gradient-to-r from-primary via-blue-500 to-purple-500 bg-clip-text text-transparent flex items-center gap-3">
+              <h1 className="text-3xl font-bold text-gradient-primary flex items-center gap-3">
                 <Bell className="h-8 w-8 text-primary" />
                 Notifications
               </h1>
@@ -248,7 +248,7 @@ export function NotificationContent() {
                 Stay updated with academic deadlines and system alerts
               </p>
             </div>
-            
+
             {/* Summary Stats */}
             {summary && (
               <div className="flex items-center gap-4">
@@ -277,7 +277,7 @@ export function NotificationContent() {
                 className={cn(
                   "flex items-center gap-2",
                   activeTab === 'academic'
-                    ? "bg-gradient-to-r from-primary to-blue-600 text-white"
+                    ? "gradient-primary-to-accent text-white"
                     : "border-primary/20 hover:bg-primary/5"
                 )}
               >
@@ -289,14 +289,14 @@ export function NotificationContent() {
                   </Badge>
                 )}
               </Button>
-              
+
               <Button
                 variant={activeTab === 'general' ? 'default' : 'outline'}
                 onClick={() => setActiveTab('general')}
                 className={cn(
                   "flex items-center gap-2",
                   activeTab === 'general'
-                    ? "bg-gradient-to-r from-primary to-blue-600 text-white"
+                    ? "gradient-primary-to-accent text-white"
                     : "border-primary/20 hover:bg-primary/5"
                 )}
               >
@@ -323,7 +323,7 @@ export function NotificationContent() {
                 {showUnreadOnly ? <Eye className="h-4 w-4 mr-2" /> : <EyeOff className="h-4 w-4 mr-2" />}
                 {showUnreadOnly ? 'Show All' : 'Unread Only'}
               </Button>
-              
+
               {selectedNotifications.length > 0 && (
                 <Button
                   variant="outline"
@@ -357,7 +357,7 @@ export function NotificationContent() {
                   <Bell className="h-16 w-16 text-muted-foreground mx-auto mb-4" />
                   <h3 className="text-xl font-semibold mb-2">No Notifications</h3>
                   <p className="text-muted-foreground">
-                    {showUnreadOnly 
+                    {showUnreadOnly
                       ? `No unread ${activeTab} notifications at the moment.`
                       : `No ${activeTab} notifications to show.`
                     }
@@ -369,7 +369,7 @@ export function NotificationContent() {
                 const { category, priority } = getNotificationStyling(notification)
                 const Icon = category.icon
                 const isSelected = selectedNotifications.includes(notification.id)
-                
+
                 return (
                   <motion.div
                     key={notification.id}
@@ -377,11 +377,11 @@ export function NotificationContent() {
                     animate={{ opacity: 1, y: 0 }}
                     transition={{ duration: 0.3 }}
                   >
-                    <Card 
+                    <Card
                       className={cn(
                         "bg-background/40 backdrop-blur-xl border shadow-lg cursor-pointer transition-all hover:shadow-xl",
-                        notification.status === 'unread' 
-                          ? "border-primary/20 bg-primary/5" 
+                        notification.status === 'unread'
+                          ? "border-primary/20 bg-primary/5"
                           : "border-primary/10",
                         priority.borderColor,
                         isSelected && "ring-2 ring-primary/50"
@@ -391,11 +391,11 @@ export function NotificationContent() {
                       <CardContent className="p-6">
                         <div className="flex items-start gap-4">
                           {/* Selection Checkbox */}
-                          <div 
+                          <div
                             className="mt-1"
                             onClick={(e) => {
                               e.stopPropagation()
-                              setSelectedNotifications(prev => 
+                              setSelectedNotifications(prev =>
                                 prev.includes(notification.id)
                                   ? prev.filter(id => id !== notification.id)
                                   : [...prev, notification.id]
@@ -404,8 +404,8 @@ export function NotificationContent() {
                           >
                             <div className={cn(
                               "w-4 h-4 border rounded cursor-pointer transition-colors",
-                              isSelected 
-                                ? "bg-primary border-primary" 
+                              isSelected
+                                ? "bg-primary border-primary"
                                 : "border-muted-foreground/30 hover:border-primary/50"
                             )}>
                               {isSelected && (
@@ -433,10 +433,10 @@ export function NotificationContent() {
                                   <div className="w-2 h-2 bg-primary rounded-full" />
                                 )}
                               </div>
-                              
+
                               <div className="flex items-center gap-2">
-                                <Badge 
-                                  variant="outline" 
+                                <Badge
+                                  variant="outline"
                                   className={cn("text-xs", priority.color, priority.borderColor)}
                                 >
                                   {priority.label}
@@ -484,7 +484,7 @@ export function NotificationContent() {
                                   {category.label}
                                 </Badge>
                               </div>
-                              
+
                               <div className="flex items-center gap-2" onClick={(e) => e.stopPropagation()}>
                                 {notification.status === 'unread' && (
                                   <Button
@@ -497,7 +497,7 @@ export function NotificationContent() {
                                     Mark Read
                                   </Button>
                                 )}
-                                
+
                                 {notification.action_url && (
                                   <Button
                                     variant="ghost"

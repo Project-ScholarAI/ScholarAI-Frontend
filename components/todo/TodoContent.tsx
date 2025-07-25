@@ -14,9 +14,9 @@ import { Label } from "@/components/ui/label"
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover"
 import { Calendar } from "@/components/ui/calendar"
 import { toast } from "sonner"
-import { 
-  CheckSquare, 
-  Plus, 
+import {
+  CheckSquare,
+  Plus,
   MoreVertical,
   Calendar as CalendarIcon,
   Clock,
@@ -60,17 +60,17 @@ export function TodoContent() {
   const [isLoading, setIsLoading] = useState(true)
   const [selectedTodos, setSelectedTodos] = useState<string[]>([])
   const [showCompleted, setShowCompleted] = useState(true)
-  
+
   // Filters and sorting
   const [filters, setFilters] = useState<TodoFilters>({})
   const [sort, setSort] = useState<TodoSortOptions>({ field: 'created_at', direction: 'desc' })
   const [searchQuery, setSearchQuery] = useState('')
-  
+
   // Dialogs
   const [showCreateDialog, setShowCreateDialog] = useState(false)
   const [showEditDialog, setShowEditDialog] = useState(false)
   const [editingTodo, setEditingTodo] = useState<Todo | null>(null)
-  
+
   // Form state
   const [form, setForm] = useState<TodoForm>({
     title: '',
@@ -115,22 +115,22 @@ export function TodoContent() {
     const loadData = async () => {
       try {
         setIsLoading(true)
-        
+
         // Load todos and summary from API
         const [todosResult, summaryResult] = await Promise.all([
           todosApi.getTodos(filters, sort),
           todosApi.getSummary()
         ])
-        
+
         console.log("Todos loaded:", todosResult.todos.length)
         console.log("Summary loaded:", summaryResult)
-        
+
         setTodos(todosResult.todos)
         setSummary(summaryResult)
       } catch (error) {
         console.error("Failed to load todos:", error)
         toast.error("Failed to load todos from server, using mock data")
-        
+
         // Fallback to mock data for development
         setTodos(MOCK_TODOS)
         const mockSummary: TodoSummary = {
@@ -147,14 +147,14 @@ export function TodoContent() {
             medium: MOCK_TODOS.filter(t => t.priority === 'medium').length,
             low: MOCK_TODOS.filter(t => t.priority === 'low').length
           },
-          overdue: MOCK_TODOS.filter(t => 
-            t.due_date && t.status !== 'completed' && 
+          overdue: MOCK_TODOS.filter(t =>
+            t.due_date && t.status !== 'completed' &&
             isBefore(parseISO(t.due_date), startOfDay(new Date()))
           ).length,
-          due_today: MOCK_TODOS.filter(t => 
+          due_today: MOCK_TODOS.filter(t =>
             t.due_date && isToday(parseISO(t.due_date))
           ).length,
-          due_this_week: MOCK_TODOS.filter(t => 
+          due_this_week: MOCK_TODOS.filter(t =>
             t.due_date && isThisWeek(parseISO(t.due_date))
           ).length
         }
@@ -172,38 +172,38 @@ export function TodoContent() {
     let filtered = todos.filter(todo => {
       // Search filter
       if (searchQuery && !todo.title.toLowerCase().includes(searchQuery.toLowerCase()) &&
-          !todo.description?.toLowerCase().includes(searchQuery.toLowerCase())) {
+        !todo.description?.toLowerCase().includes(searchQuery.toLowerCase())) {
         return false
       }
-      
+
       // Status filter
       if (filters.status && !filters.status.includes(todo.status)) {
         return false
       }
-      
+
       // Priority filter
       if (filters.priority && !filters.priority.includes(todo.priority)) {
         return false
       }
-      
+
       // Category filter
       if (filters.category && !filters.category.includes(todo.category)) {
         return false
       }
-      
+
       // Show completed filter
       if (!showCompleted && todo.status === 'completed') {
         return false
       }
-      
+
       return true
     })
-    
+
     // Sort
     return filtered.sort((a, b) => {
       let aValue: any = a[sort.field]
       let bValue: any = b[sort.field]
-      
+
       if (sort.field === 'due_date') {
         aValue = a.due_date ? new Date(a.due_date).getTime() : 0
         bValue = b.due_date ? new Date(b.due_date).getTime() : 0
@@ -214,7 +214,7 @@ export function TodoContent() {
         aValue = aValue.toLowerCase()
         bValue = bValue.toLowerCase()
       }
-      
+
       if (sort.direction === 'asc') {
         return aValue > bValue ? 1 : -1
       } else {
@@ -227,19 +227,19 @@ export function TodoContent() {
   const handleStatusUpdate = async (todoId: string, status: Todo['status']) => {
     try {
       // Update local state immediately
-      setTodos(prev => 
-        prev.map(t => 
-          t.id === todoId 
-            ? { 
-                ...t, 
-                status, 
-                completed_at: status === 'completed' ? new Date().toISOString() : undefined,
-                updated_at: new Date().toISOString()
-              }
+      setTodos(prev =>
+        prev.map(t =>
+          t.id === todoId
+            ? {
+              ...t,
+              status,
+              completed_at: status === 'completed' ? new Date().toISOString() : undefined,
+              updated_at: new Date().toISOString()
+            }
             : t
         )
       )
-      
+
       // API call
       const result = await todosApi.updateTodoStatus(todoId, status)
       if (!result.success) {
@@ -263,32 +263,32 @@ export function TodoContent() {
         toast.error("Title is required")
         return
       }
-      
+
       // Debug authentication
       const token = localStorage.getItem("scholarai_token");
       const userData = localStorage.getItem("scholarai_user");
       console.log("Auth token exists:", !!token);
       console.log("User data:", userData ? JSON.parse(userData) : null);
-      
+
       if (!token) {
         toast.error("You must be logged in to create todos");
         return;
       }
-      
+
       console.log("Creating todo with form data:", form);
-      
+
       const result = await todosApi.createTodo(form)
-      
+
       if (result.success && result.data) {
         setTodos(prev => [result.data!, ...prev])
         setShowCreateDialog(false)
         resetForm()
         setDueTime("12:00") // Reset time input
-        
+
         // Refresh summary
         const summaryResult = await todosApi.getSummary()
         setSummary(summaryResult)
-        
+
         toast.success("Todo created successfully")
       } else {
         toast.error(result.message || "Failed to create todo")
@@ -303,14 +303,14 @@ export function TodoContent() {
   const handleDeleteTodo = async (todoId: string) => {
     try {
       const result = await todosApi.deleteTodo(todoId)
-      
+
       if (result.success) {
         setTodos(prev => prev.filter(t => t.id !== todoId))
-        
+
         // Refresh summary
         const summaryResult = await todosApi.getSummary()
         setSummary(summaryResult)
-        
+
         toast.success("Todo deleted successfully")
       } else {
         toast.error(result.message || "Failed to delete todo")
@@ -342,14 +342,14 @@ export function TodoContent() {
     const status = STATUS_CONFIG[todo.status]
     const priority = PRIORITY_CONFIG[todo.priority]
     const category = CATEGORY_CONFIG[todo.category]
-    
+
     return { status, priority, category }
   }
 
   // Check if todo is overdue
   const isOverdue = (todo: Todo) => {
-    return todo.due_date && todo.status !== 'completed' && 
-           isBefore(parseISO(todo.due_date), startOfDay(new Date()))
+    return todo.due_date && todo.status !== 'completed' &&
+      isBefore(parseISO(todo.due_date), startOfDay(new Date()))
   }
 
   if (isLoading) {
@@ -377,7 +377,7 @@ export function TodoContent() {
         <div className="container mx-auto px-6 py-6">
           <div className="flex items-center justify-between mb-6">
             <div>
-              <h1 className="text-3xl font-bold bg-gradient-to-r from-primary via-blue-500 to-purple-500 bg-clip-text text-transparent flex items-center gap-3">
+              <h1 className="text-3xl font-bold text-gradient-primary flex items-center gap-3">
                 <CheckSquare className="h-8 w-8 text-primary" />
                 Todo Management
               </h1>
@@ -385,12 +385,12 @@ export function TodoContent() {
                 Organize tasks and track progress efficiently
               </p>
             </div>
-            
+
             {/* Action Buttons */}
             <div className="flex items-center gap-3">
               <Dialog open={showCreateDialog} onOpenChange={setShowCreateDialog}>
                 <DialogTrigger asChild>
-                  <Button className="bg-gradient-to-r from-primary to-blue-600 text-white flex items-center gap-2">
+                  <Button className="gradient-primary-to-accent text-white flex items-center gap-2">
                     <Plus className="h-4 w-4" />
                     Add Todo
                   </Button>
@@ -402,7 +402,7 @@ export function TodoContent() {
                       Add a new task to your todo list
                     </DialogDescription>
                   </DialogHeader>
-                  
+
                   <div className="space-y-4">
                     <div>
                       <Label htmlFor="title">Title *</Label>
@@ -413,7 +413,7 @@ export function TodoContent() {
                         placeholder="Enter todo title"
                       />
                     </div>
-                    
+
                     <div>
                       <Label htmlFor="description">Description</Label>
                       <Textarea
@@ -424,7 +424,7 @@ export function TodoContent() {
                         rows={3}
                       />
                     </div>
-                    
+
                     <div className="grid grid-cols-2 gap-4">
                       <div>
                         <Label htmlFor="priority">Priority</Label>
@@ -444,7 +444,7 @@ export function TodoContent() {
                           </SelectContent>
                         </Select>
                       </div>
-                      
+
                       <div>
                         <Label htmlFor="category">Category</Label>
                         <Select value={form.category} onValueChange={(value: any) => setForm(prev => ({ ...prev, category: value }))}>
@@ -464,7 +464,7 @@ export function TodoContent() {
                         </Select>
                       </div>
                     </div>
-                    
+
                     <div>
                       <Label htmlFor="due_date">Due Date & Time</Label>
                       <div className="flex gap-2">
@@ -514,7 +514,7 @@ export function TodoContent() {
                         />
                       </div>
                     </div>
-                    
+
                     <div>
                       <Label htmlFor="estimated_time">Estimated Time (minutes)</Label>
                       <Input
@@ -526,7 +526,7 @@ export function TodoContent() {
                       />
                     </div>
                   </div>
-                  
+
                   <DialogFooter>
                     <Button variant="outline" onClick={() => setShowCreateDialog(false)}>
                       Cancel
@@ -549,42 +549,42 @@ export function TodoContent() {
                   <div className="text-xs text-muted-foreground">Total</div>
                 </CardContent>
               </Card>
-              
+
               <Card className="bg-background/40 backdrop-blur-xl border border-blue-500/20">
                 <CardContent className="p-4 text-center">
                   <div className="text-2xl font-bold text-blue-500">{summary.by_status.pending}</div>
                   <div className="text-xs text-muted-foreground">Pending</div>
                 </CardContent>
               </Card>
-              
+
               <Card className="bg-background/40 backdrop-blur-xl border border-yellow-500/20">
                 <CardContent className="p-4 text-center">
                   <div className="text-2xl font-bold text-yellow-500">{summary.by_status.in_progress}</div>
                   <div className="text-xs text-muted-foreground">In Progress</div>
                 </CardContent>
               </Card>
-              
+
               <Card className="bg-background/40 backdrop-blur-xl border border-green-500/20">
                 <CardContent className="p-4 text-center">
                   <div className="text-2xl font-bold text-green-500">{summary.by_status.completed}</div>
                   <div className="text-xs text-muted-foreground">Completed</div>
                 </CardContent>
               </Card>
-              
+
               <Card className="bg-background/40 backdrop-blur-xl border border-red-500/20">
                 <CardContent className="p-4 text-center">
                   <div className="text-2xl font-bold text-red-500">{summary.overdue}</div>
                   <div className="text-xs text-muted-foreground">Overdue</div>
                 </CardContent>
               </Card>
-              
+
               <Card className="bg-background/40 backdrop-blur-xl border border-orange-500/20">
                 <CardContent className="p-4 text-center">
                   <div className="text-2xl font-bold text-orange-500">{summary.due_today}</div>
                   <div className="text-xs text-muted-foreground">Due Today</div>
                 </CardContent>
               </Card>
-              
+
               <Card className="bg-background/40 backdrop-blur-xl border border-purple-500/20">
                 <CardContent className="p-4 text-center">
                   <div className="text-2xl font-bold text-purple-500">{summary.due_this_week}</div>
@@ -607,7 +607,7 @@ export function TodoContent() {
                 />
               </div>
             </div>
-            
+
             <Select value={`${sort.field}-${sort.direction}`} onValueChange={(value) => {
               const option = SORT_OPTIONS.find(o => o.value === value)
               if (option) {
@@ -626,7 +626,7 @@ export function TodoContent() {
                 ))}
               </SelectContent>
             </Select>
-            
+
             <Button
               variant="outline"
               size="sm"
@@ -654,8 +654,8 @@ export function TodoContent() {
                   {searchQuery ? "No todos match your search criteria." : "Create your first todo to get started."}
                 </p>
                 {!searchQuery && (
-                  <Button 
-                    className="mt-4" 
+                  <Button
+                    className="mt-4 gradient-primary-to-accent text-white"
                     onClick={() => setShowCreateDialog(true)}
                   >
                     <Plus className="h-4 w-4 mr-2" />
@@ -668,7 +668,7 @@ export function TodoContent() {
             filteredTodos.map((todo) => {
               const { status, priority, category } = getTodoStyling(todo)
               const overdue = isOverdue(todo)
-              
+
               return (
                 <motion.div
                   key={todo.id}
@@ -676,7 +676,7 @@ export function TodoContent() {
                   animate={{ opacity: 1, y: 0 }}
                   transition={{ duration: 0.3 }}
                 >
-                  <Card 
+                  <Card
                     className={cn(
                       "bg-background/40 backdrop-blur-xl border shadow-lg cursor-pointer transition-all hover:shadow-xl",
                       status.borderColor,
@@ -687,7 +687,7 @@ export function TodoContent() {
                     <CardContent className="p-6">
                       <div className="flex items-start gap-4">
                         {/* Status Toggle */}
-                        <div 
+                        <div
                           className="mt-1"
                           onClick={(e) => {
                             e.stopPropagation()
@@ -724,7 +724,7 @@ export function TodoContent() {
                                 </Badge>
                               )}
                             </div>
-                            
+
                             <div className="flex items-center gap-2">
                               {/* Status Dropdown */}
                               <Select
@@ -779,8 +779,8 @@ export function TodoContent() {
                                 <Trash2 className="h-4 w-4" />
                               </Button>
 
-                              <Badge 
-                                variant="outline" 
+                              <Badge
+                                variant="outline"
                                 className={cn("text-xs", priority.color, priority.borderColor)}
                               >
                                 {priority.label}
@@ -806,22 +806,22 @@ export function TodoContent() {
                               </div>
                               <div className="space-y-1.5">
                                 {todo.subtasks.map((subtask) => (
-                                  <div 
-                                    key={subtask.id} 
+                                  <div
+                                    key={subtask.id}
                                     className="flex items-center gap-2 text-sm"
                                     onClick={(e) => {
                                       e.stopPropagation()
                                       // Update local state immediately for better UX
-                                      setTodos(prev => prev.map(t => 
-                                        t.id === todo.id 
+                                      setTodos(prev => prev.map(t =>
+                                        t.id === todo.id
                                           ? {
-                                              ...t,
-                                              subtasks: t.subtasks.map(s =>
-                                                s.id === subtask.id
-                                                  ? { ...s, completed: !s.completed }
-                                                  : s
-                                              )
-                                            }
+                                            ...t,
+                                            subtasks: t.subtasks.map(s =>
+                                              s.id === subtask.id
+                                                ? { ...s, completed: !s.completed }
+                                                : s
+                                            )
+                                          }
                                           : t
                                       ))
                                       // API call
@@ -830,8 +830,8 @@ export function TodoContent() {
                                   >
                                     <div className={cn(
                                       "w-4 h-4 border rounded-sm cursor-pointer transition-colors flex items-center justify-center",
-                                      subtask.completed 
-                                        ? "bg-primary border-primary" 
+                                      subtask.completed
+                                        ? "bg-primary border-primary"
                                         : "border-muted-foreground/30 hover:border-primary/50"
                                     )}>
                                       {subtask.completed && (
@@ -859,7 +859,7 @@ export function TodoContent() {
                                   Due {formatDateForCard(todo.due_date)}
                                 </div>
                               )}
-                              
+
                               {todo.estimated_time && (
                                 <div className="flex items-center gap-1">
                                   <Clock className="h-3 w-3" />
@@ -874,16 +874,16 @@ export function TodoContent() {
                                 </div>
                               )}
                             </div>
-                            
+
                             <div className="flex items-center gap-2">
-                              <Badge 
-                                variant="outline" 
+                              <Badge
+                                variant="outline"
                                 className={cn("text-xs", status.color, status.borderColor)}
                               >
                                 {status.label}
                               </Badge>
                               <span>
-                                {todo.created_at && !isNaN(new Date(todo.created_at).getTime()) 
+                                {todo.created_at && !isNaN(new Date(todo.created_at).getTime())
                                   ? formatDistance(parseISO(todo.created_at), new Date(), { addSuffix: true })
                                   : ""}
                               </span>
@@ -921,7 +921,7 @@ export function TodoContent() {
               Modify the todo details
             </DialogDescription>
           </DialogHeader>
-          
+
           <div className="space-y-4">
             <div>
               <Label htmlFor="title">Title *</Label>
@@ -932,7 +932,7 @@ export function TodoContent() {
                 placeholder="Enter todo title"
               />
             </div>
-            
+
             <div>
               <Label htmlFor="description">Description</Label>
               <Textarea
@@ -943,7 +943,7 @@ export function TodoContent() {
                 rows={3}
               />
             </div>
-            
+
             <div className="grid grid-cols-2 gap-4">
               <div>
                 <Label htmlFor="priority">Priority</Label>
@@ -963,7 +963,7 @@ export function TodoContent() {
                   </SelectContent>
                 </Select>
               </div>
-              
+
               <div>
                 <Label htmlFor="category">Category</Label>
                 <Select value={form.category} onValueChange={(value: any) => setForm(prev => ({ ...prev, category: value }))}>
@@ -983,7 +983,7 @@ export function TodoContent() {
                 </Select>
               </div>
             </div>
-            
+
             <div>
               <Label htmlFor="due_date">Due Date & Time</Label>
               <div className="flex gap-2">
@@ -1033,7 +1033,7 @@ export function TodoContent() {
                 />
               </div>
             </div>
-            
+
             <div>
               <Label htmlFor="estimated_time">Estimated Time (minutes)</Label>
               <Input
@@ -1091,7 +1091,7 @@ export function TodoContent() {
               </div>
             </div>
           </div>
-          
+
           <DialogFooter>
             <Button variant="outline" onClick={() => {
               setShowEditDialog(false)
@@ -1102,13 +1102,13 @@ export function TodoContent() {
             <Button onClick={async () => {
               if (editingTodo) {
                 const result = await todosApi.updateTodo(editingTodo.id, form)
-                
+
                 if (result.success && result.data) {
                   // Update local state
-                  setTodos(prev => prev.map(todo => 
+                  setTodos(prev => prev.map(todo =>
                     todo.id === editingTodo.id ? result.data! : todo
                   ))
-                  
+
                   setShowEditDialog(false)
                   resetForm()
                   setEditingTodo(null)

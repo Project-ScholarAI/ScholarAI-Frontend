@@ -69,6 +69,19 @@ const processPdfUrl = async (url: string): Promise<string> => {
         }
       }
 
+      // Check if it's a B2 URL
+      const isB2Url = urlObj.hostname.startsWith('f') && urlObj.hostname.endsWith('.backblazeb2.com')
+
+      if (isB2Url) {
+        // Extract file ID from B2 URL
+        const fileId = urlObj.searchParams.get('fileId')
+        if (fileId) {
+          const b2DownloadUrl = `/api/b2/download?fileId=${fileId}`
+          console.log('B2 URL detected, using dedicated download endpoint:', b2DownloadUrl)
+          return b2DownloadUrl
+        }
+      }
+
       // If it's external, use our proxy to bypass CORS
       const proxyUrl = `/api/pdf/proxy?url=${encodeURIComponent(url)}`
       console.log('External URL detected, using proxy. Original:', url, 'Proxy:', proxyUrl)
