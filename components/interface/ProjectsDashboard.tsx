@@ -7,6 +7,7 @@ import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import { Input } from "@/components/ui/input"
+import { EnhancedTooltip } from "@/components/ui/enhanced-tooltip"
 import { ProjectCreateDialog } from "@/components/interface/ProjectCreateDialog"
 import { ProjectEditDialog } from "@/components/interface/ProjectEditDialog"
 import { ShareProjectDialog } from "@/components/interface/ShareProjectDialog"
@@ -256,14 +257,16 @@ export function ProjectsDashboard() {
                                     Manage your AI-powered research workflows and discoveries
                                 </p>
                             </div>
-                            <Button
-                                onClick={() => setShowCreateDialog(true)}
-                                size="lg"
-                                className="group relative overflow-hidden gradient-primary-to-accent text-white border-0 shadow-lg shadow-primary transition-all duration-300 hover:shadow-accent hover:scale-105"
-                            >
-                                <Plus className="mr-2 h-5 w-5 group-hover:rotate-90 transition-transform duration-300" />
-                                New Project
-                            </Button>
+                            <EnhancedTooltip content="Create a new research project to organize your work">
+                                <Button
+                                    onClick={() => setShowCreateDialog(true)}
+                                    size="lg"
+                                    className="group relative overflow-hidden gradient-primary-to-accent text-white border-0 shadow-lg shadow-primary transition-all duration-300 hover:shadow-accent hover:scale-105"
+                                >
+                                    <Plus className="mr-2 h-5 w-5 group-hover:rotate-90 transition-transform duration-300" />
+                                    New Project
+                                </Button>
+                            </EnhancedTooltip>
                         </div>
 
                         {/* Stats Cards */}
@@ -282,7 +285,7 @@ export function ProjectsDashboard() {
                                     transition={{ delay: index * 0.1, duration: 0.6 }}
                                     className="relative group"
                                 >
-                                    <Card className="relative overflow-hidden bg-background/80 backdrop-blur-xl border border-primary/15 shadow-lg hover:shadow-primary/20 transition-all duration-300 group-hover:scale-105">
+                                    <Card className="relative overflow-hidden bg-background/80 backdrop-blur-xl border-2 border-primary/25 shadow-lg hover:shadow-primary/20 transition-all duration-300 group-hover:scale-105">
                                         <div className="absolute inset-0 bg-gradient-to-br from-primary/5 via-transparent to-purple-500/5 opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
                                         <CardContent className="p-3 relative z-10">
                                             <div className="flex items-center gap-2">
@@ -300,15 +303,17 @@ export function ProjectsDashboard() {
 
                         {/* Search and Filters */}
                         <div className="flex flex-col sm:flex-row gap-4 items-center">
-                            <div className="relative flex-1 max-w-md">
-                                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                                <Input
-                                    placeholder="Search projects, domains, or tags..."
-                                    value={searchQuery}
-                                    onChange={(e) => setSearchQuery(e.target.value)}
-                                    className="pl-10 bg-background/80 backdrop-blur-xl border-primary/20 focus:border-primary/40"
-                                />
-                            </div>
+                            <EnhancedTooltip content="Search through your projects by name, domain, or tags">
+                                <div className="relative flex-1 max-w-md">
+                                    <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                                    <Input
+                                        placeholder="Search projects, domains, or tags..."
+                                        value={searchQuery}
+                                        onChange={(e) => setSearchQuery(e.target.value)}
+                                        className="pl-10 bg-background/80 backdrop-blur-xl border-2 border-primary/30 focus:border-primary/50"
+                                    />
+                                </div>
+                            </EnhancedTooltip>
                             <div className="flex gap-2">
                                 {['all', 'active', 'paused', 'completed', 'archived'].map((status) => (
                                     <Button
@@ -318,7 +323,7 @@ export function ProjectsDashboard() {
                                         onClick={() => setSelectedStatus(status)}
                                         className={selectedStatus === status
                                             ? "gradient-primary-to-accent text-white"
-                                            : "bg-background/80 backdrop-blur-xl border-primary/20 hover:bg-primary/5 hover:border-primary/40"
+                                            : "bg-background/80 backdrop-blur-xl border-2 border-primary/30 hover:bg-primary/5 hover:border-primary/50"
                                         }
                                     >
                                         <Filter className="mr-1 h-3 w-3" />
@@ -331,7 +336,7 @@ export function ProjectsDashboard() {
                                     onClick={() => setShowOnlyShared(!showOnlyShared)}
                                     className={showOnlyShared
                                         ? "gradient-primary text-white"
-                                        : "bg-background/80 backdrop-blur-xl border-primary/20 hover:bg-primary/5 hover:border-primary/40"
+                                        : "bg-background/80 backdrop-blur-xl border-2 border-primary/30 hover:bg-primary/5 hover:border-primary/50"
                                     }
                                 >
                                     <Users className="mr-1 h-3 w-3" />
@@ -367,7 +372,7 @@ export function ProjectsDashboard() {
                                 <Button
                                     onClick={() => loadProjects()}
                                     variant="outline"
-                                    className="bg-background/80 backdrop-blur-xl border-primary/20 hover:border-primary/40"
+                                    className="bg-background/80 backdrop-blur-xl border-2 border-primary/30 hover:border-primary/50"
                                 >
                                     Try Again
                                 </Button>
@@ -395,7 +400,7 @@ export function ProjectsDashboard() {
                                         whileHover={{ y: -5, scale: 1.02 }}
                                         className="group cursor-pointer"
                                     >
-                                        <Card className="relative overflow-hidden bg-background/80 backdrop-blur-xl border border-primary/15 shadow-lg hover:shadow-primary/30 transition-all duration-500 group-hover:border-primary/30 h-[380px] flex flex-col">
+                                        <Card className="relative overflow-hidden bg-background/80 backdrop-blur-xl border-2 border-primary/25 shadow-lg hover:shadow-primary/30 transition-all duration-500 group-hover:border-primary/40 h-[380px] flex flex-col">
                                             {/* Card Background Effects */}
                                             <div className="absolute inset-0 bg-gradient-to-br from-primary/5 via-transparent to-purple-500/5 opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
                                             <div className="absolute top-0 right-0 w-32 h-32 bg-gradient-to-bl from-primary/10 to-transparent rounded-full blur-2xl opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
@@ -409,7 +414,7 @@ export function ProjectsDashboard() {
                                                                 {getStatusLabel(project.status)}
                                                             </Badge>
                                                             {project.domain && (
-                                                                <Badge variant="outline" className="text-xs border-primary/20">
+                                                                <Badge variant="outline" className="text-xs border-2 border-primary/30">
                                                                     {project.domain}
                                                                 </Badge>
                                                             )}
@@ -492,7 +497,7 @@ export function ProjectsDashboard() {
                                                             <Badge
                                                                 key={tag}
                                                                 variant="secondary"
-                                                                className="text-xs bg-primary/10 text-primary border-primary/20"
+                                                                className="text-xs bg-primary/10 text-primary border-2 border-primary/30"
                                                             >
                                                                 {tag}
                                                             </Badge>
@@ -532,7 +537,7 @@ export function ProjectsDashboard() {
                                                     <Button
                                                         size="sm"
                                                         variant="outline"
-                                                        className="bg-background/40 backdrop-blur-xl border-primary/20 hover:bg-primary/5"
+                                                        className="bg-background/40 backdrop-blur-xl border-2 border-primary/30 hover:bg-primary/5"
                                                         onClick={(e) => {
                                                             e.stopPropagation()
                                                             // Analytics/insights for this project
@@ -544,7 +549,7 @@ export function ProjectsDashboard() {
                                                     <Button
                                                         size="sm"
                                                         variant="outline"
-                                                        className="bg-background/40 backdrop-blur-xl border-primary/20 hover:bg-primary/5"
+                                                        className="bg-background/40 backdrop-blur-xl border-2 border-primary/30 hover:bg-primary/5"
                                                         onClick={(e) => {
                                                             e.stopPropagation()
                                                             // Open project chat
@@ -556,7 +561,7 @@ export function ProjectsDashboard() {
                                                     <Button
                                                         size="sm"
                                                         variant="outline"
-                                                        className="bg-background/40 backdrop-blur-xl border-primary/20 hover:bg-primary/5"
+                                                        className="bg-background/40 backdrop-blur-xl border-2 border-primary/30 hover:bg-primary/5"
                                                         onClick={(e) => {
                                                             e.stopPropagation()
                                                             handleShareProject(project)

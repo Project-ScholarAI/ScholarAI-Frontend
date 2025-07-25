@@ -10,15 +10,10 @@ interface SettingsState {
 
     // UI Preferences
     sidebarCollapsed: boolean
-    showBreadcrumbs: boolean
     showTooltips: boolean
-    autoSave: boolean
 
-    // Performance
-    enableAnimations: boolean
-    enableHoverEffects: boolean
+    // Animations & Effects
     enableGlowEffects: boolean
-    enableParticles: boolean
 
     // Accessibility
     highContrast: boolean
@@ -41,13 +36,8 @@ const defaultSettings: SettingsState = {
     colorScheme: 'blue',
     layoutDensity: 'comfortable',
     sidebarCollapsed: false,
-    showBreadcrumbs: true,
     showTooltips: true,
-    autoSave: true,
-    enableAnimations: true,
-    enableHoverEffects: true,
     enableGlowEffects: true,
-    enableParticles: true,
     highContrast: false,
     largeText: false,
     focusIndicators: true,
@@ -105,33 +95,33 @@ export function SettingsProvider({ children }: { children: ReactNode }) {
         // Apply accessibility settings
         if (settings.highContrast) {
             root.classList.add('high-contrast')
+            console.log('High contrast enabled')
         } else {
             root.classList.remove('high-contrast')
+            console.log('High contrast disabled')
         }
 
         if (settings.largeText) {
             root.classList.add('large-text')
+            console.log('Large text enabled')
         } else {
             root.classList.remove('large-text')
+            console.log('Large text disabled')
         }
 
-        // Apply performance settings
-        if (!settings.enableAnimations) {
-            root.classList.add('no-animations')
+        if (settings.focusIndicators) {
+            root.classList.add('focus-indicators')
+            console.log('Focus indicators enabled')
         } else {
-            root.classList.remove('no-animations')
+            root.classList.remove('focus-indicators')
+            console.log('Focus indicators disabled')
         }
 
+        // Apply glow effects
         if (!settings.enableGlowEffects) {
             root.classList.add('no-glow')
         } else {
             root.classList.remove('no-glow')
-        }
-
-        if (!settings.enableParticles) {
-            root.classList.add('no-particles')
-        } else {
-            root.classList.remove('no-particles')
         }
     }, [settings])
 
@@ -141,28 +131,38 @@ export function SettingsProvider({ children }: { children: ReactNode }) {
         setSettings(prev => ({ ...prev, [key]: value }))
         setHasUnsavedChanges(true)
 
-        // Apply settings immediately for performance-related settings
-        if (key === 'enableGlowEffects' || key === 'enableAnimations' || key === 'enableParticles') {
-            const root = document.documentElement
+        // Apply settings immediately for real-time feedback
+        const root = document.documentElement
 
-            if (key === 'enableGlowEffects') {
-                if (!value) {
-                    root.classList.add('no-glow')
-                } else {
-                    root.classList.remove('no-glow')
-                }
-            } else if (key === 'enableAnimations') {
-                if (!value) {
-                    root.classList.add('no-animations')
-                } else {
-                    root.classList.remove('no-animations')
-                }
-            } else if (key === 'enableParticles') {
-                if (!value) {
-                    root.classList.add('no-particles')
-                } else {
-                    root.classList.remove('no-particles')
-                }
+        if (key === 'enableGlowEffects') {
+            if (!value) {
+                root.classList.add('no-glow')
+            } else {
+                root.classList.remove('no-glow')
+            }
+        } else if (key === 'highContrast') {
+            if (value) {
+                root.classList.add('high-contrast')
+                console.log('High contrast enabled via updateSetting')
+            } else {
+                root.classList.remove('high-contrast')
+                console.log('High contrast disabled via updateSetting')
+            }
+        } else if (key === 'largeText') {
+            if (value) {
+                root.classList.add('large-text')
+                console.log('Large text enabled via updateSetting')
+            } else {
+                root.classList.remove('large-text')
+                console.log('Large text disabled via updateSetting')
+            }
+        } else if (key === 'focusIndicators') {
+            if (value) {
+                root.classList.add('focus-indicators')
+                console.log('Focus indicators enabled via updateSetting')
+            } else {
+                root.classList.remove('focus-indicators')
+                console.log('Focus indicators disabled via updateSetting')
             }
         }
     }

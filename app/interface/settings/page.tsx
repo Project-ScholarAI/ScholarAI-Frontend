@@ -45,15 +45,10 @@ interface SettingsState {
 
     // UI Preferences
     sidebarCollapsed: boolean
-    showBreadcrumbs: boolean
     showTooltips: boolean
-    autoSave: boolean
 
-    // Performance
-    enableAnimations: boolean
-    enableHoverEffects: boolean
+    // Animations & Effects
     enableGlowEffects: boolean
-    enableParticles: boolean
 
     // Accessibility
     highContrast: boolean
@@ -76,13 +71,8 @@ const defaultSettings: SettingsState = {
     colorScheme: 'blue',
     layoutDensity: 'comfortable',
     sidebarCollapsed: false,
-    showBreadcrumbs: true,
     showTooltips: true,
-    autoSave: true,
-    enableAnimations: true,
-    enableHoverEffects: true,
     enableGlowEffects: true,
-    enableParticles: true,
     highContrast: false,
     largeText: false,
     focusIndicators: true,
@@ -136,7 +126,7 @@ export default function SettingsPage() {
                                 <Settings className="h-8 w-8 text-primary" />
                                 Settings
                                 <div
-                                    className="w-4 h-4 rounded-full border border-primary/30 ml-2"
+                                    className="w-4 h-4 rounded-full border-2 border-primary/40 ml-2"
                                     style={{
                                         backgroundColor: {
                                             blue: 'hsl(221.2 83.2% 53.3%)',
@@ -156,7 +146,7 @@ export default function SettingsPage() {
                             <Button
                                 variant="outline"
                                 onClick={handleResetSettings}
-                                className="bg-background/40 backdrop-blur-xl border-primary/20"
+                                className="bg-background/40 backdrop-blur-xl border-2 border-primary/30"
                             >
                                 <RotateCcw className="mr-2 h-4 w-4" />
                                 Reset
@@ -179,7 +169,7 @@ export default function SettingsPage() {
                     transition={{ duration: 0.6, delay: 0.2 }}
                 >
                     <Tabs defaultValue="appearance" className="space-y-6">
-                        <TabsList className="grid w-full grid-cols-5 bg-background/40 backdrop-blur-xl border border-primary/10">
+                        <TabsList className="grid w-full grid-cols-4 bg-background/40 backdrop-blur-xl border-2 border-primary/25">
                             <TabsTrigger value="appearance" className="flex items-center gap-2">
                                 <Palette className="h-4 w-4" />
                                 <span className="hidden sm:inline">Appearance</span>
@@ -187,10 +177,6 @@ export default function SettingsPage() {
                             <TabsTrigger value="interface" className="flex items-center gap-2">
                                 <Monitor className="h-4 w-4" />
                                 <span className="hidden sm:inline">Interface</span>
-                            </TabsTrigger>
-                            <TabsTrigger value="performance" className="flex items-center gap-2">
-                                <Zap className="h-4 w-4" />
-                                <span className="hidden sm:inline">Performance</span>
                             </TabsTrigger>
                             <TabsTrigger value="accessibility" className="flex items-center gap-2">
                                 <Eye className="h-4 w-4" />
@@ -204,7 +190,7 @@ export default function SettingsPage() {
 
                         {/* Appearance Settings */}
                         <TabsContent value="appearance" className="space-y-6">
-                            <Card className="bg-background/40 backdrop-blur-xl border border-primary/10">
+                            <Card className="bg-background/40 backdrop-blur-xl border-2 border-primary/25">
                                 <CardHeader>
                                     <CardTitle className="flex items-center gap-2">
                                         <PaletteIcon className="h-5 w-5 text-primary" />
@@ -253,7 +239,7 @@ export default function SettingsPage() {
                                                 <div className="flex items-center gap-2 mt-1">
                                                     <span className="text-xs text-muted-foreground">Current:</span>
                                                     <div
-                                                        className="w-3 h-3 rounded-full border border-primary/20"
+                                                        className="w-3 h-3 rounded-full border-2 border-primary/30"
                                                         style={{
                                                             backgroundColor: {
                                                                 blue: 'hsl(221.2 83.2% 53.3%)',
@@ -313,7 +299,7 @@ export default function SettingsPage() {
                                 </CardContent>
                             </Card>
 
-                            <Card className="bg-background/40 backdrop-blur-xl border border-primary/10">
+                            <Card className="bg-background/40 backdrop-blur-xl border-2 border-primary/25">
                                 <CardHeader>
                                     <CardTitle className="flex items-center gap-2">
                                         <Zap className="h-5 w-5 text-primary" />
@@ -335,8 +321,8 @@ export default function SettingsPage() {
                                                 <div className="flex items-center gap-2 mt-2">
                                                     <div
                                                         className={`w-4 h-4 rounded-full border transition-all duration-300 ${settings.enableGlowEffects
-                                                                ? 'shadow-primary border-primary/30'
-                                                                : 'shadow-none border-primary/20'
+                                                            ? 'shadow-primary border-primary/30'
+                                                            : 'shadow-none border-2 border-primary/30'
                                                             }`}
                                                         style={{
                                                             backgroundColor: {
@@ -365,7 +351,7 @@ export default function SettingsPage() {
 
                         {/* Interface Settings */}
                         <TabsContent value="interface" className="space-y-6">
-                            <Card className="bg-background/40 backdrop-blur-xl border border-primary/10">
+                            <Card className="bg-background/40 backdrop-blur-xl border-2 border-primary/25">
                                 <CardHeader>
                                     <CardTitle className="flex items-center gap-2">
                                         <Monitor className="h-5 w-5 text-primary" />
@@ -379,36 +365,19 @@ export default function SettingsPage() {
                                     <div className="space-y-4">
                                         <div className="flex items-center justify-between">
                                             <div className="space-y-0.5">
-                                                <Label>Auto-save</Label>
-                                                <p className="text-sm text-muted-foreground">
-                                                    Automatically save your work
-                                                </p>
-                                            </div>
-                                            <Switch
-                                                checked={settings.autoSave}
-                                                onCheckedChange={(checked) => updateSetting('autoSave', checked)}
-                                            />
-                                        </div>
-
-                                        <div className="flex items-center justify-between">
-                                            <div className="space-y-0.5">
-                                                <Label>Show Breadcrumbs</Label>
-                                                <p className="text-sm text-muted-foreground">
-                                                    Display navigation breadcrumbs
-                                                </p>
-                                            </div>
-                                            <Switch
-                                                checked={settings.showBreadcrumbs}
-                                                onCheckedChange={(checked) => updateSetting('showBreadcrumbs', checked)}
-                                            />
-                                        </div>
-
-                                        <div className="flex items-center justify-between">
-                                            <div className="space-y-0.5">
                                                 <Label>Show Tooltips</Label>
                                                 <p className="text-sm text-muted-foreground">
-                                                    Display helpful tooltips
+                                                    Display helpful tooltips throughout the application
                                                 </p>
+                                                {/* Preview of tooltip functionality */}
+                                                <div className="flex items-center gap-2 mt-2">
+                                                    <div className="w-4 h-4 rounded-full border-2 border-primary/30 flex items-center justify-center">
+                                                        <span className="text-xs text-primary">?</span>
+                                                    </div>
+                                                    <span className="text-xs text-muted-foreground">
+                                                        {settings.showTooltips ? 'Tooltips enabled' : 'Tooltips disabled'}
+                                                    </span>
+                                                </div>
                                             </div>
                                             <Switch
                                                 checked={settings.showTooltips}
@@ -420,53 +389,11 @@ export default function SettingsPage() {
                             </Card>
                         </TabsContent>
 
-                        {/* Performance Settings */}
-                        <TabsContent value="performance" className="space-y-6">
-                            <Card className="bg-background/40 backdrop-blur-xl border border-primary/10">
-                                <CardHeader>
-                                    <CardTitle className="flex items-center gap-2">
-                                        <Zap className="h-5 w-5 text-primary" />
-                                        Performance Options
-                                    </CardTitle>
-                                    <CardDescription>
-                                        Optimize for speed or visual quality
-                                    </CardDescription>
-                                </CardHeader>
-                                <CardContent className="space-y-6">
-                                    <div className="space-y-4">
-                                        <div className="flex items-center justify-between">
-                                            <div className="space-y-0.5">
-                                                <Label>Hover Effects</Label>
-                                                <p className="text-sm text-muted-foreground">
-                                                    Enable interactive hover animations
-                                                </p>
-                                            </div>
-                                            <Switch
-                                                checked={settings.enableHoverEffects}
-                                                onCheckedChange={(checked) => updateSetting('enableHoverEffects', checked)}
-                                            />
-                                        </div>
 
-                                        <div className="flex items-center justify-between">
-                                            <div className="space-y-0.5">
-                                                <Label>Particle Effects</Label>
-                                                <p className="text-sm text-muted-foreground">
-                                                    Show background particle animations
-                                                </p>
-                                            </div>
-                                            <Switch
-                                                checked={settings.enableParticles}
-                                                onCheckedChange={(checked) => updateSetting('enableParticles', checked)}
-                                            />
-                                        </div>
-                                    </div>
-                                </CardContent>
-                            </Card>
-                        </TabsContent>
 
                         {/* Accessibility Settings */}
                         <TabsContent value="accessibility" className="space-y-6">
-                            <Card className="bg-background/40 backdrop-blur-xl border border-primary/10">
+                            <Card className="bg-background/40 backdrop-blur-xl border-2 border-primary/25">
                                 <CardHeader>
                                     <CardTitle className="flex items-center gap-2">
                                         <EyeIcon className="h-5 w-5 text-primary" />
@@ -484,6 +411,18 @@ export default function SettingsPage() {
                                                 <p className="text-sm text-muted-foreground">
                                                     Increase contrast for better visibility
                                                 </p>
+                                                {/* Preview of high contrast */}
+                                                <div className="flex items-center gap-2 mt-2">
+                                                    <div
+                                                        className={`w-4 h-4 rounded-full border-2 border-primary/30 ${settings.highContrast
+                                                            ? 'bg-white border-white'
+                                                            : 'bg-gray-500 border-gray-500'
+                                                            }`}
+                                                    />
+                                                    <span className="text-xs text-muted-foreground">
+                                                        {settings.highContrast ? 'High contrast enabled' : 'High contrast disabled'}
+                                                    </span>
+                                                </div>
                                             </div>
                                             <Switch
                                                 checked={settings.highContrast}
@@ -497,6 +436,16 @@ export default function SettingsPage() {
                                                 <p className="text-sm text-muted-foreground">
                                                     Increase text size for better readability
                                                 </p>
+                                                {/* Preview of large text */}
+                                                <div className="flex items-center gap-2 mt-2">
+                                                    <div className="flex items-center gap-1">
+                                                        <span className={`text-xs ${settings.largeText ? 'text-lg' : 'text-xs'}`}>A</span>
+                                                        <span className={`text-xs ${settings.largeText ? 'text-lg' : 'text-xs'}`}>a</span>
+                                                    </div>
+                                                    <span className="text-xs text-muted-foreground">
+                                                        {settings.largeText ? 'Large text enabled' : 'Large text disabled'}
+                                                    </span>
+                                                </div>
                                             </div>
                                             <Switch
                                                 checked={settings.largeText}
@@ -510,6 +459,21 @@ export default function SettingsPage() {
                                                 <p className="text-sm text-muted-foreground">
                                                     Show clear focus indicators
                                                 </p>
+                                                {/* Preview of focus indicators */}
+                                                <div className="flex items-center gap-2 mt-2">
+                                                    <div
+                                                        className={`w-4 h-4 rounded-full border-2 transition-all duration-300 ${settings.focusIndicators
+                                                            ? 'border-primary shadow-primary/50'
+                                                            : 'border-primary/30'
+                                                            }`}
+                                                        style={{
+                                                            backgroundColor: settings.focusIndicators ? 'hsl(var(--primary))' : 'transparent'
+                                                        }}
+                                                    />
+                                                    <span className="text-xs text-muted-foreground">
+                                                        {settings.focusIndicators ? 'Focus indicators enabled' : 'Focus indicators disabled'}
+                                                    </span>
+                                                </div>
                                             </div>
                                             <Switch
                                                 checked={settings.focusIndicators}
@@ -523,7 +487,7 @@ export default function SettingsPage() {
 
                         {/* Notifications Settings */}
                         <TabsContent value="notifications" className="space-y-6">
-                            <Card className="bg-background/40 backdrop-blur-xl border border-primary/10">
+                            <Card className="bg-background/40 backdrop-blur-xl border-2 border-primary/25">
                                 <CardHeader>
                                     <CardTitle className="flex items-center gap-2">
                                         <Volume2 className="h-5 w-5 text-primary" />
@@ -564,7 +528,7 @@ export default function SettingsPage() {
                                 </CardContent>
                             </Card>
 
-                            <Card className="bg-background/40 backdrop-blur-xl border border-primary/10">
+                            <Card className="bg-background/40 backdrop-blur-xl border-2 border-primary/25">
                                 <CardHeader>
                                     <CardTitle className="flex items-center gap-2">
                                         <Info className="h-5 w-5 text-primary" />

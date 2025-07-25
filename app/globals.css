@@ -188,99 +188,7 @@
    * Includes hover and active states for better user feedback.
    */
 
-  /* For Webkit browsers like Chrome, Safari, and Edge */
-  ::-webkit-scrollbar {
-    width: 12px;
-    height: 12px;
-  }
-
-  /* The track (the background of the scrollbar) */
-  ::-webkit-scrollbar-track {
-    background: rgba(15, 23, 42, 0.8);
-    border-radius: 10px;
-    backdrop-filter: blur(8px);
-  }
-
-  /* The thumb (the draggable part of the scrollbar) */
-  ::-webkit-scrollbar-thumb {
-    background: linear-gradient(180deg,
-        rgba(99, 102, 241, 0.8) 0%,
-        rgba(139, 92, 246, 0.9) 50%,
-        rgba(168, 85, 247, 0.8) 100%);
-    border-radius: 10px;
-    border: 2px solid rgba(15, 23, 42, 0.8);
-    box-shadow:
-      0 0 10px rgba(99, 102, 241, 0.3),
-      inset 0 1px 0 rgba(255, 255, 255, 0.1);
-    transition: all 0.3s ease;
-  }
-
-  /* Scrollbar thumb on hover */
-  ::-webkit-scrollbar-thumb:hover {
-    background: linear-gradient(180deg,
-        rgba(99, 102, 241, 1) 0%,
-        rgba(139, 92, 246, 1) 50%,
-        rgba(168, 85, 247, 1) 100%);
-    box-shadow:
-      0 0 15px rgba(99, 102, 241, 0.5),
-      0 0 25px rgba(139, 92, 246, 0.3),
-      inset 0 1px 0 rgba(255, 255, 255, 0.2);
-    transform: scaleY(1.1);
-  }
-
-  /* Scrollbar thumb when active (being clicked/dragged) */
-  ::-webkit-scrollbar-thumb:active {
-    background: linear-gradient(180deg,
-        rgba(79, 70, 229, 1) 0%,
-        rgba(124, 58, 237, 1) 50%,
-        rgba(147, 51, 234, 1) 100%);
-    box-shadow:
-      0 0 20px rgba(99, 102, 241, 0.7),
-      inset 0 2px 4px rgba(0, 0, 0, 0.3);
-  }
-
-  /* The corner where horizontal and vertical scrollbars meet */
-  ::-webkit-scrollbar-corner {
-    background: rgba(15, 23, 42, 0.8);
-  }
-
-  /* For Firefox */
-  html {
-    scrollbar-width: thin;
-    scrollbar-color: rgba(99, 102, 241, 0.8) rgba(15, 23, 42, 0.8);
-  }
-
-  /**
-   * Enhanced scrollbar styles specifically for the dark theme.
-   */
-  .dark ::-webkit-scrollbar-track {
-    background: rgba(15, 23, 42, 0.9);
-    border: 1px solid rgba(99, 102, 241, 0.1);
-  }
-
-  .dark ::-webkit-scrollbar-thumb {
-    background: linear-gradient(180deg,
-        rgba(99, 102, 241, 0.7) 0%,
-        rgba(139, 92, 246, 0.8) 50%,
-        rgba(168, 85, 247, 0.7) 100%);
-    border: 2px solid rgba(15, 23, 42, 0.9);
-    box-shadow:
-      0 0 8px rgba(99, 102, 241, 0.4),
-      inset 0 1px 0 rgba(255, 255, 255, 0.1),
-      inset 0 -1px 0 rgba(0, 0, 0, 0.2);
-  }
-
-  .dark ::-webkit-scrollbar-thumb:hover {
-    background: linear-gradient(180deg,
-        rgba(99, 102, 241, 0.9) 0%,
-        rgba(139, 92, 246, 1) 50%,
-        rgba(168, 85, 247, 0.9) 100%);
-    box-shadow:
-      0 0 12px rgba(99, 102, 241, 0.6),
-      0 0 20px rgba(139, 92, 246, 0.4),
-      inset 0 1px 0 rgba(255, 255, 255, 0.15),
-      inset 0 -1px 0 rgba(0, 0, 0, 0.3);
-  }
+  /* Dynamic scrollbar styling - removed old hardcoded styles */
 
   /**
    * --------------------------------------------------------------------------
@@ -694,6 +602,86 @@
     text-shadow: none !important;
   }
 
+  /* Ensure tooltips render above everything */
+  [data-radix-tooltip-content] {
+    z-index: 9999 !important;
+    position: relative !important;
+    max-width: 300px !important;
+    word-wrap: break-word !important;
+  }
+
+  /* Tooltip portal container */
+  [data-radix-portal] {
+    z-index: 9999 !important;
+  }
+
+  /* Enhanced tooltip animations */
+  [data-radix-tooltip-content][data-state="delayed-open"] {
+    animation: tooltipFadeIn 0.2s ease-out;
+  }
+
+  [data-radix-tooltip-content][data-state="closed"] {
+    animation: tooltipFadeOut 0.15s ease-in;
+  }
+
+  @keyframes tooltipFadeIn {
+    from {
+      opacity: 0;
+      transform: scale(0.95) translateY(-2px);
+    }
+
+    to {
+      opacity: 1;
+      transform: scale(1) translateY(0);
+    }
+  }
+
+  @keyframes tooltipFadeOut {
+    from {
+      opacity: 1;
+      transform: scale(1) translateY(0);
+    }
+
+    to {
+      opacity: 0;
+      transform: scale(0.95) translateY(-2px);
+    }
+  }
+
+  /* Dynamic Scrollbar Styling */
+  ::-webkit-scrollbar {
+    width: 8px;
+    height: 8px;
+  }
+
+  ::-webkit-scrollbar-track {
+    background: hsl(var(--background) / 0.3);
+    border-radius: 4px;
+  }
+
+  ::-webkit-scrollbar-thumb {
+    background: hsl(var(--accent-1) / 0.4);
+    border-radius: 4px;
+    transition: all 0.3s ease;
+  }
+
+  ::-webkit-scrollbar-thumb:hover {
+    background: hsl(var(--accent-1) / 0.6);
+  }
+
+  ::-webkit-scrollbar-corner {
+    background: hsl(var(--background) / 0.3);
+  }
+
+  /* Firefox scrollbar styling */
+  * {
+    scrollbar-width: thin;
+    scrollbar-color: hsl(var(--accent-1) / 0.4) hsl(var(--background) / 0.3);
+  }
+
+  /* Custom scrollbar for specific components */
+
+
   /* Enhanced glow effects that respond to the no-glow class */
   .no-glow .shadow-primary,
   .no-glow .shadow-accent {
@@ -791,8 +779,132 @@
 
   /* Focus indicators */
   .focus-indicators *:focus {
-    outline: 2px solid hsl(var(--primary));
-    outline-offset: 2px;
+    outline: 4px solid hsl(var(--primary)) !important;
+    outline-offset: 4px !important;
+    border-radius: 6px !important;
+    box-shadow: 0 0 0 4px hsl(var(--primary) / 0.3) !important;
+  }
+
+  .focus-indicators *:focus-visible {
+    outline: 4px solid hsl(var(--primary)) !important;
+    outline-offset: 4px !important;
+    border-radius: 6px !important;
+    box-shadow: 0 0 0 4px hsl(var(--primary) / 0.3) !important;
+  }
+
+  .focus-indicators button:focus,
+  .focus-indicators input:focus,
+  .focus-indicators select:focus,
+  .focus-indicators textarea:focus {
+    outline: 4px solid hsl(var(--primary)) !important;
+    outline-offset: 4px !important;
+    border-radius: 6px !important;
+    box-shadow: 0 0 0 4px hsl(var(--primary) / 0.3) !important;
+  }
+
+  /* High contrast mode */
+  .high-contrast {
+    --background: 0 0% 0% !important;
+    --foreground: 0 0% 100% !important;
+    --card: 0 0% 0% !important;
+    --card-foreground: 0 0% 100% !important;
+    --popover: 0 0% 0% !important;
+    --popover-foreground: 0 0% 100% !important;
+    --primary: 0 0% 100% !important;
+    --primary-foreground: 0 0% 0% !important;
+    --secondary: 0 0% 20% !important;
+    --secondary-foreground: 0 0% 100% !important;
+    --muted: 0 0% 20% !important;
+    --muted-foreground: 0 0% 80% !important;
+    --accent: 0 0% 20% !important;
+    --accent-foreground: 0 0% 100% !important;
+    --destructive: 0 100% 50% !important;
+    --destructive-foreground: 0 0% 100% !important;
+    --border: 0 0% 50% !important;
+    --input: 0 0% 50% !important;
+    --ring: 0 0% 100% !important;
+  }
+
+  .high-contrast * {
+    border-color: hsl(0 0% 50%) !important;
+  }
+
+  .high-contrast .card {
+    border: 2px solid hsl(0 0% 50%) !important;
+    background: hsl(0 0% 0%) !important;
+  }
+
+  .high-contrast button {
+    border: 2px solid hsl(0 0% 50%) !important;
+  }
+
+  .high-contrast body {
+    background-color: hsl(0 0% 0%) !important;
+    color: hsl(0 0% 100%) !important;
+  }
+
+  .high-contrast div {
+    background-color: hsl(0 0% 0%) !important;
+    color: hsl(0 0% 100%) !important;
+  }
+
+  .high-contrast span,
+  .high-contrast p,
+  .high-contrast label {
+    color: hsl(0 0% 100%) !important;
+  }
+
+  /* Large text mode */
+  .large-text {
+    font-size: 1.2em !important;
+  }
+
+  .large-text * {
+    font-size: inherit !important;
+  }
+
+  .large-text h1 {
+    font-size: 2.5em !important;
+  }
+
+  .large-text h2 {
+    font-size: 2em !important;
+  }
+
+  .large-text h3 {
+    font-size: 1.75em !important;
+  }
+
+  .large-text p,
+  .large-text span,
+  .large-text div,
+  .large-text label {
+    font-size: 1.2em !important;
+    line-height: 1.6 !important;
+  }
+
+  .large-text button {
+    font-size: 1.1em !important;
+    padding: 0.75em 1.5em !important;
+  }
+
+  .large-text input,
+  .large-text select,
+  .large-text textarea {
+    font-size: 1.1em !important;
+    padding: 0.75em !important;
+  }
+
+  .large-text .card {
+    padding: 1.5em !important;
+  }
+
+  .large-text .card-title {
+    font-size: 1.5em !important;
+  }
+
+  .large-text .card-description {
+    font-size: 1.1em !important;
   }
 
   /* Theme system */
@@ -1031,9 +1143,7 @@
     border-radius: 3px;
   }
 
-  .custom-scrollbar::-webkit-scrollbar-thumb:hover {
-    background: rgba(99, 102, 241, 0.7);
-  }
+
 
   /* A set of backdrop-filter blur utilities */
   .backdrop-blur-xs {
@@ -1171,7 +1281,7 @@
   }
 
   .dark .pdf-viewer-container .rpv-core__viewer::-webkit-scrollbar-track {
-    background: hsl(var(--card));
+    background: hsl(var(--background) / 0.3);
   }
 
   /* Controls touch behavior to allow panning and prevent page zoom */

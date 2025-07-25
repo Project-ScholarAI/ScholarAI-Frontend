@@ -24,7 +24,7 @@ import {
 } from "lucide-react"
 import { cn } from "@/lib/utils/cn"
 import { Button } from "@/components/ui/button"
-import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip"
+import { EnhancedTooltip } from "@/components/ui/enhanced-tooltip"
 import { LogoutButton } from "@/components/auth/LogoutButton"
 
 type Props = {
@@ -37,7 +37,13 @@ const NAV_ITEMS = [
     name: "Home",
     href: "/interface/home",
     icon: Home,
-    description: "Project dashboard and overview"
+    description: "Welcome guide and getting started"
+  },
+  {
+    name: "Projects",
+    href: "/interface/projects",
+    icon: BookOpen,
+    description: "Research project management"
   },
   {
     name: "ToDo",
@@ -140,15 +146,9 @@ export function Sidebar({ collapsed, onToggle }: Props) {
 
     if (collapsed) {
       return (
-        <Tooltip>
-          <TooltipTrigger asChild>
-            {content}
-          </TooltipTrigger>
-          <TooltipContent side="right" className="bg-background/95 backdrop-blur-xl border-primary/15 text-foreground shadow-xl">
-            <p className="font-medium">{item.name}</p>
-            <p className="text-xs text-muted-foreground">{item.description}</p>
-          </TooltipContent>
-        </Tooltip>
+        <EnhancedTooltip content={`${item.name}: ${item.description}`} side="right">
+          {content}
+        </EnhancedTooltip>
       )
     }
 
@@ -156,133 +156,125 @@ export function Sidebar({ collapsed, onToggle }: Props) {
   }
 
   return (
-    <TooltipProvider>
-      <div className={cn(
-        "flex h-screen flex-col bg-background/60 backdrop-blur-xl border-r border-primary/15 transition-all duration-300 relative overflow-hidden",
-        collapsed ? "w-16" : "w-72"
-      )}
-        style={{
-          boxShadow: `
+    <div className={cn(
+      "flex h-screen flex-col bg-background/60 backdrop-blur-xl border-r border-primary/15 transition-all duration-300 relative z-10",
+      collapsed ? "w-16" : "w-72"
+    )}
+      style={{
+        boxShadow: `
             inset -1px 0 0 0 rgba(99, 102, 241, 0.2),
             4px 0 20px rgba(99, 102, 241, 0.1),
             8px 0 40px rgba(139, 92, 246, 0.05),
             0 0 60px rgba(99, 102, 241, 0.03)
           `
-        }}>
-        {/* Background Effects */}
-        <div className="absolute inset-0 bg-gradient-to-b from-primary/3 via-background/30 to-purple-500/3" />
-        <div className="absolute top-0 right-0 w-32 h-32 bg-gradient-to-bl from-primary/8 to-transparent rounded-full blur-2xl animate-pulse" />
-        <div className="absolute bottom-0 left-0 w-32 h-32 bg-gradient-to-tr from-blue-500/8 to-transparent rounded-full blur-2xl animate-pulse" />
-        <div className="absolute top-1/2 left-0 w-full h-px bg-gradient-to-r from-transparent via-primary/20 to-transparent opacity-30" />
-        <div className="absolute inset-0 bg-gradient-to-r from-transparent via-primary/3 to-transparent animate-pulse duration-3000" />
+      }}>
+      {/* Background Effects */}
+      <div className="absolute inset-0 bg-gradient-to-b from-primary/3 via-background/30 to-purple-500/3" />
+      <div className="absolute top-0 right-0 w-32 h-32 bg-gradient-to-bl from-primary/8 to-transparent rounded-full blur-2xl animate-pulse" />
+      <div className="absolute bottom-0 left-0 w-32 h-32 bg-gradient-to-tr from-blue-500/8 to-transparent rounded-full blur-2xl animate-pulse" />
+      <div className="absolute top-1/2 left-0 w-full h-px bg-gradient-to-r from-transparent via-primary/20 to-transparent opacity-30" />
+      <div className="absolute inset-0 bg-gradient-to-r from-transparent via-primary/3 to-transparent animate-pulse duration-3000" />
 
-        {/* Header */}
-        <div className={cn(
-          "flex h-16 items-center justify-between px-4 border-b border-primary/15 relative z-10",
-          collapsed && "px-2"
-        )}
-          style={{
-            boxShadow: `
+      {/* Header */}
+      <div className={cn(
+        "flex h-16 items-center justify-between px-4 border-b border-primary/15 relative z-10",
+        collapsed && "px-2"
+      )}
+        style={{
+          boxShadow: `
               0 1px 0 0 rgba(99, 102, 241, 0.2),
               0 2px 10px rgba(99, 102, 241, 0.08),
               0 4px 20px rgba(139, 92, 246, 0.03)
             `
-          }}>
-          {!collapsed && (
-            <Link href="/interface/home" className="flex items-center gap-3 group">
-              <div className="flex items-center justify-center w-10 h-10 gradient-radial-accent rounded-xl shadow-lg shadow-primary/30 group-hover:shadow-primary/50 transition-all duration-300 group-hover:scale-105">
-                <Sparkles className="h-6 w-6 text-white drop-shadow-glow" />
-              </div>
-              <div className="flex flex-col">
-                <span className="font-bold text-lg text-gradient-primary">
-                  ScholarAI
-                </span>
-                <span className="text-xs text-muted-foreground">Research Assistant</span>
-              </div>
-            </Link>
-          )}
-
-          <Button
-            variant="ghost"
-            size="sm"
-            onClick={onToggle}
-            className={cn(
-              "h-8 w-8 p-0 text-foreground/70 hover:bg-primary/10 hover:text-primary transition-all duration-300 rounded-lg",
-              collapsed && "mx-auto"
-            )}
-          >
-            {collapsed ? (
-              <ChevronRight className="h-4 w-4" />
-            ) : (
-              <ChevronLeft className="h-4 w-4" />
-            )}
-          </Button>
-        </div>
-
-        {/* Navigation */}
-        <nav className="flex-1 space-y-2 p-3 relative z-10 overflow-y-auto custom-scrollbar">
-          {!collapsed && (
-            <div className="mb-4">
-              <h3 className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-2 px-3">
-                Navigation
-              </h3>
+        }}>
+        {!collapsed && (
+          <Link href="/interface/home" className="flex items-center gap-3 group">
+            <div className="flex items-center justify-center w-10 h-10 gradient-radial-accent rounded-xl shadow-lg shadow-primary/30 group-hover:shadow-primary/50 transition-all duration-300 group-hover:scale-105">
+              <Sparkles className="h-6 w-6 text-white drop-shadow-glow" />
             </div>
+            <div className="flex flex-col">
+              <span className="font-bold text-lg text-gradient-primary">
+                ScholarAI
+              </span>
+              <span className="text-xs text-muted-foreground">Research Assistant</span>
+            </div>
+          </Link>
+        )}
+
+        <Button
+          variant="ghost"
+          size="sm"
+          onClick={onToggle}
+          className={cn(
+            "h-8 w-8 p-0 text-foreground/70 hover:bg-primary/10 hover:text-primary transition-all duration-300 rounded-lg",
+            collapsed && "mx-auto"
           )}
-          {NAV_ITEMS.map((item) => (
-            <SidebarItem key={item.name} item={item} />
-          ))}
+        >
+          {collapsed ? (
+            <ChevronRight className="h-4 w-4" />
+          ) : (
+            <ChevronLeft className="h-4 w-4" />
+          )}
+        </Button>
+      </div>
 
-          {/* Separator */}
-          <div className="my-4 px-3">
-            <div className="h-px bg-gradient-to-r from-transparent via-primary/20 to-transparent" />
+      {/* Navigation */}
+      <nav className="flex-1 space-y-2 p-3 relative z-10 overflow-y-auto custom-scrollbar">
+        {!collapsed && (
+          <div className="mb-4">
+            <h3 className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-2 px-3">
+              Navigation
+            </h3>
           </div>
-        </nav>
+        )}
+        {NAV_ITEMS.map((item) => (
+          <SidebarItem key={item.name} item={item} />
+        ))}
 
-        {/* Bottom Section */}
-        <div className="border-t border-primary/15 p-3 space-y-2 relative z-10"
-          style={{
-            boxShadow: `
+        {/* Separator */}
+        <div className="my-4 px-3">
+          <div className="h-px bg-gradient-to-r from-transparent via-primary/20 to-transparent" />
+        </div>
+      </nav>
+
+      {/* Bottom Section */}
+      <div className="border-t border-primary/15 p-3 space-y-2 relative z-10"
+        style={{
+          boxShadow: `
               0 -1px 0 0 rgba(99, 102, 241, 0.2),
               0 -2px 10px rgba(99, 102, 241, 0.08),
               0 -4px 20px rgba(139, 92, 246, 0.03)
             `
-          }}>
-          {!collapsed && (
-            <div className="mb-3">
-              <h3 className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-2 px-3">
-                Account
-              </h3>
-            </div>
-          )}
-          {BOTTOM_ITEMS.map((item) => (
-            <SidebarItem key={item.name} item={item} isBottom />
-          ))}
+        }}>
+        {!collapsed && (
+          <div className="mb-3">
+            <h3 className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-2 px-3">
+              Account
+            </h3>
+          </div>
+        )}
+        {BOTTOM_ITEMS.map((item) => (
+          <SidebarItem key={item.name} item={item} isBottom />
+        ))}
 
-          {/* Logout Button */}
-          {collapsed ? (
-            <Tooltip>
-              <TooltipTrigger asChild>
-                <LogoutButton className="flex items-center justify-center gap-3 rounded-xl px-2 py-3 text-sm font-medium transition-all duration-300 group relative backdrop-blur-sm border border-transparent hover:bg-red-500/10 hover:border-red-500/30 hover:shadow-lg hover:shadow-red-500/10 text-foreground/80 hover:text-red-500 bg-background/20">
-                  <div className="relative p-1.5 rounded-lg transition-all duration-300 group-hover:bg-red-500/10">
-                    <LogOut className="h-4 w-4 text-foreground/70 group-hover:text-red-500 transition-all duration-300" />
-                  </div>
-                </LogoutButton>
-              </TooltipTrigger>
-              <TooltipContent side="right" className="bg-background/95 backdrop-blur-xl border-primary/15 text-foreground shadow-xl">
-                <p className="font-medium">Logout</p>
-                <p className="text-xs text-muted-foreground">Sign out of your account</p>
-              </TooltipContent>
-            </Tooltip>
-          ) : (
-            <LogoutButton className="flex items-center gap-3 rounded-xl px-3 py-3 text-sm font-medium transition-all duration-300 group relative backdrop-blur-sm border border-transparent hover:bg-red-500/10 hover:border-red-500/30 hover:shadow-lg hover:shadow-red-500/10 text-foreground/80 hover:text-red-500 bg-background/20 w-full">
+        {/* Logout Button */}
+        {collapsed ? (
+          <EnhancedTooltip content="Logout: Sign out of your account" side="right">
+            <LogoutButton className="flex items-center justify-center gap-3 rounded-xl px-2 py-3 text-sm font-medium transition-all duration-300 group relative backdrop-blur-sm border border-transparent hover:bg-red-500/10 hover:border-red-500/30 hover:shadow-lg hover:shadow-red-500/10 text-foreground/80 hover:text-red-500 bg-background/20">
               <div className="relative p-1.5 rounded-lg transition-all duration-300 group-hover:bg-red-500/10">
                 <LogOut className="h-4 w-4 text-foreground/70 group-hover:text-red-500 transition-all duration-300" />
               </div>
-              <span className="truncate font-medium">Logout</span>
             </LogoutButton>
-          )}
-        </div>
+          </EnhancedTooltip>
+        ) : (
+          <LogoutButton className="flex items-center gap-3 rounded-xl px-3 py-3 text-sm font-medium transition-all duration-300 group relative backdrop-blur-sm border border-transparent hover:bg-red-500/10 hover:border-red-500/30 hover:shadow-lg hover:shadow-red-500/10 text-foreground/80 hover:text-red-500 bg-background/20 w-full">
+            <div className="relative p-1.5 rounded-lg transition-all duration-300 group-hover:bg-red-500/10">
+              <LogOut className="h-4 w-4 text-foreground/70 group-hover:text-red-500 transition-all duration-300" />
+            </div>
+            <span className="truncate font-medium">Logout</span>
+          </LogoutButton>
+        )}
       </div>
-    </TooltipProvider>
+    </div>
   )
 }

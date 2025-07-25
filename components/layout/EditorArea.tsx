@@ -2,7 +2,7 @@
 
 import type React from "react"
 import { useState } from "react"
-import { usePathname } from "next/navigation"
+import { usePathname, useRouter } from "next/navigation"
 import {
     MessageSquare,
     X,
@@ -29,6 +29,7 @@ type Props = {
 
 export function EditorArea({ children, onChatToggle }: Props) {
     const pathname = usePathname()
+    const router = useRouter()
 
     // Get current page title based on route
     const getPageTitle = () => {
@@ -99,6 +100,7 @@ export function EditorArea({ children, onChatToggle }: Props) {
                         variant="ghost"
                         size="sm"
                         className="h-8 w-8 p-0 text-foreground hover:bg-primary/10 hover:text-primary transition-all duration-300 rounded-lg border border-transparent hover:border-primary/20"
+                        onClick={() => router.push('/interface/settings')}
                     >
                         <Settings className="h-4 w-4" />
                     </Button>
