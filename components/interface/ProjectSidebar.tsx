@@ -54,6 +54,13 @@ const PROJECT_NAV_ITEMS = [
         loadingMessage: "Loading research library..."
     },
     {
+        name: "Quick Notes",
+        href: "/notes",
+        icon: MessageSquare,
+        description: "Project notes and documentation",
+        loadingMessage: "Loading project notes..."
+    },
+    {
         name: "Collaboration",
         href: "/collaboration",
         icon: Users,

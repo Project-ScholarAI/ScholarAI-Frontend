@@ -7,6 +7,9 @@ import {
   Collaborator,
   AddCollaboratorRequest,
   CollaboratorResponse,
+  Note,
+  CreateNoteRequest,
+  UpdateNoteRequest,
 } from "@/types/project";
 import { authenticatedFetch } from "@/lib/api/auth";
 import { getApiUrl } from "@/lib/config/api-config";
@@ -307,5 +310,101 @@ export const projectsApi = {
       console.error('Error checking collaborators:', error);
       return false;
     }
+  },
+
+  // Quick Notes API Methods
+  async getNotes(projectId: string): Promise<Note[]> {
+    const response = await authenticatedFetch(
+      getApiUrl(`${PROJECTS_ENDPOINT}/${projectId}/notes`),
+      {
+        method: "GET",
+      }
+    );
+
+    return handleApiResponse<Note[]>(response);
+  },
+
+  async createNote(projectId: string, noteData: CreateNoteRequest): Promise<Note> {
+    const response = await authenticatedFetch(
+      getApiUrl(`${PROJECTS_ENDPOINT}/${projectId}/notes`),
+      {
+        method: "POST",
+        body: JSON.stringify(noteData),
+      }
+    );
+
+    return handleApiResponse<Note>(response);
+  },
+
+  async updateNote(projectId: string, noteId: string, noteData: UpdateNoteRequest): Promise<Note> {
+    const response = await authenticatedFetch(
+      getApiUrl(`${PROJECTS_ENDPOINT}/${projectId}/notes/${noteId}`),
+      {
+        method: "PUT",
+        body: JSON.stringify(noteData),
+      }
+    );
+
+    return handleApiResponse<Note>(response);
+  },
+
+  async deleteNote(projectId: string, noteId: string): Promise<void> {
+    const response = await authenticatedFetch(
+      getApiUrl(`${PROJECTS_ENDPOINT}/${projectId}/notes/${noteId}`),
+      {
+        method: "DELETE",
+      }
+    );
+
+    if (!response.ok) {
+      const errorData = await response.json().catch(() => ({}));
+      throw new Error(
+        errorData.message || `HTTP error! status: ${response.status}`
+      );
+    }
+  },
+
+  async toggleNoteFavorite(projectId: string, noteId: string): Promise<Note> {
+    const response = await authenticatedFetch(
+      getApiUrl(`${PROJECTS_ENDPOINT}/${projectId}/notes/${noteId}/favorite`),
+      {
+        method: "PUT",
+      }
+    );
+
+    return handleApiResponse<Note>(response);
+  },
+
+  async searchNotesByContent(projectId: string, query: string): Promise<Note[]> {
+    const response = await authenticatedFetch(
+      getApiUrl(`${PROJECTS_ENDPOINT}/${projectId}/notes/search/content?q=${encodeURIComponent(query)}`),
+      {
+        method: "GET",
+      }
+    );
+
+    return handleApiResponse<Note[]>(response);
+  },
+
+  async searchNotesByTag(projectId: string, tag: string): Promise<Note[]> {
+    const response = await authenticatedFetch(
+      getApiUrl(`${PROJECTS_ENDPOINT}/${projectId}/notes/search/tag?tag=${encodeURIComponent(tag)}`),
+      {
+        method: "GET",
+      }
+    );
+
+    return handleApiResponse<Note[]>(response);
+  },
+
+  async getFavoriteNotes(projectId: string): Promise<Note[]> {
+    const response = await authenticatedFetch(
+      getApiUrl(`${PROJECTS_ENDPOINT}/${projectId}/notes/favorites`),
+      {
+        method: "GET",
+      }
+    );
+
+    return handleApiResponse<Note[]>(response);
   }
 };

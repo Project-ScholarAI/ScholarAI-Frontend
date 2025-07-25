@@ -87,4 +87,26 @@ export interface AddCollaboratorRequest {
 
 export interface CollaboratorResponse {
     collaborators: Collaborator[]
+}
+
+export interface Note {
+    id: string
+    title: string
+    content: string
+    createdAt: string
+    updatedAt: string
+    isFavorite: boolean
+    tags?: string[]
+}
+
+export interface CreateNoteRequest {
+    title: string
+    content: string
+    tags?: string[]
+}
+
+export interface UpdateNoteRequest {
+    title?: string
+    content?: string
+    tags?: string[]
 } 
