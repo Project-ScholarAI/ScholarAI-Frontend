@@ -60,6 +60,7 @@ import { StreamingPaperCard } from "@/components/library/StreamingPaperCard"
 import { PaperDetailModal } from "@/components/library/PaperDetailModal"
 import { PdfViewerModal } from "@/components/library/PdfViewerModal"
 import { SearchConfigDialog } from "@/components/library/SearchConfigDialog"
+import { PDFUploadDialog } from "@/components/library/PDFUploadDialog"
 import { B2DownloadTest } from "@/components/test/B2DownloadTest"
 import type { Paper, WebSearchRequest } from "@/types/websearch"
 
@@ -87,6 +88,7 @@ export default function ProjectLibraryPage({ params }: ProjectLibraryPageProps) 
     const [showPdfViewer, setShowPdfViewer] = useState(false)
     const [pdfViewerPaper, setPdfViewerPaper] = useState<Paper | null>(null)
     const [showSearchConfig, setShowSearchConfig] = useState(false)
+    const [showPDFUpload, setShowPDFUpload] = useState(false)
     const [showScrollTop, setShowScrollTop] = useState(false)
     const [scrollContainer, setScrollContainer] = useState<HTMLDivElement | null>(null)
     const [libraryStats, setLibraryStats] = useState<any>(null)
@@ -128,9 +130,13 @@ export default function ProjectLibraryPage({ params }: ProjectLibraryPageProps) 
                 getProjectLibraryStats(projectId)
             ])
 
-            // Set papers from library data
+            // Set papers from library data, ensuring abstractText compatibility
             if (libraryData.data.papers) {
-                setAllPapers(libraryData.data.papers)
+                const processedPapers: Paper[] = (libraryData.data.papers as any[]).map((p: any) => ({
+                    ...p,
+                    abstractText: p.abstractText ?? p.abstract ?? null,
+                }))
+                setAllPapers(processedPapers)
             }
 
             // Set library stats
@@ -262,7 +268,7 @@ export default function ProjectLibraryPage({ params }: ProjectLibraryPageProps) 
                         <div className="p-2 rounded-lg bg-gradient-to-r from-blue-500/20 to-purple-500/20 border border-primary/20">
                             <BookOpen className="h-6 w-6 text-primary" />
                         </div>
-                        <h1 className="text-3xl font-bold bg-gradient-to-r from-primary to-purple-500 bg-clip-text text-transparent">
+                        <h1 className="text-3xl font-bold text-gradient-primary">
                             Paper Library
                         </h1>
                     </div>
@@ -284,7 +290,7 @@ export default function ProjectLibraryPage({ params }: ProjectLibraryPageProps) 
                         <TabsList className="grid w-full grid-cols-3 bg-background/60 backdrop-blur-xl border border-primary/20" style={{ boxShadow: '0 0 12px rgba(99, 102, 241, 0.1), 0 0 25px rgba(139, 92, 246, 0.06)' }}>
                             <TabsTrigger
                                 value="current-search"
-                                className="flex items-center gap-2 data-[state=active]:bg-gradient-to-r data-[state=active]:from-blue-500/20 data-[state=active]:to-cyan-500/20"
+                                className="flex items-center gap-2 data-[state=active]:bg-gradient-to-r data-[state=active]:from-primary/20 data-[state=active]:to-accent-2/20"
                             >
                                 <Globe className="h-4 w-4" />
                                 Current Web Search
@@ -296,7 +302,7 @@ export default function ProjectLibraryPage({ params }: ProjectLibraryPageProps) 
                             </TabsTrigger>
                             <TabsTrigger
                                 value="all-papers"
-                                className="flex items-center gap-2 data-[state=active]:bg-gradient-to-r data-[state=active]:from-green-500/20 data-[state=active]:to-emerald-500/20"
+                                className="flex items-center gap-2 data-[state=active]:bg-gradient-to-r data-[state=active]:from-primary/20 data-[state=active]:to-accent-2/20"
                             >
                                 <BookOpen className="h-4 w-4" />
                                 All Papers
@@ -308,7 +314,7 @@ export default function ProjectLibraryPage({ params }: ProjectLibraryPageProps) 
                             </TabsTrigger>
                             <TabsTrigger
                                 value="uploaded"
-                                className="flex items-center gap-2 data-[state=active]:bg-gradient-to-r data-[state=active]:from-purple-500/20 data-[state=active]:to-pink-500/20"
+                                className="flex items-center gap-2 data-[state=active]:bg-gradient-to-r data-[state=active]:from-primary/20 data-[state=active]:to-accent-2/20"
                             >
                                 <FolderOpen className="h-4 w-4" />
                                 Uploaded Content
@@ -333,7 +339,7 @@ export default function ProjectLibraryPage({ params }: ProjectLibraryPageProps) 
                                     <div className="flex items-center justify-between">
                                         <div>
                                             <CardTitle className="text-lg flex items-center gap-2">
-                                                <Globe className="h-5 w-5 text-blue-500" />
+                                                <Globe className="h-5 w-5 text-primary" />
                                                 Current Web Search Results
                                             </CardTitle>
                                             <CardDescription>
@@ -343,8 +349,8 @@ export default function ProjectLibraryPage({ params }: ProjectLibraryPageProps) 
                                         <Button
                                             onClick={handleRetrievePapers}
                                             disabled={webSearch.isSearching}
-                                            className="bg-gradient-to-r from-blue-500 to-cyan-500 hover:from-blue-600 hover:to-cyan-600 text-white border border-blue-500/30"
-                                            style={{ boxShadow: '0 0 15px rgba(59, 130, 246, 0.4), 0 0 30px rgba(6, 182, 212, 0.2), inset 0 1px 0 rgba(255, 255, 255, 0.1)' }}
+                                            className="gradient-primary-to-accent hover:gradient-accent text-white border border-primary/30"
+                                            style={{ boxShadow: '0 0 15px hsl(var(--accent-1) / 0.4), 0 0 30px hsl(var(--accent-2) / 0.2), inset 0 1px 0 rgba(255, 255, 255, 0.1)' }}
                                         >
                                             {webSearch.isSearching ? (
                                                 <RefreshCw className="mr-2 h-4 w-4 animate-spin" />
@@ -363,19 +369,19 @@ export default function ProjectLibraryPage({ params }: ProjectLibraryPageProps) 
                                                 <motion.div
                                                     animate={{ rotate: 360 }}
                                                     transition={{ duration: 4, repeat: Infinity, ease: "linear" }}
-                                                    className="inline-flex items-center justify-center w-12 h-12 bg-gradient-to-r from-blue-500 to-cyan-500 rounded-full mb-3"
+                                                    className="inline-flex items-center justify-center w-12 h-12 gradient-primary-to-accent rounded-full mb-3"
                                                     style={{
                                                         boxShadow: `
-                                                            0 0 20px rgba(59, 130, 246, 0.4),
-                                                            0 0 40px rgba(6, 182, 212, 0.3),
-                                                            0 0 60px rgba(99, 102, 241, 0.2),
+                                                            0 0 20px hsl(var(--accent-1) / 0.4),
+                                                            0 0 40px hsl(var(--accent-2) / 0.3),
+                                                            0 0 60px hsl(var(--accent-3) / 0.2),
                                                             inset 0 1px 0 rgba(255, 255, 255, 0.2)
                                                         `
                                                     }}
                                                 >
                                                     <Globe className="h-6 w-6 text-white" />
                                                 </motion.div>
-                                                <h3 className="text-lg font-semibold bg-gradient-to-r from-blue-500 via-purple-500 to-cyan-500 bg-clip-text text-transparent">
+                                                <h3 className="text-lg font-semibold text-gradient-primary">
                                                     Searching Academic Papers
                                                 </h3>
                                                 <p className="text-muted-foreground text-sm mt-1">
@@ -399,10 +405,10 @@ export default function ProjectLibraryPage({ params }: ProjectLibraryPageProps) 
                                                         initial={{ width: 0 }}
                                                         animate={{ width: `${webSearch.progress}%` }}
                                                         transition={{ duration: 0.5, ease: "easeOut" }}
-                                                        className="h-full bg-gradient-to-r from-blue-500 via-purple-500 to-cyan-500 rounded-full relative"
+                                                        className="h-full gradient-primary-to-accent rounded-full relative"
                                                         style={{
                                                             boxShadow: `
-                                                                0 0 10px rgba(59, 130, 246, 0.4),
+                                                                0 0 10px hsl(var(--accent-1) / 0.4),
                                                                 inset 0 1px 0 rgba(255, 255, 255, 0.2),
                                                                 inset 0 -1px 0 rgba(0, 0, 0, 0.1)
                                                             `
@@ -485,7 +491,7 @@ export default function ProjectLibraryPage({ params }: ProjectLibraryPageProps) 
                                                 {/* Enhanced Percentage Display */}
                                                 <div className="text-center mt-4">
                                                     <motion.span
-                                                        className="text-2xl font-bold bg-gradient-to-r from-blue-500 via-purple-500 to-cyan-500 bg-clip-text text-transparent"
+                                                        className="text-2xl font-bold text-gradient-primary"
                                                         animate={{ scale: [1, 1.05, 1] }}
                                                         transition={{ duration: 2, repeat: Infinity }}
                                                     >
@@ -532,7 +538,7 @@ export default function ProjectLibraryPage({ params }: ProjectLibraryPageProps) 
 
                                                             {!webSearch.isSearching && filteredAndSortedPapers.map((paper, index) => (
                                                                 <StreamingPaperCard
-                                                                    key={`${paper.title}-${index}`}
+                                                                    key={paper.id}
                                                                     paper={paper}
                                                                     index={index}
                                                                     onSelect={handlePaperSelect}
@@ -547,7 +553,7 @@ export default function ProjectLibraryPage({ params }: ProjectLibraryPageProps) 
                                                         <AnimatePresence mode="popLayout">
                                                             {filteredAndSortedPapers.map((paper, index) => (
                                                                 <PaperCard
-                                                                    key={`${paper.title}-${index}`}
+                                                                    key={paper.id}
                                                                     paper={paper}
                                                                     index={index}
                                                                     onSelect={handlePaperSelect}
@@ -566,7 +572,7 @@ export default function ProjectLibraryPage({ params }: ProjectLibraryPageProps) 
                                             <Globe className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
                                             <h3 className="text-lg font-medium text-muted-foreground mb-2">No papers found</h3>
                                             <p className="text-muted-foreground mb-4">Start a new search to find relevant research papers</p>
-                                            <Button onClick={handleRetrievePapers} className="bg-gradient-to-r from-blue-500 to-cyan-500 hover:from-blue-600 hover:to-cyan-600 text-white border border-blue-500/30" style={{ boxShadow: '0 0 15px rgba(59, 130, 246, 0.4), 0 0 30px rgba(6, 182, 212, 0.2), inset 0 1px 0 rgba(255, 255, 255, 0.1)' }}>
+                                            <Button onClick={handleRetrievePapers} className="gradient-primary-to-accent hover:gradient-accent text-white border border-primary/30" style={{ boxShadow: '0 0 15px hsl(var(--accent-1) / 0.4), 0 0 30px hsl(var(--accent-2) / 0.2), inset 0 1px 0 rgba(255, 255, 255, 0.1)' }}>
                                                 <Search className="mr-2 h-4 w-4" />
                                                 Start Search
                                             </Button>
@@ -583,7 +589,7 @@ export default function ProjectLibraryPage({ params }: ProjectLibraryPageProps) 
                                     <div className="flex items-center justify-between">
                                         <div>
                                             <CardTitle className="text-lg flex items-center gap-2">
-                                                <BookOpen className="h-5 w-5 text-green-500" />
+                                                <BookOpen className="h-5 w-5 text-primary" />
                                                 All Papers
                                             </CardTitle>
                                             <CardDescription>
@@ -700,7 +706,7 @@ export default function ProjectLibraryPage({ params }: ProjectLibraryPageProps) 
                                                         <AnimatePresence mode="popLayout">
                                                             {filteredAndSortedPapers.map((paper, index) => (
                                                                 <StreamingPaperCard
-                                                                    key={`${paper.title}-${index}`}
+                                                                    key={paper.id}
                                                                     paper={paper}
                                                                     index={index}
                                                                     onSelect={handlePaperSelect}
@@ -715,7 +721,7 @@ export default function ProjectLibraryPage({ params }: ProjectLibraryPageProps) 
                                                         <AnimatePresence mode="popLayout">
                                                             {filteredAndSortedPapers.map((paper, index) => (
                                                                 <PaperCard
-                                                                    key={`${paper.title}-${index}`}
+                                                                    key={paper.id}
                                                                     paper={paper}
                                                                     index={index}
                                                                     onSelect={handlePaperSelect}
@@ -747,7 +753,7 @@ export default function ProjectLibraryPage({ params }: ProjectLibraryPageProps) 
                                     <div className="flex items-center justify-between">
                                         <div>
                                             <CardTitle className="text-lg flex items-center gap-2">
-                                                <FolderOpen className="h-5 w-5 text-purple-500" />
+                                                <FolderOpen className="h-5 w-5 text-primary" />
                                                 Uploaded Content
                                             </CardTitle>
                                             <CardDescription>
@@ -755,9 +761,10 @@ export default function ProjectLibraryPage({ params }: ProjectLibraryPageProps) 
                                             </CardDescription>
                                         </div>
                                         <Button
+                                            onClick={() => setShowPDFUpload(true)}
                                             variant="outline"
-                                            className="bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600 text-white border border-purple-500/30"
-                                            style={{ boxShadow: '0 0 15px rgba(147, 51, 234, 0.4), 0 0 30px rgba(236, 72, 153, 0.2), inset 0 1px 0 rgba(255, 255, 255, 0.1)' }}
+                                            className="gradient-primary-to-accent hover:gradient-accent text-white border border-primary/30"
+                                            style={{ boxShadow: '0 0 15px hsl(var(--accent-1) / 0.4), 0 0 30px hsl(var(--accent-2) / 0.2), inset 0 1px 0 rgba(255, 255, 255, 0.1)' }}
                                         >
                                             <Upload className="h-4 w-4 mr-2" />
                                             Upload Files
@@ -769,7 +776,11 @@ export default function ProjectLibraryPage({ params }: ProjectLibraryPageProps) 
                                         <Upload className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
                                         <h3 className="text-lg font-medium text-muted-foreground mb-2">No uploaded content</h3>
                                         <p className="text-muted-foreground mb-4">Upload PDFs or other documents to analyze them with AI</p>
-                                        <Button className="bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600 text-white border border-purple-500/30" style={{ boxShadow: '0 0 15px rgba(147, 51, 234, 0.4), 0 0 30px rgba(236, 72, 153, 0.2), inset 0 1px 0 rgba(255, 255, 255, 0.1)' }}>
+                                        <Button
+                                            onClick={() => setShowPDFUpload(true)}
+                                            className="gradient-primary-to-accent hover:gradient-accent text-white border border-primary/30"
+                                            style={{ boxShadow: '0 0 15px hsl(var(--accent-1) / 0.4), 0 0 30px hsl(var(--accent-2) / 0.2), inset 0 1px 0 rgba(255, 255, 255, 0.1)' }}
+                                        >
                                             <Upload className="mr-2 h-4 w-4" />
                                             Upload Files
                                         </Button>
@@ -815,8 +826,8 @@ export default function ProjectLibraryPage({ params }: ProjectLibraryPageProps) 
                         <Button
                             onClick={scrollToTop}
                             size="sm"
-                            className="h-12 w-12 rounded-full bg-gradient-to-r from-primary to-purple-500 hover:from-primary/90 hover:to-purple-500/90 text-white shadow-lg hover:shadow-xl transition-all duration-300 border border-primary/30"
-                            style={{ boxShadow: '0 0 20px rgba(99, 102, 241, 0.5), 0 0 40px rgba(139, 92, 246, 0.3), inset 0 1px 0 rgba(255, 255, 255, 0.2)' }}
+                            className="h-12 w-12 rounded-full gradient-primary-to-accent hover:gradient-accent text-white shadow-lg hover:shadow-xl transition-all duration-300 border border-primary/30"
+                            style={{ boxShadow: '0 0 20px hsl(var(--accent-1) / 0.5), 0 0 40px hsl(var(--accent-2) / 0.3), inset 0 1px 0 rgba(255, 255, 255, 0.2)' }}
                         >
                             <ChevronUp className="h-5 w-5" />
                         </Button>
@@ -831,6 +842,17 @@ export default function ProjectLibraryPage({ params }: ProjectLibraryPageProps) 
                 onClose={() => setShowSearchConfig(false)}
                 onSearchSubmit={handleSearchSubmit}
                 isLoading={webSearch.isSearching}
+            />
+
+            {/* PDF Upload Dialog */}
+            <PDFUploadDialog
+                isOpen={showPDFUpload}
+                projectId={projectId}
+                onClose={() => setShowPDFUpload(false)}
+                onUploadComplete={() => {
+                    // Refresh the library data
+                    loadProjectLibrary(projectId)
+                }}
             />
         </div>
     )

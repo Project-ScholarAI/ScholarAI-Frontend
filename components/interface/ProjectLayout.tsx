@@ -3,7 +3,6 @@
 import React, { useState } from "react"
 import { ProjectSidebar } from "./ProjectSidebar"
 import { ChatPanel } from "@/components/layout/ChatPanel"
-import { StatusBar } from "@/components/layout/StatusBar"
 import { cn } from "@/lib/utils/cn"
 
 type Props = {
@@ -30,9 +29,6 @@ export function ProjectLayout({ children, projectId }: Props) {
                 <div className="flex-1 overflow-hidden">
                     {children}
                 </div>
-
-                {/* Status Bar */}
-                <StatusBar />
             </div>
 
             {/* Chat Panel */}
