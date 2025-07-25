@@ -4,23 +4,13 @@ import type React from "react"
 import { useRef, useEffect, useState } from "react"
 import {
   X,
-  Plus,
-  Clock,
-  Send,
-  Paperclip,
   Sparkles,
   MessageSquare,
-  MoreHorizontal,
-  Copy,
-  ThumbsUp,
-  ThumbsDown
+  Clock,
+  Construction,
+  Zap
 } from "lucide-react"
 import { Button } from "@/components/ui/button"
-import { Textarea } from "@/components/ui/textarea"
-import { ChatMessage } from "@/components/chat/ChatMessage"
-import { ChatComposer } from "@/components/chat/ChatComposer"
-import { chatWithPaper } from "@/lib/api/chat"
-import type { Message } from "@/types/chat"
 import { cn } from "@/lib/utils/cn"
 
 type Props = {
@@ -30,43 +20,9 @@ type Props = {
 }
 
 export function ChatPanel({ isOpen, onClose, paperId }: Props) {
-  const [messages, setMessages] = useState<Message[]>([
-    {
-      id: "1",
-      role: "system",
-      content: "Hello! I am ScholarAI, your research assistant. How can I help you today?",
-    },
-  ])
-  const [isLoading, setIsLoading] = useState(false)
-  const [currentChat, setCurrentChat] = useState({
-    id: "current",
-    title: "Chat with Paper",
-    lastUpdated: new Date().toISOString(),
-  })
-  const [chatHistory, setChatHistory] = useState([
-    {
-      id: "1",
-      title: "Research Paper Analysis",
-      lastUpdated: new Date().toISOString(),
-    },
-    {
-      id: "2",
-      title: "Literature Review Help",
-      lastUpdated: new Date(Date.now() - 86400000).toISOString(),
-    },
-  ])
-  const messagesEndRef = useRef<HTMLDivElement>(null)
   const panelRef = useRef<HTMLDivElement>(null)
   const [width, setWidth] = useState(400)
   const [isDragging, setIsDragging] = useState(false)
-  const [showChatHistory, setShowChatHistory] = useState(false)
-
-  // Scroll to bottom when messages change
-  useEffect(() => {
-    if (messagesEndRef.current) {
-      messagesEndRef.current.scrollIntoView({ behavior: "smooth" })
-    }
-  }, [messages])
 
   // Handle mouse dragging for resizing
   const handleMouseDown = (e: React.MouseEvent) => {
@@ -104,109 +60,36 @@ export function ChatPanel({ isOpen, onClose, paperId }: Props) {
     }
   }, [isDragging])
 
-  const sendMessage = async (content: string, context?: string[]) => {
-    if (!paperId) {
-      console.error("Paper ID is required for chat")
-      return
-    }
-
-    const userMessage: Message = {
-      id: Date.now().toString(),
-      role: "user",
-      content,
-      context,
-    }
-
-    setMessages((prev) => [...prev, userMessage])
-    setIsLoading(true)
-
-    try {
-      const response = await chatWithPaper(paperId, content)
-      
-      const aiMessage: Message = {
-        id: response.sessionId,
-        role: "assistant",
-        content: response.response,
-        timestamp: new Date(response.timestamp)
-      }
-      
-      setMessages((prev) => [...prev, aiMessage])
-    } catch (error) {
-      console.error("Chat error:", error)
-      const errorMessage: Message = {
-        id: (Date.now() + 1).toString(),
-        role: "assistant",
-        content: "Sorry, I encountered an error while processing your request. Please try again."
-      }
-      setMessages((prev) => [...prev, errorMessage])
-    } finally {
-      setIsLoading(false)
-    }
-  }
-
-  const startNewChat = () => {
-    setMessages([
-      {
-        id: "1",
-        role: "system",
-        content: "Hello! I am ScholarAI, your research assistant. How can I help you today?",
-      },
-    ])
-    setCurrentChat({
-      id: Date.now().toString(),
-      title: "New Chat",
-      lastUpdated: new Date().toISOString(),
-    })
-  }
-
   if (!isOpen) return null
 
   return (
     <div
       ref={panelRef}
-      className="fixed right-0 top-0 bottom-0 z-50 flex flex-col bg-[#1e1e1e] border-l border-[#3e3e42] shadow-2xl"
+      className="fixed right-0 top-0 bottom-0 z-50 flex flex-col bg-background border-l border-border shadow-2xl transition-all duration-300 ease-in-out"
       style={{ width: `${width}px` }}
     >
       {/* Resize handle */}
       <div
-        className="absolute left-0 top-0 bottom-0 w-1 cursor-ew-resize hover:bg-[#007acc] transition-colors"
+        className="absolute left-0 top-0 bottom-0 w-1 cursor-ew-resize hover:bg-primary transition-colors"
         onMouseDown={handleMouseDown}
       />
 
       {/* Header */}
-      <div className="flex h-12 items-center justify-between border-b border-[#3e3e42] px-4 bg-[#252526]">
+      <div className="flex h-12 items-center justify-between border-b border-border px-4 bg-background/80 backdrop-blur-xl">
         <div className="flex items-center gap-2">
-          <div className="flex items-center justify-center w-6 h-6 bg-gradient-to-br from-[#007acc] to-[#005a9e] rounded-md">
+          <div className="flex items-center justify-center w-6 h-6 bg-gradient-to-br from-primary to-purple-600 rounded-md">
             <Sparkles className="h-4 w-4 text-white" />
           </div>
-          <h2 className="font-semibold text-white text-sm">
-            {showChatHistory ? "Chat History" : currentChat.title}
+          <h2 className="font-semibold text-foreground text-sm">
+            AI Chat
           </h2>
         </div>
         <div className="flex items-center gap-1">
           <Button
             variant="ghost"
             size="sm"
-            onClick={startNewChat}
-            className="h-8 w-8 p-0 text-[#cccccc] hover:bg-[#2a2d2e] hover:text-white rounded-md"
-            title="New chat"
-          >
-            <Plus className="h-4 w-4" />
-          </Button>
-          <Button
-            variant="ghost"
-            size="sm"
-            onClick={() => setShowChatHistory(!showChatHistory)}
-            className="h-8 w-8 p-0 text-[#cccccc] hover:bg-[#2a2d2e] hover:text-white rounded-md"
-            title="Chat history"
-          >
-            <Clock className="h-4 w-4" />
-          </Button>
-          <Button
-            variant="ghost"
-            size="sm"
             onClick={onClose}
-            className="h-8 w-8 p-0 text-[#cccccc] hover:bg-[#2a2d2e] hover:text-white rounded-md"
+            className="h-8 w-8 p-0 text-muted-foreground hover:bg-primary/10 hover:text-primary rounded-md"
             title="Close"
           >
             <X className="h-4 w-4" />
@@ -214,84 +97,69 @@ export function ChatPanel({ isOpen, onClose, paperId }: Props) {
         </div>
       </div>
 
-      {showChatHistory ? (
-        <div className="flex-1 overflow-y-auto p-4 space-y-2">
-          <div className="text-xs text-[#cccccc] mb-4 font-medium">Recent Conversations</div>
-          {chatHistory.length === 0 ? (
-            <div className="text-center py-8">
-              <MessageSquare className="h-12 w-12 text-[#666] mx-auto mb-3" />
-              <p className="text-[#cccccc] text-sm">No chat history yet</p>
-              <p className="text-[#666] text-xs mt-1">Start a conversation to see it here</p>
-            </div>
-          ) : (
-            chatHistory.map((chat) => (
-              <div
-                key={chat.id}
-                className="p-3 rounded-lg hover:bg-[#2a2d2e] cursor-pointer border border-transparent hover:border-[#3e3e42] transition-all"
-                onClick={() => {
-                  // Switch to this chat
-                  setShowChatHistory(false)
-                }}
-              >
-                <p className="font-medium text-white text-sm truncate">{chat.title}</p>
-                <p className="text-xs text-[#cccccc] mt-1">
-                  {new Date(chat.lastUpdated).toLocaleDateString()}
-                </p>
-              </div>
-            ))
-          )}
+      {/* Coming Soon Content */}
+      <div className="flex-1 flex flex-col items-center justify-center p-8 text-center">
+        {/* Icon */}
+        <div className="flex items-center justify-center w-20 h-20 bg-gradient-to-br from-primary/10 to-purple-600/10 rounded-2xl mb-6 border border-primary/20">
+          <Construction className="h-10 w-10 text-primary" />
         </div>
-      ) : (
-        <>
-          {/* Messages */}
-          <div className="flex-1 overflow-y-auto">
-            {messages.length === 0 ? (
-              <div className="flex flex-col items-center justify-center h-full p-8 text-center">
-                <div className="flex items-center justify-center w-16 h-16 bg-gradient-to-br from-[#007acc] to-[#005a9e] rounded-2xl mb-4">
-                  <Sparkles className="h-8 w-8 text-white" />
-                </div>
-                <h3 className="text-lg font-semibold text-white mb-2">Welcome to ScholarAI</h3>
-                <p className="text-[#cccccc] text-sm mb-4 max-w-xs">
-                  I'm your AI research assistant. Ask me anything about your documents, research, or get help with analysis.
-                </p>
-                <div className="space-y-2 w-full max-w-xs">
-                  <button className="w-full text-left p-3 rounded-lg bg-[#2a2d2e] hover:bg-[#3e3e42] text-sm text-[#cccccc] transition-colors">
-                    📄 Summarize this document
-                  </button>
-                  <button className="w-full text-left p-3 rounded-lg bg-[#2a2d2e] hover:bg-[#3e3e42] text-sm text-[#cccccc] transition-colors">
-                    🔍 Find key insights
-                  </button>
-                  <button className="w-full text-left p-3 rounded-lg bg-[#2a2d2e] hover:bg-[#3e3e42] text-sm text-[#cccccc] transition-colors">
-                    💡 Generate research questions
-                  </button>
-                </div>
-              </div>
-            ) : (
-              <div className="p-4 space-y-4">
-                {messages.map((message) => (
-                  <ChatMessage key={message.id} message={message} />
-                ))}
-                {isLoading && (
-                  <div className="flex items-center gap-2 text-[#cccccc] text-sm">
-                    <div className="flex space-x-1">
-                      <div className="w-2 h-2 bg-[#007acc] rounded-full animate-bounce" />
-                      <div className="w-2 h-2 bg-[#007acc] rounded-full animate-bounce" style={{ animationDelay: '0.1s' }} />
-                      <div className="w-2 h-2 bg-[#007acc] rounded-full animate-bounce" style={{ animationDelay: '0.2s' }} />
-                    </div>
-                    <span>AI is thinking...</span>
-                  </div>
-                )}
-                <div ref={messagesEndRef} />
-              </div>
-            )}
+
+        {/* Title */}
+        <h3 className="text-xl font-semibold text-foreground mb-3">
+          AI Chat Coming Soon
+        </h3>
+
+        {/* Description */}
+        <p className="text-muted-foreground text-sm mb-6 max-w-xs leading-relaxed">
+          We're working hard to bring you an intelligent AI chat interface that will help you analyze research papers, answer questions, and provide insights.
+        </p>
+
+        {/* Features Preview */}
+        <div className="space-y-3 w-full max-w-xs mb-8">
+          <div className="flex items-center gap-3 p-3 rounded-lg bg-primary/5 border border-primary/10">
+            <div className="flex items-center justify-center w-8 h-8 bg-primary/10 rounded-lg">
+              <MessageSquare className="h-4 w-4 text-primary" />
+            </div>
+            <div className="text-left">
+              <p className="text-sm font-medium text-foreground">Smart Conversations</p>
+              <p className="text-xs text-muted-foreground">Ask questions about your research papers</p>
+            </div>
           </div>
 
-          {/* Input Area */}
-          <div className="border-t border-[#3e3e42] p-4 bg-[#252526]">
-            <ChatComposer onSend={sendMessage} isLoading={isLoading} />
+          <div className="flex items-center gap-3 p-3 rounded-lg bg-purple-500/5 border border-purple-500/10">
+            <div className="flex items-center justify-center w-8 h-8 bg-purple-500/10 rounded-lg">
+              <Zap className="h-4 w-4 text-purple-500" />
+            </div>
+            <div className="text-left">
+              <p className="text-sm font-medium text-foreground">Instant Insights</p>
+              <p className="text-xs text-muted-foreground">Get quick summaries and key findings</p>
+            </div>
           </div>
-        </>
-      )}
+
+          <div className="flex items-center gap-3 p-3 rounded-lg bg-cyan-500/5 border border-cyan-500/10">
+            <div className="flex items-center justify-center w-8 h-8 bg-cyan-500/10 rounded-lg">
+              <Clock className="h-4 w-4 text-cyan-500" />
+            </div>
+            <div className="text-left">
+              <p className="text-sm font-medium text-foreground">Chat History</p>
+              <p className="text-xs text-muted-foreground">Save and revisit your conversations</p>
+            </div>
+          </div>
+        </div>
+
+        {/* Notification Button */}
+        <Button
+          variant="outline"
+          className="border-primary/20 hover:border-primary/40 hover:bg-primary/5 text-primary"
+          onClick={() => {
+            // Could add notification signup functionality here
+            console.log("Notify me when available")
+          }}
+        >
+          <MessageSquare className="h-4 w-4 mr-2" />
+          Notify me when available
+        </Button>
+      </div>
     </div>
   )
 }

@@ -7,6 +7,11 @@ interface LoadingScreenProps {
     isVisible: boolean
 }
 
+interface PageLoadingIndicatorProps {
+    isVisible: boolean
+    message?: string
+}
+
 export const LoadingScreen: React.FC<LoadingScreenProps> = ({
     message = "Loading...",
     isVisible
@@ -188,6 +193,23 @@ export const LoadingScreen: React.FC<LoadingScreenProps> = ({
                         />
                     ))}
                 </div>
+            </div>
+        </div>
+    )
+}
+
+// Smaller page loading indicator for less intrusive feedback
+export const PageLoadingIndicator: React.FC<PageLoadingIndicatorProps> = ({
+    isVisible,
+    message = "Loading..."
+}) => {
+    if (!isVisible) return null
+
+    return (
+        <div className="fixed top-4 right-4 z-[9998] bg-background/90 backdrop-blur-xl border border-primary/20 rounded-lg shadow-lg shadow-primary/10 p-3 flex items-center gap-3 animate-in slide-in-from-right-2 duration-300">
+            <div className="flex items-center gap-2">
+                <div className="w-4 h-4 border-2 border-primary/30 border-t-primary rounded-full animate-spin" />
+                <span className="text-sm font-medium text-foreground">{message}</span>
             </div>
         </div>
     )

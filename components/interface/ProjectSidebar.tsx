@@ -30,6 +30,7 @@ import { EnhancedTooltip } from "@/components/ui/enhanced-tooltip"
 import { Badge } from "@/components/ui/badge"
 import { projectsApi } from "@/lib/api/projects"
 import { Project } from "@/types/project"
+import { useLoading } from "@/contexts/LoadingContext"
 
 type Props = {
     projectId: string
@@ -42,43 +43,50 @@ const PROJECT_NAV_ITEMS = [
         name: "Overview",
         href: "/overview",
         icon: Sparkles,
-        description: "Project details, stats, and information"
+        description: "Project details, stats, and information",
+        loadingMessage: "Loading project overview..."
     },
     {
         name: "Library",
         href: "/library",
         icon: Database,
-        description: "Research paper library with advanced search and filters"
+        description: "Research paper library with advanced search and filters",
+        loadingMessage: "Loading research library..."
     },
     {
         name: "AI Agents",
         href: "/agents",
         icon: Brain,
-        description: "AI-powered research assistants"
+        description: "AI-powered research assistants",
+        loadingMessage: "Loading AI agents..."
     },
     {
         name: "Insights",
         href: "/insights",
         icon: Lightbulb,
-        description: "Research insights and gap analysis"
+        description: "Research insights and gap analysis",
+        loadingMessage: "Loading research insights..."
     },
     {
         name: "Tasks",
         href: "/tasks",
         icon: Target,
-        description: "Reading list and task management"
+        description: "Reading list and task management",
+        loadingMessage: "Loading project tasks..."
     },
     {
         name: "Analytics",
         href: "/analytics",
         icon: BarChart3,
-        description: "Research progress and analytics"
+        description: "Research progress and analytics",
+        loadingMessage: "Loading project analytics..."
     },
     {
         name: "Collaboration",
         href: "/collaboration",
         icon: Users,
-        description: "Team collaboration and sharing"
+        description: "Team collaboration and sharing",
+        loadingMessage: "Loading collaboration tools..."
     }
 ]
 
@@ -87,13 +95,15 @@ const PROJECT_BOTTOM_ITEMS = [
         name: "Project Settings",
         href: "/settings",
         icon: Settings,
-        description: "Project configuration and preferences"
+        description: "Project configuration and preferences",
+        loadingMessage: "Loading project settings..."
     },
     {
         name: "Notifications",
         href: "/notifications",
         icon: Bell,
-        description: "Project notifications and alerts"
+        description: "Project notifications and alerts",
+        loadingMessage: "Loading project notifications..."
     }
 ]
 
@@ -102,6 +112,7 @@ export function ProjectSidebar({ projectId, collapsed, onToggle }: Props) {
     const router = useRouter()
     const [project, setProject] = useState<Project | null>(null)
     const [isLoading, setIsLoading] = useState(true)
+    const { showPageLoading, hidePageLoading } = useLoading()
 
     // Load project data
     useEffect(() => {
@@ -121,20 +132,43 @@ export function ProjectSidebar({ projectId, collapsed, onToggle }: Props) {
     }
 
     const handleExitProject = () => {
-        router.push('/interface/home')
+        showPageLoading("Returning to home dashboard...")
+        setTimeout(() => {
+            router.push('/interface/home')
+            setTimeout(() => {
+                hidePageLoading()
+            }, 500)
+        }, 100)
+    }
+
+    const handleNavigation = (href: string, loadingMessage: string) => {
+        const fullPath = getProjectPath(href)
+        // Don't show loading if we're already on the same page
+        if (pathname === fullPath) return
+
+        showPageLoading(loadingMessage)
+
+        // Add a small delay to ensure the loading indicator shows
+        setTimeout(() => {
+            router.push(fullPath)
+            // Hide loading after navigation completes
+            setTimeout(() => {
+                hidePageLoading()
+            }, 500)
+        }, 100)
     }
 
     const getProjectPath = (href: string) => `/interface/projects/${projectId}${href}`
 
-    const SidebarItem = ({ item, isBottom = false }: { item: typeof PROJECT_NAV_ITEMS[0], isBottom?: boolean }) => {
+    const SidebarItem = ({ item, isBottom = false }: { item: typeof PROJECT_NAV_ITEMS[0] | typeof PROJECT_BOTTOM_ITEMS[0], isBottom?: boolean }) => {
         const fullPath = getProjectPath(item.href)
         const isActive = pathname === fullPath
 
         const content = (
-            <Link
-                href={fullPath}
+            <button
+                onClick={() => handleNavigation(item.href, item.loadingMessage)}
                 className={cn(
-                    "flex items-center gap-3 rounded-xl px-3 py-3 text-sm font-medium transition-all duration-300 group relative backdrop-blur-sm border",
+                    "flex items-center gap-3 rounded-xl px-3 py-3 text-sm font-medium transition-all duration-300 group relative backdrop-blur-sm border w-full text-left",
                     "hover:bg-primary/10 hover:border-primary/30",
                     isActive
                         ? "bg-gradient-to-r from-primary/20 to-purple-500/10 text-primary border-primary/30"
@@ -191,7 +225,7 @@ export function ProjectSidebar({ projectId, collapsed, onToggle }: Props) {
                 {isActive && !collapsed && (
                     <div className="absolute right-3 w-2 h-2 bg-gradient-to-r from-primary to-purple-500 rounded-full shadow-lg shadow-primary/50" />
                 )}
-            </Link>
+            </button>
         )
 
         if (collapsed) {

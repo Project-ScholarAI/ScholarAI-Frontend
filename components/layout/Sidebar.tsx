@@ -1,6 +1,6 @@
 "use client"
 
-import { usePathname } from "next/navigation"
+import { usePathname, useRouter } from "next/navigation"
 import Link from "next/link"
 import {
   BookOpen,
@@ -26,6 +26,7 @@ import { cn } from "@/lib/utils/cn"
 import { Button } from "@/components/ui/button"
 import { EnhancedTooltip } from "@/components/ui/enhanced-tooltip"
 import { LogoutButton } from "@/components/auth/LogoutButton"
+import { useLoading } from "@/contexts/LoadingContext"
 
 type Props = {
   collapsed: boolean
@@ -37,31 +38,36 @@ const NAV_ITEMS = [
     name: "Home",
     href: "/interface/home",
     icon: Home,
-    description: "Welcome guide and getting started"
+    description: "Welcome guide and getting started",
+    loadingMessage: "Loading home dashboard..."
   },
   {
     name: "Projects",
     href: "/interface/projects",
     icon: BookOpen,
-    description: "Research project management"
+    description: "Research project management",
+    loadingMessage: "Loading research projects..."
   },
   {
     name: "ToDo",
     href: "/interface/todo",
     icon: CheckSquare,
-    description: "Task management and planning"
+    description: "Task management and planning",
+    loadingMessage: "Loading task management..."
   },
   {
     name: "Notifications",
     href: "/interface/notifications",
     icon: Bell,
-    description: "Recent notifications and alerts"
+    description: "Recent notifications and alerts",
+    loadingMessage: "Loading notifications..."
   },
   {
     name: "Settings",
     href: "/interface/settings",
     icon: Settings,
-    description: "Application preferences and customization"
+    description: "Application preferences and customization",
+    loadingMessage: "Loading settings..."
   }
 ]
 
@@ -70,21 +76,40 @@ const BOTTOM_ITEMS = [
     name: "Account",
     href: "/interface/account",
     icon: User,
-    description: "User profile and preferences"
+    description: "User profile and preferences",
+    loadingMessage: "Loading account settings..."
   }
 ]
 
 export function Sidebar({ collapsed, onToggle }: Props) {
   const pathname = usePathname()
+  const router = useRouter()
+  const { showPageLoading, hidePageLoading } = useLoading()
 
-  const SidebarItem = ({ item, isBottom = false }: { item: typeof NAV_ITEMS[0], isBottom?: boolean }) => {
+  const handleNavigation = (href: string, loadingMessage: string) => {
+    // Don't show loading if we're already on the same page
+    if (pathname === href) return
+
+    showPageLoading(loadingMessage)
+
+    // Add a small delay to ensure the loading indicator shows
+    setTimeout(() => {
+      router.push(href)
+      // Hide loading after navigation completes
+      setTimeout(() => {
+        hidePageLoading()
+      }, 500)
+    }, 100)
+  }
+
+  const SidebarItem = ({ item, isBottom = false }: { item: typeof NAV_ITEMS[0] | typeof BOTTOM_ITEMS[0], isBottom?: boolean }) => {
     const isActive = pathname.startsWith(item.href)
 
     const content = (
-      <Link
-        href={item.href}
+      <button
+        onClick={() => handleNavigation(item.href, item.loadingMessage)}
         className={cn(
-          "flex items-center gap-3 rounded-xl px-3 py-3 text-sm font-medium transition-all duration-300 group relative backdrop-blur-sm border",
+          "flex items-center gap-3 rounded-xl px-3 py-3 text-sm font-medium transition-all duration-300 group relative backdrop-blur-sm border w-full text-left",
           "hover:bg-primary/10 hover:border-primary/30",
           isActive
             ? "bg-gradient-to-r from-primary/20 to-purple-500/10 text-primary border-primary/30"
@@ -141,7 +166,7 @@ export function Sidebar({ collapsed, onToggle }: Props) {
         {isActive && !collapsed && (
           <div className="absolute right-3 w-2 h-2 bg-gradient-to-r from-primary to-purple-500 rounded-full shadow-lg shadow-primary/50" />
         )}
-      </Link>
+      </button>
     )
 
     if (collapsed) {
@@ -188,7 +213,10 @@ export function Sidebar({ collapsed, onToggle }: Props) {
             `
         }}>
         {!collapsed && (
-          <Link href="/interface/home" className="flex items-center gap-3 group">
+          <button
+            onClick={() => handleNavigation("/interface/home", "Loading home dashboard...")}
+            className="flex items-center gap-3 group"
+          >
             <div className="flex items-center justify-center w-10 h-10 gradient-radial-accent rounded-xl shadow-lg shadow-primary/30 group-hover:shadow-primary/50 transition-all duration-300 group-hover:scale-105">
               <Sparkles className="h-6 w-6 text-white drop-shadow-glow" />
             </div>
@@ -198,7 +226,7 @@ export function Sidebar({ collapsed, onToggle }: Props) {
               </span>
               <span className="text-xs text-muted-foreground">Research Assistant</span>
             </div>
-          </Link>
+          </button>
         )}
 
         <Button
