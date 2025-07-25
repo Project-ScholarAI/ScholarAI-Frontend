@@ -238,11 +238,12 @@ export const projectsApi = {
   },
 
   // Remove collaborator from project
-  async removeCollaborator(projectId: string, collaboratorId: string): Promise<void> {
+  async removeCollaborator(projectId: string, collaboratorEmail: string): Promise<void> {
     const response = await authenticatedFetch(
-      getApiUrl(`${PROJECTS_ENDPOINT}/${projectId}/collaborators/${collaboratorId}`),
+      getApiUrl(`${PROJECTS_ENDPOINT}/${projectId}/collaborators`),
       {
         method: "DELETE",
+        body: JSON.stringify({ collaboratorEmail }),
       }
     );
 
@@ -252,6 +253,19 @@ export const projectsApi = {
         errorData.message || `HTTP error! status: ${response.status}`
       );
     }
+  },
+
+  // Update collaborator role
+  async updateCollaborator(projectId: string, collaboratorEmail: string, role: 'VIEWER' | 'EDITOR' | 'ADMIN'): Promise<Collaborator> {
+    const response = await authenticatedFetch(
+      getApiUrl(`${PROJECTS_ENDPOINT}/${projectId}/collaborators`),
+      {
+        method: "PUT",
+        body: JSON.stringify({ collaboratorEmail, role }),
+      }
+    );
+
+    return handleApiResponse<Collaborator>(response);
   },
 
   // Check if project has collaborators (more efficient than fetching all)

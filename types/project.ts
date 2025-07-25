@@ -68,10 +68,15 @@ export interface ProjectStats {
 
 export interface Collaborator {
     id: string
-    email: string
+    projectId: string
+    collaboratorId: string
+    collaboratorEmail: string
+    collaboratorName: string
+    ownerEmail: string
     role: 'VIEWER' | 'EDITOR' | 'ADMIN'
     status: 'PENDING' | 'ACTIVE' | 'DECLINED'
-    invitedAt: string
+    createdAt: string
+    invitedAt?: string
     joinedAt?: string
 }
 

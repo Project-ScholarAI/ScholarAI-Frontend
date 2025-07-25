@@ -54,34 +54,6 @@ const PROJECT_NAV_ITEMS = [
         loadingMessage: "Loading research library..."
     },
     {
-        name: "AI Agents",
-        href: "/agents",
-        icon: Brain,
-        description: "AI-powered research assistants",
-        loadingMessage: "Loading AI agents..."
-    },
-    {
-        name: "Insights",
-        href: "/insights",
-        icon: Lightbulb,
-        description: "Research insights and gap analysis",
-        loadingMessage: "Loading research insights..."
-    },
-    {
-        name: "Tasks",
-        href: "/tasks",
-        icon: Target,
-        description: "Reading list and task management",
-        loadingMessage: "Loading project tasks..."
-    },
-    {
-        name: "Analytics",
-        href: "/analytics",
-        icon: BarChart3,
-        description: "Research progress and analytics",
-        loadingMessage: "Loading project analytics..."
-    },
-    {
         name: "Collaboration",
         href: "/collaboration",
         icon: Users,
@@ -90,22 +62,7 @@ const PROJECT_NAV_ITEMS = [
     }
 ]
 
-const PROJECT_BOTTOM_ITEMS = [
-    {
-        name: "Project Settings",
-        href: "/settings",
-        icon: Settings,
-        description: "Project configuration and preferences",
-        loadingMessage: "Loading project settings..."
-    },
-    {
-        name: "Notifications",
-        href: "/notifications",
-        icon: Bell,
-        description: "Project notifications and alerts",
-        loadingMessage: "Loading project notifications..."
-    }
-]
+const PROJECT_BOTTOM_ITEMS = []
 
 export function ProjectSidebar({ projectId, collapsed, onToggle }: Props) {
     const pathname = usePathname()
