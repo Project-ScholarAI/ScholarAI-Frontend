@@ -68,4 +68,62 @@ export const getProjectLibraryStats = async (
         console.error("Error fetching project library stats:", error);
         throw error;
     }
+};
+
+export const addUploadedPaper = async (projectId: string, paperData: {
+    title: string;
+    abstract?: string | null;
+    authors?: Array<{
+        name: string;
+        authorId?: string | null;
+        orcid?: string | null;
+        affiliation?: string | null;
+    }>;
+    publicationDate?: string;
+    doi?: string | null;
+    semanticScholarId?: string | null;
+    externalIds?: {
+        DOI?: string;
+        ArXiv?: string;
+        PubMedCentral?: string;
+        CorpusId?: number;
+    };
+    source: string;
+    pdfContentUrl: string;
+    pdfUrl?: string | null;
+    isOpenAccess?: boolean;
+    paperUrl?: string | null;
+    venueName?: string | null;
+    publisher?: string | null;
+    publicationTypes?: string[];
+    volume?: string | null;
+    issue?: string | null;
+    pages?: string | null;
+    citationCount?: number | null;
+    referenceCount?: number | null;
+    influentialCitationCount?: number | null;
+    fieldsOfStudy?: string[];
+}) => {
+    try {
+        const response = await authenticatedFetch(
+            getApiUrl(`/api/v1/library/project/${projectId}/papers`),
+            {
+                method: "POST",
+                body: JSON.stringify(paperData),
+            }
+        );
+
+        if (!response.ok) {
+            const errorData = await response.json().catch(() => ({}));
+            throw new Error(
+                errorData.message || `HTTP error! status: ${response.status}`
+            );
+        }
+
+        const data = await response.json();
+        return data;
+    } catch (error) {
+        console.error("Error adding uploaded paper:", error);
+        throw error;
+    }
 }; 

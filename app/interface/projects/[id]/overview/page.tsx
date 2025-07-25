@@ -7,6 +7,7 @@ import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import { Separator } from "@/components/ui/separator"
 import { Progress } from "@/components/ui/progress"
+import { ShareProjectDialog } from "@/components/interface/ShareProjectDialog"
 import {
     Sparkles,
     BookOpen,
@@ -25,7 +26,8 @@ import {
     Brain,
     Users,
     Edit3,
-    Archive
+    Archive,
+    Share2
 } from "lucide-react"
 import { projectsApi } from "@/lib/api/projects"
 import { Project } from "@/types/project"
@@ -40,6 +42,7 @@ export default function ProjectOverviewPage({ params }: ProjectOverviewPageProps
     const [projectId, setProjectId] = useState<string>("")
     const [project, setProject] = useState<Project | null>(null)
     const [isLoading, setIsLoading] = useState(true)
+    const [showShareDialog, setShowShareDialog] = useState(false)
 
     // Load project data
     useEffect(() => {
@@ -126,6 +129,17 @@ export default function ProjectOverviewPage({ params }: ProjectOverviewPageProps
                             >
                                 <Edit3 className="mr-2 h-4 w-4" />
                                 Edit Project
+                            </Button>
+                            <Button
+                                variant="outline"
+                                className="bg-background/40 backdrop-blur-xl border-primary/30 hover:border-primary/50 hover:bg-primary/5 transition-all duration-300"
+                                style={{
+                                    boxShadow: '0 0 20px rgba(99, 102, 241, 0.15), inset 0 0 20px rgba(99, 102, 241, 0.05)'
+                                }}
+                                onClick={() => setShowShareDialog(true)}
+                            >
+                                <Share2 className="mr-2 h-4 w-4" />
+                                Share Project
                             </Button>
                             <Button
                                 className="bg-gradient-to-r from-primary to-purple-600 hover:from-primary/90 hover:to-purple-700 text-white shadow-lg hover:shadow-primary/25 transition-all duration-300"
@@ -386,6 +400,18 @@ export default function ProjectOverviewPage({ params }: ProjectOverviewPageProps
                     </div>
                 </div>
             </div>
+
+            {/* Share Project Dialog */}
+            <ShareProjectDialog
+                isOpen={showShareDialog}
+                projectId={projectId}
+                projectName={project?.name || ''}
+                onClose={() => setShowShareDialog(false)}
+                onCollaboratorAdded={() => {
+                    // Optionally refresh project data or show updated collaborator list
+                    console.log('Collaborator added successfully')
+                }}
+            />
         </div>
     )
 } 

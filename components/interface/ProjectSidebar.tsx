@@ -200,7 +200,7 @@ export function ProjectSidebar({ projectId, collapsed, onToggle }: Props) {
                     <TooltipTrigger asChild>
                         {content}
                     </TooltipTrigger>
-                    <TooltipContent side="right" className="bg-background/90 backdrop-blur-xl border-primary/20 text-foreground shadow-2xl">
+                    <TooltipContent side="right" className="bg-background/95 backdrop-blur-xl border-primary/15 text-foreground shadow-xl">
                         <p className="font-medium">{item.name}</p>
                         <p className="text-xs text-muted-foreground">{item.description}</p>
                     </TooltipContent>
@@ -214,39 +214,39 @@ export function ProjectSidebar({ projectId, collapsed, onToggle }: Props) {
     return (
         <TooltipProvider>
             <div className={cn(
-                "flex h-screen flex-col bg-background/40 backdrop-blur-xl border-r border-primary/20 transition-all duration-300 relative overflow-hidden",
+                "flex h-screen flex-col bg-background/60 backdrop-blur-xl border-r border-primary/15 transition-all duration-300 relative overflow-hidden",
                 collapsed ? "w-16" : "w-72"
             )}
                 style={{
                     boxShadow: `
-                    inset -1px 0 0 0 rgba(99, 102, 241, 0.3),
-                    4px 0 20px rgba(99, 102, 241, 0.15),
-                    8px 0 40px rgba(139, 92, 246, 0.1),
-                    0 0 60px rgba(99, 102, 241, 0.05)
+                    inset -1px 0 0 0 rgba(99, 102, 241, 0.2),
+                    4px 0 20px rgba(99, 102, 241, 0.1),
+                    8px 0 40px rgba(139, 92, 246, 0.05),
+                    0 0 60px rgba(99, 102, 241, 0.03)
                 `
                 }}>
                 {/* Background Effects */}
-                <div className="absolute inset-0 bg-gradient-to-b from-primary/5 via-background/50 to-purple-500/5" />
-                <div className="absolute top-0 right-0 w-32 h-32 bg-gradient-to-bl from-primary/15 to-transparent rounded-full blur-2xl animate-pulse" />
-                <div className="absolute bottom-0 left-0 w-32 h-32 bg-gradient-to-tr from-blue-500/15 to-transparent rounded-full blur-2xl animate-pulse" />
-                <div className="absolute top-1/2 left-0 w-full h-px bg-gradient-to-r from-transparent via-primary/30 to-transparent opacity-50" />
-                <div className="absolute inset-0 bg-gradient-to-r from-transparent via-primary/5 to-transparent animate-pulse duration-3000" />
+                <div className="absolute inset-0 bg-gradient-to-b from-primary/3 via-background/30 to-purple-500/3" />
+                <div className="absolute top-0 right-0 w-32 h-32 bg-gradient-to-bl from-primary/8 to-transparent rounded-full blur-2xl animate-pulse" />
+                <div className="absolute bottom-0 left-0 w-32 h-32 bg-gradient-to-tr from-blue-500/8 to-transparent rounded-full blur-2xl animate-pulse" />
+                <div className="absolute top-1/2 left-0 w-full h-px bg-gradient-to-r from-transparent via-primary/20 to-transparent opacity-30" />
+                <div className="absolute inset-0 bg-gradient-to-r from-transparent via-primary/3 to-transparent animate-pulse duration-3000" />
 
                 {/* Header */}
                 <div className={cn(
-                    "flex h-16 items-center justify-between px-4 border-b border-primary/20 relative z-10",
+                    "flex h-16 items-center justify-between px-4 border-b border-primary/15 relative z-10",
                     collapsed && "px-2"
                 )}
                     style={{
                         boxShadow: `
-                        0 1px 0 0 rgba(99, 102, 241, 0.3),
-                        0 2px 10px rgba(99, 102, 241, 0.1),
-                        0 4px 20px rgba(139, 92, 246, 0.05)
+                        0 1px 0 0 rgba(99, 102, 241, 0.2),
+                        0 2px 10px rgba(99, 102, 241, 0.08),
+                        0 4px 20px rgba(139, 92, 246, 0.03)
                     `
                     }}>
                     {!collapsed && (
                         <div className="flex items-center gap-3 min-w-0 flex-1">
-                            <div className="flex items-center justify-center w-10 h-10 bg-gradient-to-br from-blue-500 via-purple-500 to-pink-500 rounded-xl shadow-lg shadow-blue-500/30 transition-all duration-300 relative overflow-hidden">
+                            <div className="flex items-center justify-center w-10 h-10 gradient-radial-accent rounded-xl shadow-lg shadow-primary/30 transition-all duration-300 relative overflow-hidden">
                                 {/* Background shimmer effect */}
                                 <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/20 to-transparent -translate-x-full animate-pulse duration-2000" />
 
@@ -298,7 +298,7 @@ export function ProjectSidebar({ projectId, collapsed, onToggle }: Props) {
                             </div>
                             <div className="flex flex-col min-w-0 flex-1">
                                 <div
-                                    className="font-bold text-sm bg-gradient-to-r from-blue-500 via-purple-500 to-pink-500 bg-clip-text text-transparent leading-tight max-h-12 overflow-hidden"
+                                    className="font-bold text-sm text-gradient-primary leading-tight max-h-12 overflow-hidden"
                                     style={{
                                         display: '-webkit-box',
                                         WebkitLineClamp: 2,
@@ -356,12 +356,12 @@ export function ProjectSidebar({ projectId, collapsed, onToggle }: Props) {
                 </nav>
 
                 {/* Exit Project Button at Bottom */}
-                <div className="p-3 border-t border-primary/20 relative z-10 mt-auto"
+                <div className="p-3 border-t border-primary/15 relative z-10 mt-auto"
                     style={{
                         boxShadow: `
-                        0 -1px 0 0 rgba(99, 102, 241, 0.3),
-                        0 -2px 10px rgba(99, 102, 241, 0.1),
-                        0 -4px 20px rgba(139, 92, 246, 0.05)
+                        0 -1px 0 0 rgba(99, 102, 241, 0.2),
+                        0 -2px 10px rgba(99, 102, 241, 0.08),
+                        0 -4px 20px rgba(139, 92, 246, 0.03)
                     `
                     }}>
                     <Tooltip>
@@ -371,28 +371,28 @@ export function ProjectSidebar({ projectId, collapsed, onToggle }: Props) {
                                 variant="outline"
                                 size={collapsed ? "sm" : "default"}
                                 className={cn(
-                                    "w-full bg-gradient-to-r from-blue-500/15 via-purple-500/15 to-pink-500/15 border-blue-400/30 text-blue-100 hover:bg-gradient-to-r hover:from-blue-500/25 hover:via-purple-500/25 hover:to-pink-500/25 hover:border-blue-300/50 hover:text-white transition-all duration-300",
+                                    "w-full bg-gradient-to-r from-primary/10 via-accent-2/10 to-accent-3/10 border-primary/20 text-foreground hover:bg-gradient-to-r hover:from-primary/20 hover:via-accent-2/20 hover:to-accent-3/20 hover:border-primary/40 hover:text-primary transition-all duration-300",
                                     collapsed && "px-2"
                                 )}
                                 style={{
                                     boxShadow: `
-                                        0 0 10px rgba(59, 130, 246, 0.2),
-                                        0 0 20px rgba(139, 92, 246, 0.1),
+                                        0 0 10px hsl(var(--accent-1) / 0.15),
+                                        0 0 20px hsl(var(--accent-2) / 0.08),
                                         inset 0 1px 0 rgba(255, 255, 255, 0.1)
                                     `
                                 }}
                                 onMouseEnter={(e) => {
                                     e.currentTarget.style.boxShadow = `
-                                        0 0 20px rgba(59, 130, 246, 0.4),
-                                        0 0 40px rgba(139, 92, 246, 0.2),
+                                        0 0 20px hsl(var(--accent-1) / 0.3),
+                                        0 0 40px hsl(var(--accent-2) / 0.15),
                                         inset 0 1px 0 rgba(255, 255, 255, 0.2),
-                                        0 4px 20px rgba(59, 130, 246, 0.2)
+                                        0 4px 20px hsl(var(--accent-1) / 0.15)
                                     `
                                 }}
                                 onMouseLeave={(e) => {
                                     e.currentTarget.style.boxShadow = `
-                                        0 0 10px rgba(59, 130, 246, 0.2),
-                                        0 0 20px rgba(139, 92, 246, 0.1),
+                                        0 0 10px hsl(var(--accent-1) / 0.15),
+                                        0 0 20px hsl(var(--accent-2) / 0.08),
                                         inset 0 1px 0 rgba(255, 255, 255, 0.1)
                                     `
                                 }}
@@ -402,7 +402,7 @@ export function ProjectSidebar({ projectId, collapsed, onToggle }: Props) {
                             </Button>
                         </TooltipTrigger>
                         {collapsed && (
-                            <TooltipContent side="right" className="bg-background/90 backdrop-blur-xl border-primary/20 text-foreground shadow-2xl">
+                            <TooltipContent side="right" className="bg-background/95 backdrop-blur-xl border-primary/15 text-foreground shadow-xl">
                                 <p className="font-medium">Exit Project</p>
                                 <p className="text-xs text-muted-foreground">Return to main interface</p>
                             </TooltipContent>

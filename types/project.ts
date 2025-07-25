@@ -64,4 +64,22 @@ export interface ProjectStats {
     completed: number
     archived: number
     total: number
+}
+
+export interface Collaborator {
+    id: string
+    email: string
+    role: 'VIEWER' | 'EDITOR' | 'ADMIN'
+    status: 'PENDING' | 'ACTIVE' | 'DECLINED'
+    invitedAt: string
+    joinedAt?: string
+}
+
+export interface AddCollaboratorRequest {
+    collaboratorEmail: string
+    role: 'VIEWER' | 'EDITOR' | 'ADMIN'
+}
+
+export interface CollaboratorResponse {
+    collaborators: Collaborator[]
 } 

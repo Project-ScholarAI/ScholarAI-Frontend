@@ -9,8 +9,10 @@ import { Badge } from "@/components/ui/badge"
 import { Input } from "@/components/ui/input"
 import { ProjectCreateDialog } from "@/components/interface/ProjectCreateDialog"
 import { ProjectEditDialog } from "@/components/interface/ProjectEditDialog"
+import { ShareProjectDialog } from "@/components/interface/ShareProjectDialog"
 import { projectsApi } from "@/lib/api/projects"
 import { Project, ProjectStatus } from "@/types/project"
+import { useSharedProjects } from "@/hooks/useSharedProjects"
 import {
     Plus,
     Search,
@@ -32,7 +34,8 @@ import {
     Settings,
     MoreVertical,
     Edit,
-    Loader2
+    Loader2,
+    Share2
 } from "lucide-react"
 
 export function ProjectsDashboard() {
@@ -41,18 +44,24 @@ export function ProjectsDashboard() {
     const [searchQuery, setSearchQuery] = useState("")
     const [showCreateDialog, setShowCreateDialog] = useState(false)
     const [showEditDialog, setShowEditDialog] = useState(false)
+    const [showShareDialog, setShowShareDialog] = useState(false)
     const [editingProject, setEditingProject] = useState<Project | null>(null)
+    const [sharingProject, setSharingProject] = useState<Project | null>(null)
     const [selectedStatus, setSelectedStatus] = useState<string>("all")
+    const [showOnlyShared, setShowOnlyShared] = useState(false)
     const [isLoading, setIsLoading] = useState(true)
     const [error, setError] = useState<string | null>(null)
     const [openingProjectId, setOpeningProjectId] = useState<string | null>(null)
+
+    // Hook to track shared projects
+    const { isProjectShared, refreshSharedProjects, markProjectAsShared, markProjectAsNotShared } = useSharedProjects(projects)
 
     // Load projects on component mount
     useEffect(() => {
         loadProjects()
     }, [])
 
-    const loadProjects = async () => {
+    const loadProjects = async (retryCount = 0) => {
         try {
             setIsLoading(true)
             setError(null)
@@ -60,7 +69,36 @@ export function ProjectsDashboard() {
             setProjects(data)
         } catch (error) {
             console.error('Error loading projects:', error)
-            setError('Failed to load projects. Please try again.')
+
+            // Provide more specific error messages based on the error type
+            let errorMessage = 'Failed to load projects. Please try again.'
+
+            if (error instanceof Error) {
+                if (error.message.includes('fetch')) {
+                    errorMessage = 'Cannot connect to server. Please check if the backend is running.'
+                } else if (error.message.includes('401')) {
+                    errorMessage = 'Authentication required. Please log in again.'
+                } else if (error.message.includes('403')) {
+                    errorMessage = 'Access denied. You may not have permission to view projects.'
+                } else if (error.message.includes('404')) {
+                    errorMessage = 'Projects endpoint not found. Please check the API configuration.'
+                } else if (error.message.includes('500')) {
+                    errorMessage = 'Server error. Please try again later.'
+                } else if (error.message.includes('Invalid JSON')) {
+                    errorMessage = 'Invalid response from server. Please try again.'
+                } else {
+                    errorMessage = error.message || errorMessage
+                }
+            }
+
+            setError(errorMessage)
+
+            // Auto-retry for network errors (up to 2 retries)
+            if (retryCount < 2 && error instanceof Error && error.message.includes('fetch')) {
+                console.log(`Retrying project load (attempt ${retryCount + 1})...`)
+                setTimeout(() => loadProjects(retryCount + 1), 2000) // Retry after 2 seconds
+                return
+            }
         } finally {
             setIsLoading(false)
         }
@@ -84,8 +122,9 @@ export function ProjectsDashboard() {
             projectTopics.some(topic => topic.toLowerCase().includes(searchQuery.toLowerCase()))
 
         const matchesStatus = selectedStatus === "all" || project.status.toLowerCase() === selectedStatus
+        const matchesShared = !showOnlyShared || isProjectShared(project.id)
 
-        return matchesSearch && matchesStatus
+        return matchesSearch && matchesStatus && matchesShared
     })
 
     const toggleStar = async (projectId: string) => {
@@ -101,17 +140,26 @@ export function ProjectsDashboard() {
 
     const handleProjectCreated = (newProject: Project) => {
         setProjects(prev => [newProject, ...prev])
+        // Refresh shared projects after creating a new project
+        setTimeout(() => refreshSharedProjects(), 100)
     }
 
     const handleProjectUpdated = (updatedProject: Project) => {
         setProjects(prev => prev.map(p =>
             p.id === updatedProject.id ? updatedProject : p
         ))
+        // Refresh shared projects after updating a project
+        setTimeout(() => refreshSharedProjects(), 100)
     }
 
     const handleEditProject = (project: Project) => {
         setEditingProject(project)
         setShowEditDialog(true)
+    }
+
+    const handleShareProject = (project: Project) => {
+        setSharingProject(project)
+        setShowShareDialog(true)
     }
 
     const getStatusIcon = (status: ProjectStatus) => {
@@ -169,12 +217,14 @@ export function ProjectsDashboard() {
         const activeProjects = projects.filter(p => p.status === 'ACTIVE').length
         const totalPapers = projects.reduce((sum, p) => sum + p.totalPapers, 0)
         const totalTasks = projects.reduce((sum, p) => sum + p.activeTasks, 0)
+        const sharedProjects = projects.filter(p => isProjectShared(p.id)).length
 
         return {
             activeProjects,
             totalPapers,
             totalTasks,
-            totalProjects: projects.length
+            totalProjects: projects.length,
+            sharedProjects
         }
     }
 
@@ -199,7 +249,7 @@ export function ProjectsDashboard() {
                     >
                         <div className="flex items-center justify-between mb-4">
                             <div>
-                                <h1 className="text-4xl font-bold bg-gradient-to-r from-primary via-blue-500 to-purple-500 bg-clip-text text-transparent">
+                                <h1 className="text-4xl font-bold text-gradient-primary">
                                     Research Projects
                                 </h1>
                                 <p className="text-muted-foreground mt-2">
@@ -209,7 +259,7 @@ export function ProjectsDashboard() {
                             <Button
                                 onClick={() => setShowCreateDialog(true)}
                                 size="lg"
-                                className="group relative overflow-hidden bg-gradient-to-r from-primary to-purple-600 hover:from-primary/90 hover:to-purple-700 text-white border-0 shadow-lg shadow-primary/25 transition-all duration-300 hover:shadow-primary/40 hover:scale-105"
+                                className="group relative overflow-hidden gradient-primary-to-accent text-white border-0 shadow-lg shadow-primary transition-all duration-300 hover:shadow-accent hover:scale-105"
                             >
                                 <Plus className="mr-2 h-5 w-5 group-hover:rotate-90 transition-transform duration-300" />
                                 New Project
@@ -217,12 +267,13 @@ export function ProjectsDashboard() {
                         </div>
 
                         {/* Stats Cards */}
-                        <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
+                        <div className="flex flex-wrap gap-3 mb-4">
                             {[
-                                { label: "Active Projects", value: stats.activeProjects.toString(), icon: PlayCircle, color: "text-green-500" },
-                                { label: "Total Papers", value: stats.totalPapers.toString(), icon: BookOpen, color: "text-blue-500" },
-                                { label: "Active Tasks", value: stats.totalTasks.toString(), icon: Zap, color: "text-purple-500" },
-                                { label: "Total Projects", value: stats.totalProjects.toString(), icon: Database, color: "text-orange-500" }
+                                { label: "Active", value: stats.activeProjects.toString(), icon: PlayCircle, color: "text-green-500" },
+                                { label: "Papers", value: stats.totalPapers.toString(), icon: BookOpen, color: "text-blue-500" },
+                                { label: "Tasks", value: stats.totalTasks.toString(), icon: Zap, color: "text-purple-500" },
+                                { label: "Shared", value: stats.sharedProjects.toString(), icon: Users, color: "text-blue-500" },
+                                { label: "Total", value: stats.totalProjects.toString(), icon: Database, color: "text-orange-500" }
                             ].map((stat, index) => (
                                 <motion.div
                                     key={stat.label}
@@ -231,15 +282,15 @@ export function ProjectsDashboard() {
                                     transition={{ delay: index * 0.1, duration: 0.6 }}
                                     className="relative group"
                                 >
-                                    <Card className="relative overflow-hidden bg-background/40 backdrop-blur-xl border border-primary/10 shadow-lg hover:shadow-primary/20 transition-all duration-300 group-hover:scale-105">
+                                    <Card className="relative overflow-hidden bg-background/80 backdrop-blur-xl border border-primary/15 shadow-lg hover:shadow-primary/20 transition-all duration-300 group-hover:scale-105">
                                         <div className="absolute inset-0 bg-gradient-to-br from-primary/5 via-transparent to-purple-500/5 opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
-                                        <CardContent className="p-4 relative z-10">
-                                            <div className="flex items-center justify-between">
+                                        <CardContent className="p-3 relative z-10">
+                                            <div className="flex items-center gap-2">
+                                                <stat.icon className={`h-4 w-4 ${stat.color}`} />
                                                 <div>
-                                                    <p className="text-sm text-muted-foreground">{stat.label}</p>
-                                                    <p className="text-2xl font-bold text-foreground">{stat.value}</p>
+                                                    <p className="text-xs text-muted-foreground">{stat.label}</p>
+                                                    <p className="text-lg font-bold text-foreground">{stat.value}</p>
                                                 </div>
-                                                <stat.icon className={`h-8 w-8 ${stat.color}`} />
                                             </div>
                                         </CardContent>
                                     </Card>
@@ -255,7 +306,7 @@ export function ProjectsDashboard() {
                                     placeholder="Search projects, domains, or tags..."
                                     value={searchQuery}
                                     onChange={(e) => setSearchQuery(e.target.value)}
-                                    className="pl-10 bg-background/40 backdrop-blur-xl border-primary/20 focus:border-primary/40"
+                                    className="pl-10 bg-background/80 backdrop-blur-xl border-primary/20 focus:border-primary/40"
                                 />
                             </div>
                             <div className="flex gap-2">
@@ -266,14 +317,26 @@ export function ProjectsDashboard() {
                                         size="sm"
                                         onClick={() => setSelectedStatus(status)}
                                         className={selectedStatus === status
-                                            ? "bg-gradient-to-r from-primary to-purple-600 text-white"
-                                            : "bg-background/40 backdrop-blur-xl border-primary/20 hover:bg-primary/5"
+                                            ? "gradient-primary-to-accent text-white"
+                                            : "bg-background/80 backdrop-blur-xl border-primary/20 hover:bg-primary/5 hover:border-primary/40"
                                         }
                                     >
                                         <Filter className="mr-1 h-3 w-3" />
                                         {status.charAt(0).toUpperCase() + status.slice(1)}
                                     </Button>
                                 ))}
+                                <Button
+                                    variant={showOnlyShared ? "default" : "outline"}
+                                    size="sm"
+                                    onClick={() => setShowOnlyShared(!showOnlyShared)}
+                                    className={showOnlyShared
+                                        ? "gradient-primary text-white"
+                                        : "bg-background/80 backdrop-blur-xl border-primary/20 hover:bg-primary/5 hover:border-primary/40"
+                                    }
+                                >
+                                    <Users className="mr-1 h-3 w-3" />
+                                    Shared Only
+                                </Button>
                             </div>
                         </div>
                     </motion.div>
@@ -302,9 +365,9 @@ export function ProjectsDashboard() {
                                     <p className="text-red-500">{error}</p>
                                 </div>
                                 <Button
-                                    onClick={loadProjects}
+                                    onClick={() => loadProjects()}
                                     variant="outline"
-                                    className="bg-background/40 backdrop-blur-xl border-primary/20"
+                                    className="bg-background/80 backdrop-blur-xl border-primary/20 hover:border-primary/40"
                                 >
                                     Try Again
                                 </Button>
@@ -332,7 +395,7 @@ export function ProjectsDashboard() {
                                         whileHover={{ y: -5, scale: 1.02 }}
                                         className="group cursor-pointer"
                                     >
-                                        <Card className="relative overflow-hidden bg-background/40 backdrop-blur-xl border border-primary/10 shadow-lg hover:shadow-primary/30 transition-all duration-500 group-hover:border-primary/30 h-[380px] flex flex-col">
+                                        <Card className="relative overflow-hidden bg-background/80 backdrop-blur-xl border border-primary/15 shadow-lg hover:shadow-primary/30 transition-all duration-500 group-hover:border-primary/30 h-[380px] flex flex-col">
                                             {/* Card Background Effects */}
                                             <div className="absolute inset-0 bg-gradient-to-br from-primary/5 via-transparent to-purple-500/5 opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
                                             <div className="absolute top-0 right-0 w-32 h-32 bg-gradient-to-bl from-primary/10 to-transparent rounded-full blur-2xl opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
@@ -348,6 +411,12 @@ export function ProjectsDashboard() {
                                                             {project.domain && (
                                                                 <Badge variant="outline" className="text-xs border-primary/20">
                                                                     {project.domain}
+                                                                </Badge>
+                                                            )}
+                                                            {isProjectShared(project.id) && (
+                                                                <Badge className="bg-blue-500/10 text-blue-500 border-blue-500/20 text-xs">
+                                                                    <Users className="h-3 w-3 mr-1" />
+                                                                    Shared
                                                                 </Badge>
                                                             )}
                                                         </div>
@@ -399,7 +468,7 @@ export function ProjectsDashboard() {
                                                         </div>
                                                         <div className="w-full bg-secondary/50 rounded-full h-2">
                                                             <div
-                                                                className="bg-gradient-to-r from-primary to-purple-500 h-2 rounded-full transition-all duration-1000 ease-out"
+                                                                className="gradient-primary-to-accent h-2 rounded-full transition-all duration-1000 ease-out"
                                                                 style={{ width: `${project.progress}%` }}
                                                             />
                                                         </div>
@@ -441,7 +510,7 @@ export function ProjectsDashboard() {
                                                     <Button
                                                         size="sm"
                                                         disabled={openingProjectId === project.id}
-                                                        className="flex-1 bg-gradient-to-r from-primary/80 to-purple-600/80 hover:from-primary hover:to-purple-600 text-white transition-all duration-300 disabled:opacity-60 disabled:cursor-not-allowed relative overflow-hidden"
+                                                        className="flex-1 gradient-primary-to-accent text-white transition-all duration-300 disabled:opacity-60 disabled:cursor-not-allowed relative overflow-hidden"
                                                         onClick={(e) => {
                                                             e.stopPropagation()
                                                             handleOpenProject(project.id)
@@ -449,7 +518,7 @@ export function ProjectsDashboard() {
                                                     >
                                                         {openingProjectId === project.id ? (
                                                             <>
-                                                                <div className="absolute inset-0 bg-gradient-to-r from-primary/20 to-purple-600/20 animate-pulse" />
+                                                                <div className="absolute inset-0 bg-gradient-to-r from-primary/20 to-accent-2/20 animate-pulse" />
                                                                 <Loader2 className="mr-1 h-3 w-3 animate-spin relative z-10" />
                                                                 <span className="relative z-10">Opening...</span>
                                                             </>
@@ -483,6 +552,17 @@ export function ProjectsDashboard() {
                                                         }}
                                                     >
                                                         <MessageSquare className="h-3 w-3" />
+                                                    </Button>
+                                                    <Button
+                                                        size="sm"
+                                                        variant="outline"
+                                                        className="bg-background/40 backdrop-blur-xl border-primary/20 hover:bg-primary/5"
+                                                        onClick={(e) => {
+                                                            e.stopPropagation()
+                                                            handleShareProject(project)
+                                                        }}
+                                                    >
+                                                        <Share2 className="h-3 w-3" />
                                                     </Button>
                                                 </div>
                                             </CardContent>
@@ -533,6 +613,20 @@ export function ProjectsDashboard() {
                 project={editingProject}
                 onClose={() => setShowEditDialog(false)}
                 onProjectUpdated={handleProjectUpdated}
+            />
+
+            {/* Share Project Dialog */}
+            <ShareProjectDialog
+                isOpen={showShareDialog}
+                projectId={sharingProject?.id || ''}
+                projectName={sharingProject?.name || ''}
+                onClose={() => setShowShareDialog(false)}
+                onCollaboratorAdded={() => {
+                    // Mark the project as shared when a collaborator is added
+                    if (sharingProject) {
+                        markProjectAsShared(sharingProject.id)
+                    }
+                }}
             />
         </div>
     )

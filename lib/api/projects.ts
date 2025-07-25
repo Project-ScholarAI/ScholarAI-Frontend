@@ -4,6 +4,9 @@ import {
   UpdateProjectRequest,
   APIResponse,
   ProjectStats,
+  Collaborator,
+  AddCollaboratorRequest,
+  CollaboratorResponse,
 } from "@/types/project";
 import { authenticatedFetch } from "@/lib/api/auth";
 import { getApiUrl } from "@/lib/config/api-config";
@@ -13,14 +16,42 @@ const PROJECTS_ENDPOINT = "/api/v1/projects";
 // Helper function to handle API response
 const handleApiResponse = async <T>(response: Response): Promise<T> => {
   if (!response.ok) {
-    const errorData = await response.json().catch(() => ({}));
-    throw new Error(
-      errorData.message || `HTTP error! status: ${response.status}`
-    );
+    // Try to parse error response as JSON, fallback to text
+    let errorMessage = `HTTP error! status: ${response.status}`;
+    try {
+      const errorData = await response.json();
+      errorMessage = errorData.message || errorData.error || errorMessage;
+    } catch {
+      // If JSON parsing fails, try to get text content
+      try {
+        const textContent = await response.text();
+        errorMessage = textContent || errorMessage;
+      } catch {
+        // If all else fails, use the status-based message
+      }
+    }
+    throw new Error(errorMessage);
   }
 
-  const apiResponse: APIResponse<T> = await response.json();
-  return apiResponse.data;
+  // Try to parse the response as JSON
+  let apiResponse: APIResponse<T>;
+  try {
+    const jsonData = await response.json();
+    apiResponse = jsonData;
+  } catch (error) {
+    throw new Error("Invalid JSON response from server");
+  }
+
+  // Handle different response structures
+  if (apiResponse.data !== undefined) {
+    return apiResponse.data;
+  } else if (Array.isArray(apiResponse)) {
+    // Direct array response
+    return apiResponse as unknown as T;
+  } else {
+    // If no data property, return the whole response
+    return apiResponse as unknown as T;
+  }
 };
 
 export const projectsApi = {
@@ -154,4 +185,113 @@ export const projectsApi = {
 
     return handleApiResponse<Project>(response);
   },
+
+  // Get project collaborators
+  async getCollaborators(projectId: string): Promise<Collaborator[]> {
+    const response = await authenticatedFetch(
+      getApiUrl(`${PROJECTS_ENDPOINT}/${projectId}/collaborators`),
+      {
+        method: "GET",
+      }
+    );
+
+    if (!response.ok) {
+      const errorData = await response.json().catch(() => ({}));
+      throw new Error(
+        errorData.message || `HTTP error! status: ${response.status}`
+      );
+    }
+
+    // Try to parse the response directly to handle different structures
+    const rawResponse = await response.json();
+
+    // Handle different possible response structures
+    if (rawResponse.data && rawResponse.data.collaborators) {
+      // Standard API response structure
+      return rawResponse.data.collaborators;
+    } else if (rawResponse.collaborators) {
+      // Direct response structure
+      return rawResponse.collaborators;
+    } else if (Array.isArray(rawResponse)) {
+      // Direct array response
+      return rawResponse;
+    } else if (Array.isArray(rawResponse.data)) {
+      // Data is directly an array
+      return rawResponse.data;
+    }
+
+    // Default to empty array if structure is unknown
+    return [];
+  },
+
+  // Add collaborator to project
+  async addCollaborator(projectId: string, collaboratorData: AddCollaboratorRequest): Promise<Collaborator> {
+    const response = await authenticatedFetch(
+      getApiUrl(`${PROJECTS_ENDPOINT}/${projectId}/collaborators`),
+      {
+        method: "POST",
+        body: JSON.stringify(collaboratorData),
+      }
+    );
+
+    return handleApiResponse<Collaborator>(response);
+  },
+
+  // Remove collaborator from project
+  async removeCollaborator(projectId: string, collaboratorId: string): Promise<void> {
+    const response = await authenticatedFetch(
+      getApiUrl(`${PROJECTS_ENDPOINT}/${projectId}/collaborators/${collaboratorId}`),
+      {
+        method: "DELETE",
+      }
+    );
+
+    if (!response.ok) {
+      const errorData = await response.json().catch(() => ({}));
+      throw new Error(
+        errorData.message || `HTTP error! status: ${response.status}`
+      );
+    }
+  },
+
+  // Check if project has collaborators (more efficient than fetching all)
+  async hasCollaborators(projectId: string): Promise<boolean> {
+    try {
+      const response = await authenticatedFetch(
+        getApiUrl(`${PROJECTS_ENDPOINT}/${projectId}/collaborators`),
+        {
+          method: "GET",
+        }
+      );
+
+      if (!response.ok) {
+        return false;
+      }
+
+      // Try to parse the response directly to handle different structures
+      const rawResponse = await response.json();
+
+      // Handle different possible response structures
+      let collaborators: Collaborator[] = [];
+
+      if (rawResponse.data && rawResponse.data.collaborators) {
+        // Standard API response structure
+        collaborators = rawResponse.data.collaborators;
+      } else if (rawResponse.collaborators) {
+        // Direct response structure
+        collaborators = rawResponse.collaborators;
+      } else if (Array.isArray(rawResponse)) {
+        // Direct array response
+        collaborators = rawResponse;
+      } else if (Array.isArray(rawResponse.data)) {
+        // Data is directly an array
+        collaborators = rawResponse.data;
+      }
+
+      return collaborators.length > 0;
+    } catch (error) {
+      console.error('Error checking collaborators:', error);
+      return false;
+    }
+  }
 };

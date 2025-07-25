@@ -17,7 +17,7 @@ export function MainLayout({ children }: Props) {
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false)
 
   return (
-    <div className="flex h-screen w-full overflow-hidden bg-[#1e1e1e] text-white">
+    <div className="flex h-screen w-full overflow-hidden bg-background text-foreground">
       {/* Left Sidebar */}
       <Sidebar
         collapsed={sidebarCollapsed}
