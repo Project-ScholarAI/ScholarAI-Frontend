@@ -1,9 +1,6 @@
-export enum ProjectStatus {
-    ACTIVE = 'ACTIVE',
-    PAUSED = 'PAUSED',
-    COMPLETED = 'COMPLETED',
-    ARCHIVED = 'ARCHIVED'
-}
+import { Paper } from "@/types/websearch"
+
+export type ProjectStatus = 'planning' | 'active' | 'completed' | 'on-hold' | 'cancelled'
 
 export interface Project {
     id: string
@@ -109,4 +106,77 @@ export interface UpdateNoteRequest {
     title?: string
     content?: string
     tags?: string[]
+}
+
+// Reading List Types
+export interface ReadingListItem {
+    id: string
+    paperId: string
+    paper?: Paper // Made optional since backend doesn't include it
+    status: 'PENDING' | 'IN_PROGRESS' | 'COMPLETED' | 'SKIPPED'
+    priority: 'LOW' | 'MEDIUM' | 'HIGH' | 'CRITICAL'
+    addedAt: string
+    startedAt?: string
+    completedAt?: string
+    estimatedTime?: number // in minutes
+    actualTime?: number // in minutes
+    notes?: string
+    tags?: string[]
+    rating?: number // 1-5 stars
+    difficulty?: 'EASY' | 'MEDIUM' | 'HARD' | 'EXPERT'
+    relevance?: 'LOW' | 'MEDIUM' | 'HIGH' | 'CRITICAL'
+    readingProgress?: number // 0-100
+    lastReadAt?: string
+    readCount?: number
+    isBookmarked?: boolean
+    isRecommended?: boolean
+    recommendedBy?: string
+    recommendedReason?: string
+}
+
+export interface CreateReadingListItemRequest {
+    paperId: string
+    priority?: 'LOW' | 'MEDIUM' | 'HIGH' | 'CRITICAL'
+    estimatedTime?: number
+    notes?: string
+    tags?: string[]
+    difficulty?: 'EASY' | 'MEDIUM' | 'HARD' | 'EXPERT'
+    relevance?: 'LOW' | 'MEDIUM' | 'HIGH' | 'CRITICAL'
+}
+
+export interface UpdateReadingListItemRequest {
+    status?: 'PENDING' | 'IN_PROGRESS' | 'COMPLETED' | 'SKIPPED'
+    priority?: 'LOW' | 'MEDIUM' | 'HIGH' | 'CRITICAL'
+    estimatedTime?: number
+    actualTime?: number
+    notes?: string
+    tags?: string[]
+    rating?: number
+    difficulty?: 'EASY' | 'MEDIUM' | 'HARD' | 'EXPERT'
+    relevance?: 'LOW' | 'MEDIUM' | 'HIGH' | 'CRITICAL'
+    readingProgress?: number
+    isBookmarked?: boolean
+}
+
+export interface ReadingListStats {
+    totalItems: number
+    pendingItems: number
+    inProgressItems: number
+    completedItems: number
+    skippedItems: number
+    totalEstimatedTime: number
+    totalActualTime: number
+    averageRating: number
+    completionRate: number
+    averageReadingTime: number
+    mostReadAuthor: string
+    mostReadVenue: string
+    topTags: string[]
+    readingStreak: number
+    lastActivity: string
+}
+
+export interface BulkReadingListUpdate {
+    itemId: string
+    updates: Partial<UpdateReadingListItemRequest>
 } 

@@ -54,6 +54,13 @@ const PROJECT_NAV_ITEMS = [
         loadingMessage: "Loading research library..."
     },
     {
+        name: "Reading List",
+        href: "/reading-list",
+        icon: BookOpen,
+        description: "Curated reading list and paper recommendations",
+        loadingMessage: "Loading reading list..."
+    },
+    {
         name: "Quick Notes",
         href: "/notes",
         icon: MessageSquare,

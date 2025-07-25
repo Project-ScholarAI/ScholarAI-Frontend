@@ -10,6 +10,11 @@ import {
   Note,
   CreateNoteRequest,
   UpdateNoteRequest,
+  ReadingListItem,
+  CreateReadingListItemRequest,
+  UpdateReadingListItemRequest,
+  ReadingListStats,
+  BulkReadingListUpdate,
 } from "@/types/project";
 import { authenticatedFetch } from "@/lib/api/auth";
 import { getApiUrl } from "@/lib/config/api-config";
@@ -47,6 +52,11 @@ const handleApiResponse = async <T>(response: Response): Promise<T> => {
 
   // Handle different response structures
   if (apiResponse.data !== undefined) {
+    // Check if data has an 'items' property (for paginated responses)
+    if (apiResponse.data && typeof apiResponse.data === 'object' && 'items' in apiResponse.data) {
+      return (apiResponse.data as any).items;
+    }
+    // Return the data directly
     return apiResponse.data;
   } else if (Array.isArray(apiResponse)) {
     // Direct array response
@@ -406,5 +416,207 @@ export const projectsApi = {
     );
 
     return handleApiResponse<Note[]>(response);
+  },
+
+  // Reading List API Methods
+  async getReadingList(
+    projectId: string,
+    options?: {
+      status?: 'PENDING' | 'IN_PROGRESS' | 'COMPLETED' | 'SKIPPED'
+      priority?: 'LOW' | 'MEDIUM' | 'HIGH' | 'CRITICAL'
+      difficulty?: 'EASY' | 'MEDIUM' | 'HARD' | 'EXPERT'
+      relevance?: 'LOW' | 'MEDIUM' | 'HIGH' | 'CRITICAL'
+      isBookmarked?: boolean
+      isRecommended?: boolean
+      search?: string
+      sortBy?: 'addedAt' | 'priority' | 'title' | 'rating' | 'difficulty'
+      sortOrder?: 'asc' | 'desc'
+      page?: number
+      limit?: number
+    }
+  ): Promise<ReadingListItem[]> {
+    const params = new URLSearchParams()
+
+    if (options?.status) params.append('status', options.status)
+    if (options?.priority) params.append('priority', options.priority)
+    if (options?.difficulty) params.append('difficulty', options.difficulty)
+    if (options?.relevance) params.append('relevance', options.relevance)
+    if (options?.isBookmarked !== undefined) params.append('isBookmarked', options.isBookmarked.toString())
+    if (options?.isRecommended !== undefined) params.append('isRecommended', options.isRecommended.toString())
+    if (options?.search) params.append('search', options.search)
+    if (options?.sortBy) params.append('sortBy', options.sortBy)
+    if (options?.sortOrder) params.append('sortOrder', options.sortOrder)
+    if (options?.page) params.append('page', options.page.toString())
+    if (options?.limit) params.append('limit', options.limit.toString())
+
+    const url = `${PROJECTS_ENDPOINT}/${projectId}/reading-list${params.toString() ? `?${params.toString()}` : ''}`
+
+    const response = await authenticatedFetch(
+      getApiUrl(url),
+      {
+        method: "GET",
+      }
+    );
+
+    return handleApiResponse<ReadingListItem[]>(response);
+  },
+
+  async addToReadingList(projectId: string, paperId: string, readingListData?: Partial<CreateReadingListItemRequest>): Promise<ReadingListItem> {
+    const response = await authenticatedFetch(
+      getApiUrl(`${PROJECTS_ENDPOINT}/${projectId}/reading-list`),
+      {
+        method: "POST",
+        body: JSON.stringify({
+          paperId,
+          ...readingListData
+        }),
+      }
+    );
+
+    return handleApiResponse<ReadingListItem>(response);
+  },
+
+  async updateReadingListItem(projectId: string, itemId: string, updateData: UpdateReadingListItemRequest): Promise<ReadingListItem> {
+    const response = await authenticatedFetch(
+      getApiUrl(`${PROJECTS_ENDPOINT}/${projectId}/reading-list/${itemId}`),
+      {
+        method: "PUT",
+        body: JSON.stringify(updateData),
+      }
+    );
+
+    return handleApiResponse<ReadingListItem>(response);
+  },
+
+  async updateReadingListItemStatus(projectId: string, itemId: string, status: ReadingListItem['status']): Promise<ReadingListItem> {
+    const response = await authenticatedFetch(
+      getApiUrl(`${PROJECTS_ENDPOINT}/${projectId}/reading-list/${itemId}/status`),
+      {
+        method: "PATCH",
+        body: JSON.stringify({ status }),
+      }
+    );
+
+    return handleApiResponse<ReadingListItem>(response);
+  },
+
+  async updateReadingProgress(projectId: string, itemId: string, progress: number): Promise<ReadingListItem> {
+    const response = await authenticatedFetch(
+      getApiUrl(`${PROJECTS_ENDPOINT}/${projectId}/reading-list/${itemId}/progress`),
+      {
+        method: "PATCH",
+        body: JSON.stringify({ readingProgress: progress }),
+      }
+    );
+
+    return handleApiResponse<ReadingListItem>(response);
+  },
+
+  async removeFromReadingList(projectId: string, itemId: string): Promise<void> {
+    const response = await authenticatedFetch(
+      getApiUrl(`${PROJECTS_ENDPOINT}/${projectId}/reading-list/${itemId}`),
+      {
+        method: "DELETE",
+      }
+    );
+
+    if (!response.ok) {
+      const errorData = await response.json().catch(() => ({}));
+      throw new Error(
+        errorData.message || `HTTP error! status: ${response.status}`
+      );
+    }
+  },
+
+  async getReadingListStats(
+    projectId: string,
+    timeRange?: '7d' | '30d' | '90d' | 'all'
+  ): Promise<ReadingListStats> {
+    const params = new URLSearchParams()
+    if (timeRange) params.append('timeRange', timeRange)
+
+    const url = `${PROJECTS_ENDPOINT}/${projectId}/reading-list/stats${params.toString() ? `?${params.toString()}` : ''}`
+
+    const response = await authenticatedFetch(
+      getApiUrl(url),
+      {
+        method: "GET",
+      }
+    );
+
+    return handleApiResponse<ReadingListStats>(response);
+  },
+
+  async getReadingListRecommendations(
+    projectId: string,
+    options?: {
+      limit?: number
+      difficulty?: 'easy' | 'medium' | 'hard' | 'expert'
+      excludeRead?: boolean
+    }
+  ): Promise<ReadingListItem[]> {
+    const params = new URLSearchParams()
+
+    if (options?.limit) params.append('limit', options.limit.toString())
+    if (options?.difficulty) params.append('difficulty', options.difficulty)
+    if (options?.excludeRead !== undefined) params.append('excludeRead', options.excludeRead.toString())
+
+    const url = `${PROJECTS_ENDPOINT}/${projectId}/reading-list/recommendations${params.toString() ? `?${params.toString()}` : ''}`
+
+    const response = await authenticatedFetch(
+      getApiUrl(url),
+      {
+        method: "GET",
+      }
+    );
+
+    return handleApiResponse<ReadingListItem[]>(response);
+  },
+
+  async addReadingListNote(projectId: string, itemId: string, note: string): Promise<ReadingListItem> {
+    const response = await authenticatedFetch(
+      getApiUrl(`${PROJECTS_ENDPOINT}/${projectId}/reading-list/${itemId}/notes`),
+      {
+        method: "POST",
+        body: JSON.stringify({ note }),
+      }
+    );
+
+    return handleApiResponse<ReadingListItem>(response);
+  },
+
+  async rateReadingListItem(projectId: string, itemId: string, rating: number): Promise<ReadingListItem> {
+    const response = await authenticatedFetch(
+      getApiUrl(`${PROJECTS_ENDPOINT}/${projectId}/reading-list/${itemId}/rating`),
+      {
+        method: "PATCH",
+        body: JSON.stringify({ rating }),
+      }
+    );
+
+    return handleApiResponse<ReadingListItem>(response);
+  },
+
+  async toggleReadingListItemBookmark(projectId: string, itemId: string): Promise<ReadingListItem> {
+    const response = await authenticatedFetch(
+      getApiUrl(`${PROJECTS_ENDPOINT}/${projectId}/reading-list/${itemId}/bookmark`),
+      {
+        method: "PUT",
+      }
+    );
+
+    return handleApiResponse<ReadingListItem>(response);
+  },
+
+  async bulkUpdateReadingList(projectId: string, updates: BulkReadingListUpdate[]): Promise<ReadingListItem[]> {
+    const response = await authenticatedFetch(
+      getApiUrl(`${PROJECTS_ENDPOINT}/${projectId}/reading-list/bulk`),
+      {
+        method: "PATCH",
+        body: JSON.stringify({ updates }),
+      }
+    );
+
+    return handleApiResponse<ReadingListItem[]>(response);
   }
 };
