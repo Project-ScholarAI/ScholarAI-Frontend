@@ -28,6 +28,22 @@ jobs:
         echo " Updating ScholarAI-Frontend..."
         git pull origin main
 
+<<<<<<< HEAD
+        echo "Installing Docker Compose if not present..."
+        if ! command -v docker-compose &> /dev/null; then
+          echo "Docker Compose not found, installing..."
+          sudo curl -L "https://github.com/docker/compose/releases/latest/download/docker-compose-$(uname -s)-$(uname -m)" -o /usr/local/bin/docker-compose
+          sudo chmod +x /usr/local/bin/docker-compose
+          echo "Docker Compose installed successfully"
+        else
+          echo "Docker Compose already installed"
+        fi
+
+        echo "Making docker.sh executable..."
+        chmod +x ./scripts/docker.sh
+
+=======
+>>>>>>> a77f1210a06c85fad46fee4366f8be592e02d392
         echo "Stopping Frontend..."
         ./scripts/docker.sh stop || true
 
