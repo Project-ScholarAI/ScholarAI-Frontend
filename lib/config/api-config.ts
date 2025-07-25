@@ -21,7 +21,7 @@ export const getApiBaseUrl = (): string => {
         case "prod":
             const prodUrl =
                 process.env.NEXT_PUBLIC_API_BASE_URL ||
-                "https://your-production-api.com";
+                "http://4.247.29.26:8080";
             console.log("Using Production API URL:", prodUrl);
             return prodUrl;
         case "dev":
