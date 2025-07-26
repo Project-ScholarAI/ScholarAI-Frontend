@@ -184,21 +184,21 @@ export function ProjectWorkspace({ projectId }: ProjectWorkspaceProps) {
 
     const getStatusIcon = (status?: Paper['status']) => {
         switch (status || 'new') {
-            case 'new': return <PlusCircle className="h-4 w-4 text-blue-500" />
-            case 'processing': return <RefreshCw className="h-4 w-4 text-yellow-500 animate-spin" />
-            case 'ready': return <CheckCircle className="h-4 w-4 text-green-500" />
-            case 'failed': return <MoreVertical className="h-4 w-4 text-red-500" />
-            default: return <PlusCircle className="h-4 w-4 text-blue-500" />
+            case 'new': return <PlusCircle className="h-4 w-4 text-blue-300" />
+            case 'processing': return <RefreshCw className="h-4 w-4 text-amber-300 animate-spin" />
+            case 'ready': return <CheckCircle className="h-4 w-4 text-emerald-300" />
+            case 'failed': return <MoreVertical className="h-4 w-4 text-red-300" />
+            default: return <PlusCircle className="h-4 w-4 text-blue-300" />
         }
     }
 
     const getStatusColor = (status?: Paper['status']) => {
         switch (status || 'new') {
-            case 'new': return 'bg-blue-500/10 text-blue-500 border-blue-500/20'
-            case 'processing': return 'bg-yellow-500/10 text-yellow-500 border-yellow-500/20'
-            case 'ready': return 'bg-green-500/10 text-green-500 border-green-500/20'
-            case 'failed': return 'bg-red-500/10 text-red-500 border-red-500/20'
-            default: return 'bg-blue-500/10 text-blue-500 border-blue-500/20'
+            case 'new': return 'bg-gradient-to-r from-blue-500/20 to-blue-600/20 text-blue-300 border-blue-400/40 shadow-sm shadow-blue-500/30 backdrop-blur-sm'
+            case 'processing': return 'bg-gradient-to-r from-amber-500/20 to-amber-600/20 text-amber-300 border-amber-400/40 shadow-sm shadow-amber-500/30 backdrop-blur-sm'
+            case 'ready': return 'bg-gradient-to-r from-emerald-500/20 to-emerald-600/20 text-emerald-300 border-emerald-400/40 shadow-sm shadow-emerald-500/30 backdrop-blur-sm'
+            case 'failed': return 'bg-gradient-to-r from-red-500/20 to-red-600/20 text-red-300 border-red-400/40 shadow-sm shadow-red-500/30 backdrop-blur-sm'
+            default: return 'bg-gradient-to-r from-blue-500/20 to-blue-600/20 text-blue-300 border-blue-400/40 shadow-sm shadow-blue-500/30 backdrop-blur-sm'
         }
     }
 
@@ -458,7 +458,7 @@ export function ProjectWorkspace({ projectId }: ProjectWorkspaceProps) {
                                                                 <div className="flex-1 min-w-0">
                                                                     <div className="flex items-center gap-2 mb-2">
                                                                         {getStatusIcon(paper.status)}
-                                                                        <Badge className={`${getStatusColor(paper.status)} text-xs`}>
+                                                                        <Badge variant="status" className={`${getStatusColor(paper.status)} text-xs`}>
                                                                             {paper.status || 'new'}
                                                                         </Badge>
                                                                         {(paper.hasBeenScored || false) && (paper.score || 0) > 0 && (

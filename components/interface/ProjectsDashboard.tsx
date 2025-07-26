@@ -12,6 +12,7 @@ import { ProjectCreateDialog } from "@/components/interface/ProjectCreateDialog"
 import { ProjectEditDialog } from "@/components/interface/ProjectEditDialog"
 import { ShareProjectDialog } from "@/components/interface/ShareProjectDialog"
 import { projectsApi } from "@/lib/api/projects"
+import { getProjectLibraryStats } from "@/lib/api/library"
 import { Project, ProjectStatus } from "@/types/project"
 import { useSharedProjects } from "@/hooks/useSharedProjects"
 import {
@@ -42,6 +43,7 @@ import {
 export function ProjectsDashboard() {
     const router = useRouter()
     const [projects, setProjects] = useState<Project[]>([])
+    const [paperCounts, setPaperCounts] = useState<Record<string, number>>({})
     const [searchQuery, setSearchQuery] = useState("")
     const [showCreateDialog, setShowCreateDialog] = useState(false)
     const [showEditDialog, setShowEditDialog] = useState(false)
@@ -61,6 +63,13 @@ export function ProjectsDashboard() {
     useEffect(() => {
         loadProjects()
     }, [])
+
+    // Load paper counts when projects are loaded
+    useEffect(() => {
+        if (projects.length > 0) {
+            loadPaperCounts()
+        }
+    }, [projects])
 
     const loadProjects = async (retryCount = 0) => {
         try {
@@ -98,10 +107,31 @@ export function ProjectsDashboard() {
             if (retryCount < 2 && error instanceof Error && error.message.includes('fetch')) {
                 console.log(`Retrying project load (attempt ${retryCount + 1})...`)
                 setTimeout(() => loadProjects(retryCount + 1), 2000) // Retry after 2 seconds
-                return
             }
         } finally {
             setIsLoading(false)
+        }
+    }
+
+    const loadPaperCounts = async () => {
+        try {
+            const counts: Record<string, number> = {}
+
+            // Fetch paper counts for all projects in parallel
+            const promises = projects.map(async (project) => {
+                try {
+                    const stats = await getProjectLibraryStats(project.id)
+                    counts[project.id] = stats.data.totalPapers
+                } catch (error) {
+                    console.error(`Error loading paper count for project ${project.id}:`, error)
+                    counts[project.id] = 0
+                }
+            })
+
+            await Promise.all(promises)
+            setPaperCounts(counts)
+        } catch (error) {
+            console.error('Error loading paper counts:', error)
         }
     }
 
@@ -165,26 +195,29 @@ export function ProjectsDashboard() {
 
     const getStatusIcon = (status: ProjectStatus) => {
         switch (status) {
-            case 'ACTIVE': return <PlayCircle className="h-4 w-4 text-green-500" />
-            case 'PAUSED': return <PauseCircle className="h-4 w-4 text-yellow-500" />
-            case 'COMPLETED': return <CheckCircle className="h-4 w-4 text-blue-500" />
-            case 'ARCHIVED': return <MoreVertical className="h-4 w-4 text-gray-500" />
+            case 'active': return <PlayCircle className="h-4 w-4 text-emerald-300" />
+            case 'on-hold': return <PauseCircle className="h-4 w-4 text-amber-300" />
+            case 'completed': return <CheckCircle className="h-4 w-4 text-blue-300" />
+            case 'cancelled': return <MoreVertical className="h-4 w-4 text-slate-300" />
             default: return null
         }
     }
 
     const getStatusColor = (status: ProjectStatus) => {
         switch (status) {
-            case 'ACTIVE': return 'bg-green-500/10 text-green-500 border-green-500/20'
-            case 'PAUSED': return 'bg-yellow-500/10 text-yellow-500 border-yellow-500/20'
-            case 'COMPLETED': return 'bg-blue-500/10 text-blue-500 border-blue-500/20'
-            case 'ARCHIVED': return 'bg-gray-500/10 text-gray-500 border-gray-500/20'
-            default: return 'bg-gray-500/10 text-gray-500 border-gray-500/20'
+            case 'active': return 'bg-gradient-to-r from-emerald-500/20 to-emerald-600/20 text-emerald-300 border-emerald-400/40 shadow-sm shadow-emerald-500/30 backdrop-blur-sm'
+            case 'on-hold': return 'bg-gradient-to-r from-amber-500/20 to-amber-600/20 text-amber-300 border-amber-400/40 shadow-sm shadow-amber-500/30 backdrop-blur-sm'
+            case 'completed': return 'bg-gradient-to-r from-blue-500/20 to-blue-600/20 text-blue-300 border-blue-400/40 shadow-sm shadow-blue-500/30 backdrop-blur-sm'
+            case 'cancelled': return 'bg-gradient-to-r from-slate-500/20 to-slate-600/20 text-slate-300 border-slate-400/40 shadow-sm shadow-slate-500/30 backdrop-blur-sm'
+            default: return 'bg-gradient-to-r from-slate-500/20 to-slate-600/20 text-slate-300 border-slate-400/40 shadow-sm shadow-slate-500/30 backdrop-blur-sm'
         }
     }
 
     const getStatusLabel = (status: ProjectStatus) => {
-        return status.charAt(0) + status.slice(1).toLowerCase()
+        if (status === 'on-hold') {
+            return 'On Hold'
+        }
+        return status.charAt(0).toUpperCase() + status.slice(1)
     }
 
     const formatLastActivity = (updatedAt: string) => {
@@ -215,8 +248,8 @@ export function ProjectsDashboard() {
     }
 
     const calculateStats = () => {
-        const activeProjects = projects.filter(p => p.status === 'ACTIVE').length
-        const totalPapers = projects.reduce((sum, p) => sum + p.totalPapers, 0)
+        const activeProjects = projects.filter(p => p.status === 'active').length
+        const totalPapers = projects.reduce((sum, p) => sum + paperCounts[p.id] || 0, 0)
         const totalTasks = projects.reduce((sum, p) => sum + p.activeTasks, 0)
         const sharedProjects = projects.filter(p => isProjectShared(p.id)).length
 
@@ -315,7 +348,7 @@ export function ProjectsDashboard() {
                                 </div>
                             </EnhancedTooltip>
                             <div className="flex gap-2">
-                                {['all', 'active', 'paused', 'completed', 'archived'].map((status) => (
+                                {['all', 'active', 'on-hold', 'completed', 'cancelled'].map((status) => (
                                     <Button
                                         key={status}
                                         variant={selectedStatus === status ? "default" : "outline"}
@@ -327,7 +360,7 @@ export function ProjectsDashboard() {
                                         }
                                     >
                                         <Filter className="mr-1 h-3 w-3" />
-                                        {status.charAt(0).toUpperCase() + status.slice(1)}
+                                        {status === 'on-hold' ? 'On Hold' : status.charAt(0).toUpperCase() + status.slice(1)}
                                     </Button>
                                 ))}
                                 <Button
@@ -410,7 +443,7 @@ export function ProjectsDashboard() {
                                                     <div className="flex-1">
                                                         <div className="flex items-center gap-2 mb-2">
                                                             {getStatusIcon(project.status)}
-                                                            <Badge className={`${getStatusColor(project.status)} text-xs`}>
+                                                            <Badge variant="status" className={`${getStatusColor(project.status)} text-xs`}>
                                                                 {getStatusLabel(project.status)}
                                                             </Badge>
                                                             {project.domain && (
@@ -483,7 +516,7 @@ export function ProjectsDashboard() {
                                                     <div className="grid grid-cols-2 gap-3 mb-3">
                                                         <div className="flex items-center gap-2">
                                                             <Database className="h-4 w-4 text-blue-500" />
-                                                            <span className="text-sm font-medium">{project.totalPapers} papers</span>
+                                                            <span className="text-sm font-medium">{paperCounts[project.id] || 0} papers</span>
                                                         </div>
                                                         <div className="flex items-center gap-2">
                                                             <Clock className="h-4 w-4 text-green-500" />

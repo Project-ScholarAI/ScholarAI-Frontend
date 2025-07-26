@@ -230,26 +230,26 @@ export default function ProjectCollaborationPage({ params }: ProjectCollaboratio
     const getStatusColor = (status: string) => {
         switch (status) {
             case 'ACTIVE':
-                return 'bg-green-500/10 text-green-500 border-green-500/20'
+                return 'bg-gradient-to-r from-emerald-500/20 to-emerald-600/20 text-emerald-300 border-emerald-400/40 shadow-sm shadow-emerald-500/30 backdrop-blur-sm'
             case 'PENDING':
-                return 'bg-yellow-500/10 text-yellow-500 border-yellow-500/20'
+                return 'bg-gradient-to-r from-amber-500/20 to-amber-600/20 text-amber-300 border-amber-400/40 shadow-sm shadow-amber-500/30 backdrop-blur-sm'
             case 'DECLINED':
-                return 'bg-red-500/10 text-red-500 border-red-500/20'
+                return 'bg-gradient-to-r from-red-500/20 to-red-600/20 text-red-300 border-red-400/40 shadow-sm shadow-red-500/30 backdrop-blur-sm'
             default:
-                return 'bg-gray-500/10 text-gray-500 border-gray-500/20'
+                return 'bg-gradient-to-r from-slate-500/20 to-slate-600/20 text-slate-300 border-slate-400/40 shadow-sm shadow-slate-500/30 backdrop-blur-sm'
         }
     }
 
     const getRoleColor = (role: string) => {
         switch (role) {
             case 'ADMIN':
-                return 'bg-red-500/10 text-red-500 border-red-500/20'
+                return 'bg-gradient-to-r from-red-500/20 to-red-600/20 text-red-300 border-red-400/40 shadow-sm shadow-red-500/30 backdrop-blur-sm'
             case 'EDITOR':
-                return 'bg-blue-500/10 text-blue-500 border-blue-500/20'
+                return 'bg-gradient-to-r from-blue-500/20 to-blue-600/20 text-blue-300 border-blue-400/40 shadow-sm shadow-blue-500/30 backdrop-blur-sm'
             case 'VIEWER':
-                return 'bg-green-500/10 text-green-500 border-green-500/20'
+                return 'bg-gradient-to-r from-emerald-500/20 to-emerald-600/20 text-emerald-300 border-emerald-400/40 shadow-sm shadow-emerald-500/30 backdrop-blur-sm'
             default:
-                return 'bg-gray-500/10 text-gray-500 border-gray-500/20'
+                return 'bg-gradient-to-r from-slate-500/20 to-slate-600/20 text-slate-300 border-slate-400/40 shadow-sm shadow-slate-500/30 backdrop-blur-sm'
         }
     }
 
@@ -470,11 +470,11 @@ export default function ProjectCollaborationPage({ params }: ProjectCollaboratio
                                                                     <span className="font-medium">
                                                                         {collaborator.collaboratorName || collaborator.collaboratorEmail || 'Unknown User'}
                                                                     </span>
-                                                                    <Badge className={`${getRoleColor(collaborator.role)} text-xs flex items-center gap-1`}>
+                                                                    <Badge variant="status" className={`${getRoleColor(collaborator.role)} text-xs flex items-center gap-1`}>
                                                                         {getRoleIcon(collaborator.role)}
                                                                         {collaborator.role}
                                                                     </Badge>
-                                                                    <Badge className={`${getStatusColor(collaborator.status)} text-xs flex items-center gap-1`}>
+                                                                    <Badge variant="status" className={`${getStatusColor(collaborator.status)} text-xs flex items-center gap-1`}>
                                                                         {getStatusIcon(collaborator.status)}
                                                                         {collaborator.status}
                                                                     </Badge>
