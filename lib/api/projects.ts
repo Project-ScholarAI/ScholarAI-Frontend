@@ -82,6 +82,12 @@ export const projectsApi = {
 
   // Get project by ID
   async getProject(id: string): Promise<Project> {
+    // Validate project ID before making API call
+    const { isValidUUID } = await import("@/lib/utils");
+    if (!isValidUUID(id)) {
+      throw new Error(`Invalid project ID format: ${id}`);
+    }
+
     const response = await authenticatedFetch(
       getApiUrl(`${PROJECTS_ENDPOINT}/${id}`),
       {
@@ -146,6 +152,12 @@ export const projectsApi = {
     id: string,
     projectData: UpdateProjectRequest
   ): Promise<Project> {
+    // Validate project ID before making API call
+    const { isValidUUID } = await import("@/lib/utils");
+    if (!isValidUUID(id)) {
+      throw new Error(`Invalid project ID format: ${id}`);
+    }
+
     const response = await authenticatedFetch(
       getApiUrl(`${PROJECTS_ENDPOINT}/${id}`),
       {
@@ -159,6 +171,12 @@ export const projectsApi = {
 
   // Delete a project
   async deleteProject(id: string): Promise<void> {
+    // Validate project ID before making API call
+    const { isValidUUID } = await import("@/lib/utils");
+    if (!isValidUUID(id)) {
+      throw new Error(`Invalid project ID format: ${id}`);
+    }
+
     const response = await authenticatedFetch(
       getApiUrl(`${PROJECTS_ENDPOINT}/${id}`),
       {
@@ -176,6 +194,12 @@ export const projectsApi = {
 
   // Toggle project star status
   async toggleStar(id: string): Promise<Project> {
+    // Validate project ID before making API call
+    const { isValidUUID } = await import("@/lib/utils");
+    if (!isValidUUID(id)) {
+      throw new Error(`Invalid project ID format: ${id}`);
+    }
+
     const response = await authenticatedFetch(
       getApiUrl(`${PROJECTS_ENDPOINT}/${id}/toggle-star`),
       {
@@ -188,6 +212,12 @@ export const projectsApi = {
 
   // Update project status
   async updateStatus(id: string, status: string): Promise<Project> {
+    // Validate project ID before making API call
+    const { isValidUUID } = await import("@/lib/utils");
+    if (!isValidUUID(id)) {
+      throw new Error(`Invalid project ID format: ${id}`);
+    }
+
     const response = await authenticatedFetch(
       getApiUrl(`${PROJECTS_ENDPOINT}/${id}`),
       {
@@ -201,6 +231,12 @@ export const projectsApi = {
 
   // Get project collaborators
   async getCollaborators(projectId: string): Promise<Collaborator[]> {
+    // Validate project ID before making API call
+    const { isValidUUID } = await import("@/lib/utils");
+    if (!isValidUUID(projectId)) {
+      throw new Error(`Invalid project ID format: ${projectId}`);
+    }
+
     const response = await authenticatedFetch(
       getApiUrl(`${PROJECTS_ENDPOINT}/${projectId}/collaborators`),
       {

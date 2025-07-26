@@ -126,4 +126,27 @@ export const addUploadedPaper = async (projectId: string, paperData: {
         console.error("Error adding uploaded paper:", error);
         throw error;
     }
+};
+
+export const getProjectLatestPapers = async (
+    projectId: string
+): Promise<LibraryResponse> => {
+    try {
+        const response = await authenticatedFetch(
+            getApiUrl(`/api/v1/library/project/${projectId}/latest`)
+        );
+
+        if (!response.ok) {
+            const errorData = await response.json().catch(() => ({}));
+            throw new Error(
+                errorData.message || `HTTP error! status: ${response.status}`
+            );
+        }
+
+        const data = await response.json();
+        return data;
+    } catch (error) {
+        console.error("Error fetching latest papers:", error);
+        throw error;
+    }
 }; 

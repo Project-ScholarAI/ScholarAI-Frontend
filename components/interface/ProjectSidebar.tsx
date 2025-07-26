@@ -25,6 +25,7 @@ import {
     GraduationCap
 } from "lucide-react"
 import { cn } from "@/lib/utils/cn"
+import { isValidUUID } from "@/lib/utils"
 import { Button } from "@/components/ui/button"
 import { EnhancedTooltip } from "@/components/ui/enhanced-tooltip"
 import { Badge } from "@/components/ui/badge"
@@ -91,6 +92,12 @@ export function ProjectSidebar({ projectId, collapsed, onToggle }: Props) {
     }, [projectId])
 
     const loadProject = async () => {
+        // Validate project ID before making API calls
+        if (!isValidUUID(projectId)) {
+            console.error('Invalid project ID in ProjectSidebar:', projectId)
+            return
+        }
+
         try {
             setIsLoading(true)
             const projectData = await projectsApi.getProject(projectId)
