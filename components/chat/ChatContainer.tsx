@@ -4,10 +4,10 @@ import { useState, useRef, useEffect } from "react"
 import { ChatComposer } from "./ChatComposer"
 import { ChatMessage } from "./ChatMessage"
 import { Button } from "@/components/ui/button"
-import { Plus, Cloud, Clock, MoreHorizontal, X } from "lucide-react"
+import { Plus, Cloud, Clock, MoreHorizontal, X, Loader2, AlertTriangle } from "lucide-react"
 import { cn } from "@/lib/utils/cn"
 import type { Message } from "@/types/chat"
-import { chatWithPaper } from "@/lib/api/chat"
+import { chatWithPaper, checkPaperChatReadiness, extractPaperForChat } from "@/lib/api/chat"
 
 type ChatContainerProps = {
     /**
@@ -34,6 +34,12 @@ export function ChatContainer({ onClose, externalContexts = [], onExternalContex
     ])
     const messagesEndRef = useRef<HTMLDivElement>(null)
 
+    // New state for chat readiness
+    const [isChatReady, setIsChatReady] = useState<boolean | null>(null)
+    const [isExtracting, setIsExtracting] = useState(false)
+    const [extractionCountdown, setExtractionCountdown] = useState(60)
+    const [extractionError, setExtractionError] = useState<string | null>(null)
+
     const scrollToBottom = () => {
         messagesEndRef.current?.scrollIntoView({ behavior: "smooth" })
     }
@@ -42,7 +48,83 @@ export function ChatContainer({ onClose, externalContexts = [], onExternalContex
         scrollToBottom()
     }, [messages])
 
+    // Check chat readiness when paperId changes
+    useEffect(() => {
+        if (paperId) {
+            checkChatReadiness()
+        }
+    }, [paperId])
+
+    // Handle extraction countdown
+    useEffect(() => {
+        let interval: NodeJS.Timeout | null = null
+
+        if (isExtracting && extractionCountdown > 0) {
+            interval = setInterval(() => {
+                setExtractionCountdown(prev => {
+                    if (prev <= 1) {
+                        setIsExtracting(false)
+                        setIsChatReady(true)
+                        return 0
+                    }
+                    return prev - 1
+                })
+            }, 1000)
+        }
+
+        return () => {
+            if (interval) clearInterval(interval)
+        }
+    }, [isExtracting, extractionCountdown])
+
+    const checkChatReadiness = async () => {
+        if (!paperId) return
+
+        try {
+            setIsChatReady(null)
+            setExtractionError(null)
+
+            const readiness = await checkPaperChatReadiness(paperId)
+
+            if (readiness.isReady) {
+                setIsChatReady(true)
+            } else if (readiness.needsExtraction) {
+                // Start extraction process
+                await startExtraction()
+            }
+        } catch (error) {
+            console.error("Error checking chat readiness:", error)
+            setExtractionError("Failed to check if paper is ready for chat")
+        }
+    }
+
+    const startExtraction = async () => {
+        if (!paperId) return
+
+        try {
+            setIsExtracting(true)
+            setExtractionCountdown(60)
+            setExtractionError(null)
+
+            // Start extraction in background
+            extractPaperForChat(paperId).catch(error => {
+                console.error("Extraction failed:", error)
+                setExtractionError("Failed to extract paper. Please try again.")
+                setIsExtracting(false)
+            })
+        } catch (error) {
+            console.error("Error starting extraction:", error)
+            setExtractionError("Failed to start paper extraction")
+            setIsExtracting(false)
+        }
+    }
+
     const handleSend = async (message: string, context?: string[]) => {
+        // Don't allow sending if chat is not ready
+        if (!isChatReady) {
+            return
+        }
+
         const userMessage: Message = {
             id: Date.now().toString(),
             role: "user",
@@ -59,14 +141,14 @@ export function ChatContainer({ onClose, externalContexts = [], onExternalContex
             }
 
             const response = await chatWithPaper(paperId, message)
-            
+
             const aiMessage: Message = {
                 id: response.sessionId || Date.now().toString(),
                 role: "assistant",
                 content: response.response || "No response received",
                 timestamp: response.timestamp ? new Date(response.timestamp) : new Date()
             }
-            
+
             setMessages((prev) => [...prev, aiMessage])
         } catch (error) {
             console.error("Chat error:", error)
@@ -192,35 +274,80 @@ export function ChatContainer({ onClose, externalContexts = [], onExternalContex
                 {/* Messages Area */}
                 <div className="flex-1 overflow-y-auto">
                     <div className="max-w-3xl mx-auto">
-                        {messages.length === 0 ? (
+                        {/* Show extraction status when not ready */}
+                        {!isChatReady && (
                             <div className="mt-8 px-4">
-                                <ChatComposer onSend={handleSend} isLoading={isLoading} externalContexts={externalContexts} onExternalContextsCleared={onExternalContextsCleared} />
-                            </div>
-                        ) : (
-                            <>
-                                <div className="px-4 pb-4">
-                                    {messages.map((message) => (
-                                        <ChatMessage key={message.id} message={message} />
-                                    ))}
-                                    {isLoading && (
-                                        <div className="flex items-center gap-2 py-4 text-sm text-muted-foreground">
-                                            <div className="flex gap-1">
-                                                <span className="animate-bounce">●</span>
-                                                <span className="animate-bounce" style={{ animationDelay: "0.1s" }}>●</span>
-                                                <span className="animate-bounce" style={{ animationDelay: "0.2s" }}>●</span>
-                                            </div>
-                                            <span>Assistant is thinking...</span>
+                                {isExtracting ? (
+                                    <div className="text-center py-8">
+                                        <div className="flex items-center justify-center gap-3 mb-4">
+                                            <Loader2 className="h-8 w-8 animate-spin text-primary" />
+                                            <div className="text-lg font-medium">Getting chatbot ready...</div>
                                         </div>
-                                    )}
-                                    <div ref={messagesEndRef} />
-                                </div>
-
-                                {/* Input at bottom when there are messages */}
-                                <div className="sticky bottom-0 bg-background border-t border-border">
-                                    <div className="max-w-3xl mx-auto p-4">
-                                        <ChatComposer onSend={handleSend} isLoading={isLoading} externalContexts={externalContexts} onExternalContextsCleared={onExternalContextsCleared} />
+                                        <div className="text-sm text-muted-foreground mb-4">
+                                            Extracting paper content for AI analysis
+                                        </div>
+                                        <div className="text-2xl font-bold text-primary">
+                                            {extractionCountdown}s
+                                        </div>
+                                        <div className="text-xs text-muted-foreground mt-2">
+                                            This may take up to 60 seconds
+                                        </div>
                                     </div>
-                                </div>
+                                ) : extractionError ? (
+                                    <div className="text-center py-8">
+                                        <div className="text-red-500 mb-4">
+                                            <AlertTriangle className="h-8 w-8 mx-auto mb-2" />
+                                            <div className="text-sm">{extractionError}</div>
+                                        </div>
+                                        <Button onClick={startExtraction} variant="outline">
+                                            Try Again
+                                        </Button>
+                                    </div>
+                                ) : (
+                                    <div className="text-center py-8">
+                                        <div className="flex items-center justify-center gap-3 mb-4">
+                                            <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
+                                            <div className="text-sm text-muted-foreground">Checking paper readiness...</div>
+                                        </div>
+                                    </div>
+                                )}
+                            </div>
+                        )}
+
+                        {/* Show chat interface when ready */}
+                        {isChatReady && (
+                            <>
+                                {messages.length === 0 ? (
+                                    <div className="mt-8 px-4">
+                                        <ChatComposer onSend={handleSend} isLoading={isLoading} externalContexts={externalContexts} onExternalContextsCleared={onExternalContextsCleared} disabled={!isChatReady} />
+                                    </div>
+                                ) : (
+                                    <>
+                                        <div className="px-4 pb-4">
+                                            {messages.map((message) => (
+                                                <ChatMessage key={message.id} message={message} />
+                                            ))}
+                                            {isLoading && (
+                                                <div className="flex items-center gap-2 py-4 text-sm text-muted-foreground">
+                                                    <div className="flex gap-1">
+                                                        <span className="animate-bounce">●</span>
+                                                        <span className="animate-bounce" style={{ animationDelay: "0.1s" }}>●</span>
+                                                        <span className="animate-bounce" style={{ animationDelay: "0.2s" }}>●</span>
+                                                    </div>
+                                                    <span>Assistant is thinking...</span>
+                                                </div>
+                                            )}
+                                            <div ref={messagesEndRef} />
+                                        </div>
+
+                                        {/* Input at bottom when there are messages */}
+                                        <div className="sticky bottom-0 bg-background border-t border-border">
+                                            <div className="max-w-3xl mx-auto p-4">
+                                                <ChatComposer onSend={handleSend} isLoading={isLoading} externalContexts={externalContexts} onExternalContextsCleared={onExternalContextsCleared} disabled={!isChatReady} />
+                                            </div>
+                                        </div>
+                                    </>
+                                )}
                             </>
                         )}
                     </div>

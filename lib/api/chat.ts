@@ -1,6 +1,7 @@
 import type { APIResponse } from "@/types/project";
 import { getApiUrl } from "@/lib/config/api-config";
 import { authenticatedFetch } from "@/lib/api/auth";
+import { hasStructuredFacts, extractPaper } from "@/lib/api/extract";
 
 /**
  * Chat API Request/Response Types - Must match backend DTOs exactly
@@ -136,5 +137,50 @@ export const checkChatHealth = async (): Promise<boolean> => {
   } catch (error) {
     console.error("Chat health check error:", error);
     return false;
+  }
+};
+
+/**
+ * Check if a paper is ready for chat and handle extraction if needed
+ */
+export const checkPaperChatReadiness = async (paperId: string): Promise<{
+  isReady: boolean;
+  needsExtraction: boolean;
+}> => {
+  try {
+    const hasData = await hasStructuredFacts(paperId);
+
+    if (hasData.hasStructuredFacts) {
+      return { isReady: true, needsExtraction: false };
+    } else {
+      // Paper needs extraction
+      return { isReady: false, needsExtraction: true };
+    }
+  } catch (error) {
+    console.error("Error checking paper chat readiness:", error);
+    // If we can't check, assume it needs extraction
+    return { isReady: false, needsExtraction: true };
+  }
+};
+
+/**
+ * Extract paper and wait for completion
+ */
+export const extractPaperForChat = async (paperId: string): Promise<void> => {
+  try {
+    // Start extraction
+    await extractPaper(paperId);
+
+    // Wait for 60 seconds for extraction to complete
+    await new Promise(resolve => setTimeout(resolve, 60000));
+
+    // Verify extraction completed successfully
+    const hasData = await hasStructuredFacts(paperId);
+    if (!hasData.hasStructuredFacts) {
+      throw new Error("Paper extraction did not complete successfully");
+    }
+  } catch (error) {
+    console.error("Error extracting paper for chat:", error);
+    throw error;
   }
 };
