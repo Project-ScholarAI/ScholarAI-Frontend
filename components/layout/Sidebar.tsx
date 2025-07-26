@@ -31,6 +31,7 @@ import { useLoading } from "@/contexts/LoadingContext"
 type Props = {
   collapsed: boolean
   onToggle: () => void
+  className?: string
 }
 
 const NAV_ITEMS = [
@@ -81,7 +82,7 @@ const BOTTOM_ITEMS = [
   }
 ]
 
-export function Sidebar({ collapsed, onToggle }: Props) {
+export function Sidebar({ collapsed, onToggle, className }: Props) {
   const pathname = usePathname()
   const router = useRouter()
   const { showPageLoading, hidePageLoading } = useLoading()
@@ -183,7 +184,8 @@ export function Sidebar({ collapsed, onToggle }: Props) {
   return (
     <div className={cn(
       "flex h-screen flex-col bg-background/60 backdrop-blur-xl border-r border-primary/15 transition-all duration-300 relative z-10",
-      collapsed ? "w-16" : "w-72"
+      collapsed ? "w-16" : "w-72",
+      className
     )}
       style={{
         boxShadow: `
@@ -229,13 +231,15 @@ export function Sidebar({ collapsed, onToggle }: Props) {
           </button>
         )}
 
+        {/* Collapse/Expand Button - Hidden on mobile */}
         <Button
           variant="ghost"
           size="sm"
           onClick={onToggle}
           className={cn(
             "h-8 w-8 p-0 text-foreground/70 hover:bg-primary/10 hover:text-primary transition-all duration-300 rounded-lg",
-            collapsed && "mx-auto"
+            collapsed && "mx-auto",
+            "hidden md:flex" // Hide on mobile
           )}
         >
           {collapsed ? (

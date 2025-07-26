@@ -39,6 +39,7 @@ import {
     Loader2,
     Share2
 } from "lucide-react"
+import { cn } from "@/lib/utils"
 
 export function ProjectsDashboard() {
     const router = useRouter()
@@ -273,20 +274,20 @@ export function ProjectsDashboard() {
 
             {/* Fixed Header Section */}
             <div className="relative z-10 bg-gradient-to-br from-background via-background/95 to-primary/5 backdrop-blur-xl border-b border-primary/10">
-                <div className="container mx-auto px-6 py-8">
+                <div className="container mx-auto px-4 sm:px-6 py-6 sm:py-8">
                     {/* Header */}
                     <motion.div
                         initial={{ opacity: 0, y: -20 }}
                         animate={{ opacity: 1, y: 0 }}
                         transition={{ duration: 0.6 }}
-                        className="mb-8"
+                        className="mb-6 sm:mb-8"
                     >
-                        <div className="flex items-center justify-between mb-4">
+                        <div className="flex flex-col sm:flex-row sm:items-center justify-between mb-4 gap-4">
                             <div>
-                                <h1 className="text-4xl font-bold text-gradient-primary">
+                                <h1 className="text-2xl sm:text-3xl md:text-4xl font-bold text-gradient-primary">
                                     Research Projects
                                 </h1>
-                                <p className="text-muted-foreground mt-2">
+                                <p className="text-muted-foreground mt-2 text-sm sm:text-base">
                                     Manage your AI-powered research workflows and discoveries
                                 </p>
                             </div>
@@ -294,16 +295,16 @@ export function ProjectsDashboard() {
                                 <Button
                                     onClick={() => setShowCreateDialog(true)}
                                     size="lg"
-                                    className="group relative overflow-hidden gradient-primary-to-accent text-white border-0 shadow-lg shadow-primary transition-all duration-300 hover:shadow-accent hover:scale-105"
+                                    className="group relative overflow-hidden gradient-primary-to-accent text-white border-0 shadow-lg shadow-primary transition-all duration-300 hover:shadow-accent hover:scale-105 w-full sm:w-auto"
                                 >
-                                    <Plus className="mr-2 h-5 w-5 group-hover:rotate-90 transition-transform duration-300" />
-                                    New Project
+                                    <Plus className="mr-2 h-4 w-4 sm:h-5 sm:w-5 group-hover:rotate-90 transition-transform duration-300" />
+                                    <span className="text-sm sm:text-base">New Project</span>
                                 </Button>
                             </EnhancedTooltip>
                         </div>
 
                         {/* Stats Cards */}
-                        <div className="flex flex-wrap gap-3 mb-4">
+                        <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3 mb-4">
                             {[
                                 { label: "Active", value: stats.activeProjects.toString(), icon: PlayCircle, color: "text-green-500" },
                                 { label: "Papers", value: stats.totalPapers.toString(), icon: BookOpen, color: "text-blue-500" },
@@ -322,10 +323,10 @@ export function ProjectsDashboard() {
                                         <div className="absolute inset-0 bg-gradient-to-br from-primary/5 via-transparent to-purple-500/5 opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
                                         <CardContent className="p-3 relative z-10">
                                             <div className="flex items-center gap-2">
-                                                <stat.icon className={`h-4 w-4 ${stat.color}`} />
+                                                <stat.icon className={`h-3 w-3 sm:h-4 sm:w-4 ${stat.color}`} />
                                                 <div>
                                                     <p className="text-xs text-muted-foreground">{stat.label}</p>
-                                                    <p className="text-lg font-bold text-foreground">{stat.value}</p>
+                                                    <p className="text-sm sm:text-lg font-bold text-foreground">{stat.value}</p>
                                                 </div>
                                             </div>
                                         </CardContent>
@@ -335,9 +336,9 @@ export function ProjectsDashboard() {
                         </div>
 
                         {/* Search and Filters */}
-                        <div className="flex flex-col sm:flex-row gap-4 items-center">
+                        <div className="flex flex-col sm:flex-row gap-4 items-start sm:items-center">
                             <EnhancedTooltip content="Search through your projects by name, domain, or tags">
-                                <div className="relative flex-1 max-w-md">
+                                <div className="relative flex-1 max-w-md w-full">
                                     <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
                                     <Input
                                         placeholder="Search projects, domains, or tags..."
@@ -347,17 +348,19 @@ export function ProjectsDashboard() {
                                     />
                                 </div>
                             </EnhancedTooltip>
-                            <div className="flex gap-2">
+                            <div className="flex flex-wrap gap-2 w-full sm:w-auto">
                                 {['all', 'active', 'on-hold', 'completed', 'cancelled'].map((status) => (
                                     <Button
                                         key={status}
                                         variant={selectedStatus === status ? "default" : "outline"}
                                         size="sm"
                                         onClick={() => setSelectedStatus(status)}
-                                        className={selectedStatus === status
-                                            ? "gradient-primary-to-accent text-white"
-                                            : "bg-background/80 backdrop-blur-xl border-2 border-primary/30 hover:bg-primary/5 hover:border-primary/50"
-                                        }
+                                        className={cn(
+                                            selectedStatus === status
+                                                ? "gradient-primary-to-accent text-white"
+                                                : "bg-background/80 backdrop-blur-xl border-2 border-primary/30 hover:bg-primary/5 hover:border-primary/50",
+                                            "text-xs sm:text-sm"
+                                        )}
                                     >
                                         <Filter className="mr-1 h-3 w-3" />
                                         {status === 'on-hold' ? 'On Hold' : status.charAt(0).toUpperCase() + status.slice(1)}
@@ -367,10 +370,12 @@ export function ProjectsDashboard() {
                                     variant={showOnlyShared ? "default" : "outline"}
                                     size="sm"
                                     onClick={() => setShowOnlyShared(!showOnlyShared)}
-                                    className={showOnlyShared
-                                        ? "gradient-primary text-white"
-                                        : "bg-background/80 backdrop-blur-xl border-2 border-primary/30 hover:bg-primary/5 hover:border-primary/50"
-                                    }
+                                    className={cn(
+                                        showOnlyShared
+                                            ? "gradient-primary text-white"
+                                            : "bg-background/80 backdrop-blur-xl border-2 border-primary/30 hover:bg-primary/5 hover:border-primary/50",
+                                        "text-xs sm:text-sm"
+                                    )}
                                 >
                                     <Users className="mr-1 h-3 w-3" />
                                     Shared Only
@@ -383,14 +388,14 @@ export function ProjectsDashboard() {
 
             {/* Scrollable Content Area */}
             <div className="flex-1 relative z-10 overflow-y-auto">
-                <div className="container mx-auto px-6 py-8">
+                <div className="container mx-auto px-4 sm:px-6 py-6 sm:py-8">
 
                     {/* Loading State */}
                     {isLoading && (
                         <div className="flex items-center justify-center py-16">
                             <div className="text-center">
                                 <Loader2 className="h-8 w-8 animate-spin text-primary mx-auto mb-4" />
-                                <p className="text-muted-foreground">Loading projects...</p>
+                                <p className="text-muted-foreground text-sm sm:text-base">Loading projects...</p>
                             </div>
                         </div>
                     )}
@@ -400,7 +405,7 @@ export function ProjectsDashboard() {
                         <div className="flex items-center justify-center py-16">
                             <div className="text-center">
                                 <div className="bg-red-500/10 border border-red-500/20 rounded-lg p-4 mb-4">
-                                    <p className="text-red-500">{error}</p>
+                                    <p className="text-red-500 text-sm sm:text-base">{error}</p>
                                 </div>
                                 <Button
                                     onClick={() => loadProjects()}
@@ -419,7 +424,7 @@ export function ProjectsDashboard() {
                             initial={{ opacity: 0 }}
                             animate={{ opacity: 1 }}
                             transition={{ delay: 0.3, duration: 0.6 }}
-                            className="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-6"
+                            className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4 sm:gap-6"
                         >
                             <AnimatePresence mode="popLayout">
                                 {filteredProjects.map((project, index) => (
@@ -433,15 +438,15 @@ export function ProjectsDashboard() {
                                         whileHover={{ y: -5, scale: 1.02 }}
                                         className="group cursor-pointer"
                                     >
-                                        <Card className="relative overflow-hidden bg-background/80 backdrop-blur-xl border-2 border-primary/25 shadow-lg hover:shadow-primary/30 transition-all duration-500 group-hover:border-primary/40 h-[380px] flex flex-col">
+                                        <Card className="relative overflow-hidden bg-background/80 backdrop-blur-xl border-2 border-primary/25 shadow-lg hover:shadow-primary/30 transition-all duration-500 group-hover:border-primary/40 h-[350px] sm:h-[380px] flex flex-col">
                                             {/* Card Background Effects */}
                                             <div className="absolute inset-0 bg-gradient-to-br from-primary/5 via-transparent to-purple-500/5 opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
                                             <div className="absolute top-0 right-0 w-32 h-32 bg-gradient-to-bl from-primary/10 to-transparent rounded-full blur-2xl opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
 
                                             <CardHeader className="relative z-10 pb-3">
                                                 <div className="flex items-start justify-between">
-                                                    <div className="flex-1">
-                                                        <div className="flex items-center gap-2 mb-2">
+                                                    <div className="flex-1 min-w-0">
+                                                        <div className="flex flex-wrap items-center gap-1 sm:gap-2 mb-2">
                                                             {getStatusIcon(project.status)}
                                                             <Badge variant="status" className={`${getStatusColor(project.status)} text-xs`}>
                                                                 {getStatusLabel(project.status)}
@@ -458,7 +463,7 @@ export function ProjectsDashboard() {
                                                                 </Badge>
                                                             )}
                                                         </div>
-                                                        <CardTitle className="text-lg group-hover:text-primary transition-colors duration-300">
+                                                        <CardTitle className="text-base sm:text-lg group-hover:text-primary transition-colors duration-300 truncate">
                                                             {project.name}
                                                         </CardTitle>
                                                     </div>
@@ -470,9 +475,9 @@ export function ProjectsDashboard() {
                                                                 e.stopPropagation()
                                                                 toggleStar(project.id)
                                                             }}
-                                                            className="h-8 w-8 p-0 hover:bg-primary/10"
+                                                            className="h-7 w-7 sm:h-8 sm:w-8 p-0 hover:bg-primary/10"
                                                         >
-                                                            <Star className={`h-4 w-4 transition-colors ${project.isStarred ? 'text-yellow-500 fill-yellow-500' : 'text-muted-foreground hover:text-yellow-500'}`} />
+                                                            <Star className={`h-3 w-3 sm:h-4 sm:w-4 transition-colors ${project.isStarred ? 'text-yellow-500 fill-yellow-500' : 'text-muted-foreground hover:text-yellow-500'}`} />
                                                         </Button>
                                                         <Button
                                                             variant="ghost"
@@ -481,13 +486,13 @@ export function ProjectsDashboard() {
                                                                 e.stopPropagation()
                                                                 handleEditProject(project)
                                                             }}
-                                                            className="h-8 w-8 p-0 hover:bg-primary/10"
+                                                            className="h-7 w-7 sm:h-8 sm:w-8 p-0 hover:bg-primary/10"
                                                         >
-                                                            <Edit className="h-4 w-4 text-muted-foreground" />
+                                                            <Edit className="h-3 w-3 sm:h-4 sm:w-4 text-muted-foreground" />
                                                         </Button>
                                                     </div>
                                                 </div>
-                                                <CardDescription className="text-sm text-muted-foreground group-hover:text-foreground/80 transition-colors duration-300 overflow-hidden min-h-[3.5rem] max-h-[3.5rem] leading-5" style={{
+                                                <CardDescription className="text-xs sm:text-sm text-muted-foreground group-hover:text-foreground/80 transition-colors duration-300 overflow-hidden min-h-[3rem] sm:min-h-[3.5rem] max-h-[3rem] sm:max-h-[3.5rem] leading-5" style={{
                                                     display: '-webkit-box',
                                                     WebkitLineClamp: 3,
                                                     WebkitBoxOrient: 'vertical' as const
@@ -501,8 +506,8 @@ export function ProjectsDashboard() {
                                                     {/* Progress Bar */}
                                                     <div className="mb-3">
                                                         <div className="flex justify-between items-center mb-1">
-                                                            <span className="text-sm font-medium">Progress</span>
-                                                            <span className="text-sm text-muted-foreground">{project.progress}%</span>
+                                                            <span className="text-xs sm:text-sm font-medium">Progress</span>
+                                                            <span className="text-xs sm:text-sm text-muted-foreground">{project.progress}%</span>
                                                         </div>
                                                         <div className="w-full bg-secondary/50 rounded-full h-2">
                                                             <div
@@ -513,14 +518,14 @@ export function ProjectsDashboard() {
                                                     </div>
 
                                                     {/* Stats */}
-                                                    <div className="grid grid-cols-2 gap-3 mb-3">
+                                                    <div className="grid grid-cols-2 gap-2 sm:gap-3 mb-3">
                                                         <div className="flex items-center gap-2">
-                                                            <Database className="h-4 w-4 text-blue-500" />
-                                                            <span className="text-sm font-medium">{paperCounts[project.id] || 0} papers</span>
+                                                            <Database className="h-3 w-3 sm:h-4 sm:w-4 text-blue-500" />
+                                                            <span className="text-xs sm:text-sm font-medium">{paperCounts[project.id] || 0} papers</span>
                                                         </div>
                                                         <div className="flex items-center gap-2">
-                                                            <Clock className="h-4 w-4 text-green-500" />
-                                                            <span className="text-sm text-muted-foreground">{formatLastActivity(project.updatedAt)}</span>
+                                                            <Clock className="h-3 w-3 sm:h-4 sm:w-4 text-green-500" />
+                                                            <span className="text-xs sm:text-sm text-muted-foreground">{formatLastActivity(project.updatedAt)}</span>
                                                         </div>
                                                     </div>
 
@@ -544,11 +549,11 @@ export function ProjectsDashboard() {
                                                 </div>
 
                                                 {/* Action Buttons */}
-                                                <div className="flex gap-2">
+                                                <div className="flex gap-1 sm:gap-2">
                                                     <Button
                                                         size="sm"
                                                         disabled={openingProjectId === project.id}
-                                                        className="flex-1 gradient-primary-to-accent text-white transition-all duration-300 disabled:opacity-60 disabled:cursor-not-allowed relative overflow-hidden"
+                                                        className="flex-1 gradient-primary-to-accent text-white transition-all duration-300 disabled:opacity-60 disabled:cursor-not-allowed relative overflow-hidden text-xs sm:text-sm"
                                                         onClick={(e) => {
                                                             e.stopPropagation()
                                                             handleOpenProject(project.id)
@@ -570,37 +575,37 @@ export function ProjectsDashboard() {
                                                     <Button
                                                         size="sm"
                                                         variant="outline"
-                                                        className="bg-background/40 backdrop-blur-xl border-2 border-primary/30 hover:bg-primary/5"
+                                                        className="bg-background/40 backdrop-blur-xl border-2 border-primary/30 hover:bg-primary/5 h-8 w-8 sm:h-9 sm:w-9 p-0"
                                                         onClick={(e) => {
                                                             e.stopPropagation()
                                                             // Analytics/insights for this project
                                                             console.log("Show project analytics for", project.id)
                                                         }}
                                                     >
-                                                        <BarChart3 className="h-3 w-3" />
+                                                        <BarChart3 className="h-3 w-3 sm:h-4 sm:w-4" />
                                                     </Button>
                                                     <Button
                                                         size="sm"
                                                         variant="outline"
-                                                        className="bg-background/40 backdrop-blur-xl border-2 border-primary/30 hover:bg-primary/5"
+                                                        className="bg-background/40 backdrop-blur-xl border-2 border-primary/30 hover:bg-primary/5 h-8 w-8 sm:h-9 sm:w-9 p-0"
                                                         onClick={(e) => {
                                                             e.stopPropagation()
                                                             // Open project chat
                                                             console.log("Open chat for", project.id)
                                                         }}
                                                     >
-                                                        <MessageSquare className="h-3 w-3" />
+                                                        <MessageSquare className="h-3 w-3 sm:h-4 sm:w-4" />
                                                     </Button>
                                                     <Button
                                                         size="sm"
                                                         variant="outline"
-                                                        className="bg-background/40 backdrop-blur-xl border-2 border-primary/30 hover:bg-primary/5"
+                                                        className="bg-background/40 backdrop-blur-xl border-2 border-primary/30 hover:bg-primary/5 h-8 w-8 sm:h-9 sm:w-9 p-0"
                                                         onClick={(e) => {
                                                             e.stopPropagation()
                                                             handleShareProject(project)
                                                         }}
                                                     >
-                                                        <Share2 className="h-3 w-3" />
+                                                        <Share2 className="h-3 w-3 sm:h-4 sm:w-4" />
                                                     </Button>
                                                 </div>
                                             </CardContent>
@@ -620,15 +625,15 @@ export function ProjectsDashboard() {
                         >
                             <div className="relative inline-block mb-4">
                                 <div className="absolute inset-0 bg-gradient-to-r from-primary to-purple-500 rounded-full opacity-20 blur-xl" />
-                                <Search className="relative h-16 w-16 text-muted-foreground" />
+                                <Search className="relative h-12 w-12 sm:h-16 sm:w-16 text-muted-foreground" />
                             </div>
-                            <h3 className="text-xl font-semibold mb-2">No projects found</h3>
-                            <p className="text-muted-foreground mb-6">
+                            <h3 className="text-lg sm:text-xl font-semibold mb-2">No projects found</h3>
+                            <p className="text-muted-foreground mb-6 text-sm sm:text-base">
                                 {searchQuery ? "Try adjusting your search criteria" : "Create your first research project to get started"}
                             </p>
                             <Button
                                 onClick={() => setShowCreateDialog(true)}
-                                className="bg-gradient-to-r from-primary to-purple-600 hover:from-primary/90 hover:to-purple-700 text-white"
+                                className="bg-gradient-to-r from-primary to-purple-600 hover:from-primary/90 hover:to-purple-700 text-white text-sm sm:text-base"
                             >
                                 <Plus className="mr-2 h-4 w-4" />
                                 Create Project

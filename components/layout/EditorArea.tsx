@@ -17,7 +17,8 @@ import {
     Command,
     Brain,
     Zap,
-    BookOpen
+    BookOpen,
+    Menu
 } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { cn } from "@/lib/utils/cn"
@@ -25,9 +26,11 @@ import { cn } from "@/lib/utils/cn"
 type Props = {
     children: React.ReactNode
     onChatToggle: () => void
+    onSidebarToggle?: () => void
+    showMobileMenu?: boolean
 }
 
-export function EditorArea({ children, onChatToggle }: Props) {
+export function EditorArea({ children, onChatToggle, onSidebarToggle, showMobileMenu }: Props) {
     const pathname = usePathname()
     const router = useRouter()
 
@@ -61,19 +64,32 @@ export function EditorArea({ children, onChatToggle }: Props) {
     return (
         <div className="flex flex-col h-full relative">
             {/* Top Header Bar */}
-            <div className="flex items-center justify-between h-14 px-6 bg-background/80 backdrop-blur-xl border-b border-primary/15 relative z-10">
+            <div className="flex items-center justify-between h-14 px-4 sm:px-6 bg-background/80 backdrop-blur-xl border-b border-primary/15 relative z-10">
                 <div className="flex items-center gap-3">
+                    {/* Mobile Menu Button */}
+                    {showMobileMenu && onSidebarToggle && (
+                        <Button
+                            variant="ghost"
+                            size="sm"
+                            onClick={onSidebarToggle}
+                            className="h-8 w-8 p-0 text-foreground hover:bg-primary/10 hover:text-primary transition-all duration-300 rounded-lg border border-transparent hover:border-primary/20 lg:hidden"
+                        >
+                            <Menu className="h-4 w-4" />
+                        </Button>
+                    )}
+
                     <div className="flex items-center gap-2 text-foreground/80">
                         {getPageIcon()}
-                        <h2 className="font-semibold text-lg">{getPageTitle()}</h2>
+                        <h2 className="font-semibold text-base sm:text-lg truncate">{getPageTitle()}</h2>
                     </div>
                 </div>
 
-                <div className="flex items-center gap-2">
+                <div className="flex items-center gap-1 sm:gap-2">
+                    {/* Search Button - Hidden on mobile, shown on larger screens */}
                     <Button
                         variant="ghost"
                         size="sm"
-                        className="h-8 px-3 text-foreground hover:bg-primary/10 hover:text-primary transition-all duration-300 rounded-lg border border-transparent hover:border-primary/20"
+                        className="hidden sm:flex h-8 px-3 text-foreground hover:bg-primary/10 hover:text-primary transition-all duration-300 rounded-lg border border-transparent hover:border-primary/20"
                         onClick={() => {
                             // Quick search functionality
                             console.log("Quick search")
@@ -86,16 +102,31 @@ export function EditorArea({ children, onChatToggle }: Props) {
                         </kbd>
                     </Button>
 
+                    {/* Mobile Search Button */}
                     <Button
                         variant="ghost"
                         size="sm"
-                        className="h-8 px-3 text-foreground hover:bg-primary/10 hover:text-primary transition-all duration-300 rounded-lg border border-transparent hover:border-primary/20"
-                        onClick={onChatToggle}
+                        className="sm:hidden h-8 w-8 p-0 text-foreground hover:bg-primary/10 hover:text-primary transition-all duration-300 rounded-lg border border-transparent hover:border-primary/20"
+                        onClick={() => {
+                            // Quick search functionality
+                            console.log("Quick search")
+                        }}
                     >
-                        <MessageSquare className="h-4 w-4 mr-2" />
-                        <span className="text-sm">AI Chat</span>
+                        <Search className="h-4 w-4" />
                     </Button>
 
+                    {/* Chat Button */}
+                    <Button
+                        variant="ghost"
+                        size="sm"
+                        className="h-8 px-2 sm:px-3 text-foreground hover:bg-primary/10 hover:text-primary transition-all duration-300 rounded-lg border border-transparent hover:border-primary/20"
+                        onClick={onChatToggle}
+                    >
+                        <MessageSquare className="h-4 w-4 mr-1 sm:mr-2" />
+                        <span className="hidden sm:inline text-sm">AI Chat</span>
+                    </Button>
+
+                    {/* Settings Button */}
                     <Button
                         variant="ghost"
                         size="sm"
