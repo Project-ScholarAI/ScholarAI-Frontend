@@ -45,7 +45,14 @@ ENV NEXT_PUBLIC_GOOGLE_CLIENT_ID=$NEXT_PUBLIC_GOOGLE_CLIENT_ID \
     NEXT_PUBLIC_ENV=$NEXT_PUBLIC_ENV \
     NEXT_TELEMETRY_DISABLED=1
 
-# 6. Copy the rest of your source & build
+# 6. Debug: Show environment at build time
+RUN echo "✅ Environment Variables in Build:" && \
+    echo "NEXT_PUBLIC_ENV=$NEXT_PUBLIC_ENV" && \
+    echo "ENV=$ENV" && \
+    echo "NEXT_PUBLIC_API_BASE_URL=$NEXT_PUBLIC_API_BASE_URL" && \
+    echo "NEXT_PUBLIC_DOCKER_BACKEND_URL=$NEXT_PUBLIC_DOCKER_BACKEND_URL"
+
+# 7. Copy the rest of your source code & build Next.js app
 COPY . .
 RUN npm run build
 
@@ -63,14 +70,14 @@ ENV NODE_ENV=production \
     PORT=3000 \
     HOSTNAME=0.0.0.0
 
-# Drop root
+# Drop root privileges
 RUN addgroup --system --gid 1001 nodejs \
  && adduser  --system --uid 1001 nextjs
 USER nextjs
 
-# Copy only what Next’s standalone output needs
+# Copy only the standalone output needed for production
 COPY --from=builder /app/public            ./public
-COPY --from=builder --chown=nextjs:nodejs /app/.next/standalone ./
+COPY --from=builder --chown=nextjs:nodejs /app/.next/standalone ./ 
 COPY --from=builder --chown=nextjs:nodejs /app/.next/static     ./.next/static
 
 EXPOSE 3000
