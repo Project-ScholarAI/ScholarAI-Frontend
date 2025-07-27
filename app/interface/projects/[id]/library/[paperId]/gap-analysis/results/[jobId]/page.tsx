@@ -303,8 +303,8 @@ export default function GapAnalysisResultsPage({ params }: GapAnalysisResultsPag
                                                                     <div>
                                                                         <span className="text-muted-foreground">Difficulty:</span>
                                                                         <div className="flex items-center gap-2 mt-1">
-                                                                            <Progress value={gap.gap_metrics.difficulty_score} className="h-2 flex-1" />
-                                                                            <span>{gap.gap_metrics.difficulty_score}%</span>
+                                                                            <Progress value={gap.gap_metrics.difficulty_score * 10} className="h-2 flex-1" />
+                                                                            <span>{(gap.gap_metrics.difficulty_score * 10).toFixed(1)}%</span>
                                                                         </div>
                                                                     </div>
                                                                     <div>
