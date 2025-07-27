@@ -297,15 +297,7 @@
     }
   }
 
-  @keyframes shimmer {
-    0% {
-      transform: translateX(-100%);
-    }
 
-    100% {
-      transform: translateX(100%);
-    }
-  }
 
   /* Animation utility classes */
   .animate-gradient {
@@ -320,9 +312,7 @@
     animation: glow 2s ease-in-out infinite;
   }
 
-  .animate-shimmer {
-    animation: shimmer 2s infinite;
-  }
+
 
   /**
    * --------------------------------------------------------------------------
@@ -495,6 +485,104 @@
     padding: 0 1rem;
   }
 
+  /* Responsive utilities */
+  .mobile-only {
+    display: block;
+  }
+
+  .tablet-only {
+    display: none;
+  }
+
+  .desktop-only {
+    display: none;
+  }
+
+  @media (min-width: 768px) {
+    .mobile-only {
+      display: none;
+    }
+
+    .tablet-only {
+      display: block;
+    }
+  }
+
+  @media (min-width: 1024px) {
+    .tablet-only {
+      display: none;
+    }
+
+    .desktop-only {
+      display: block;
+    }
+  }
+
+  /* Responsive text utilities */
+  .text-responsive-xs {
+    font-size: 0.75rem;
+  }
+
+  .text-responsive-sm {
+    font-size: 0.875rem;
+  }
+
+  .text-responsive-base {
+    font-size: 1rem;
+  }
+
+  .text-responsive-lg {
+    font-size: 1.125rem;
+  }
+
+  .text-responsive-xl {
+    font-size: 1.25rem;
+  }
+
+  @media (min-width: 640px) {
+    .text-responsive-xs {
+      font-size: 0.875rem;
+    }
+
+    .text-responsive-sm {
+      font-size: 1rem;
+    }
+
+    .text-responsive-base {
+      font-size: 1.125rem;
+    }
+
+    .text-responsive-lg {
+      font-size: 1.25rem;
+    }
+
+    .text-responsive-xl {
+      font-size: 1.5rem;
+    }
+  }
+
+  @media (min-width: 1024px) {
+    .text-responsive-xs {
+      font-size: 1rem;
+    }
+
+    .text-responsive-sm {
+      font-size: 1.125rem;
+    }
+
+    .text-responsive-base {
+      font-size: 1.25rem;
+    }
+
+    .text-responsive-lg {
+      font-size: 1.5rem;
+    }
+
+    .text-responsive-xl {
+      font-size: 1.875rem;
+    }
+  }
+
   /**
    * --------------------------------------------------------------------------
    * Settings & Accessibility Classes
@@ -650,33 +738,50 @@
 
   /* Dynamic Scrollbar Styling */
   ::-webkit-scrollbar {
-    width: 8px;
-    height: 8px;
+    width: 10px;
+    height: 10px;
   }
 
   ::-webkit-scrollbar-track {
-    background: hsl(var(--background) / 0.3);
-    border-radius: 4px;
+    background: rgba(0, 0, 0, 0.1);
+    border-radius: 5px;
   }
 
   ::-webkit-scrollbar-thumb {
-    background: hsl(var(--accent-1) / 0.4);
-    border-radius: 4px;
+    background: linear-gradient(180deg, rgba(99, 102, 241, 0.6) 0%, rgba(139, 92, 246, 0.6) 100%);
+    border-radius: 5px;
+    border: 1px solid rgba(99, 102, 241, 0.2);
     transition: all 0.3s ease;
   }
 
   ::-webkit-scrollbar-thumb:hover {
-    background: hsl(var(--accent-1) / 0.6);
+    background: linear-gradient(180deg, rgba(99, 102, 241, 0.8) 0%, rgba(139, 92, 246, 0.8) 100%);
+    border: 1px solid rgba(99, 102, 241, 0.4);
   }
 
   ::-webkit-scrollbar-corner {
-    background: hsl(var(--background) / 0.3);
+    background: transparent;
   }
 
   /* Firefox scrollbar styling */
   * {
     scrollbar-width: thin;
-    scrollbar-color: hsl(var(--accent-1) / 0.4) hsl(var(--background) / 0.3);
+    scrollbar-color: rgba(99, 102, 241, 0.6) rgba(0, 0, 0, 0.1);
+  }
+
+  /* Dark theme scrollbar adjustments */
+  .dark ::-webkit-scrollbar-track {
+    background: rgba(255, 255, 255, 0.05);
+  }
+
+  .dark ::-webkit-scrollbar-thumb {
+    background: linear-gradient(180deg, rgba(99, 102, 241, 0.7) 0%, rgba(139, 92, 246, 0.7) 100%);
+    border: 1px solid rgba(99, 102, 241, 0.3);
+  }
+
+  .dark ::-webkit-scrollbar-thumb:hover {
+    background: linear-gradient(180deg, rgba(99, 102, 241, 0.9) 0%, rgba(139, 92, 246, 0.9) 100%);
+    border: 1px solid rgba(99, 102, 241, 0.5);
   }
 
   /* Custom scrollbar for specific components */
@@ -1000,6 +1105,159 @@
   [data-theme="light"] .badge {
     background: rgba(255, 255, 255, 0.9) !important;
     border-color: rgba(99, 102, 241, 0.2) !important;
+  }
+
+  /* Status badge theme improvements */
+  /* Active/Ready - Green */
+  [data-theme="light"] .badge.status-active {
+    background: rgb(220 252 231) !important;
+    /* emerald-100 */
+    color: rgb(21 128 61) !important;
+    /* emerald-700 */
+    border-color: rgb(16 185 129) !important;
+    /* emerald-500 */
+  }
+
+  [data-theme="dark"] .badge.status-active {
+    background: rgb(6 78 59) !important;
+    /* emerald-900 */
+    color: rgb(110 231 183) !important;
+    /* emerald-300 */
+    border-color: rgb(16 185 129) !important;
+    /* emerald-500 */
+  }
+
+  /* On Hold/Processing - Yellow/Amber */
+  [data-theme="light"] .badge.status-on-hold {
+    background: rgb(255 251 235) !important;
+    /* amber-50 */
+    color: rgb(180 83 9) !important;
+    /* amber-700 */
+    border-color: rgb(245 158 11) !important;
+    /* amber-500 */
+  }
+
+  [data-theme="dark"] .badge.status-on-hold {
+    background: rgb(69 26 3) !important;
+    /* amber-900 */
+    color: rgb(252 211 77) !important;
+    /* amber-300 */
+    border-color: rgb(245 158 11) !important;
+    /* amber-500 */
+  }
+
+  /* Completed/New - Blue */
+  [data-theme="light"] .badge.status-completed {
+    background: rgb(239 246 255) !important;
+    /* blue-50 */
+    color: rgb(29 78 216) !important;
+    /* blue-700 */
+    border-color: rgb(59 130 246) !important;
+    /* blue-500 */
+  }
+
+  [data-theme="dark"] .badge.status-completed {
+    background: rgb(30 58 138) !important;
+    /* blue-900 */
+    color: rgb(147 197 253) !important;
+    /* blue-300 */
+    border-color: rgb(59 130 246) !important;
+    /* blue-500 */
+  }
+
+  /* Cancelled/Archived - Gray */
+  [data-theme="light"] .badge.status-cancelled {
+    background: rgb(248 250 252) !important;
+    /* slate-50 */
+    color: rgb(51 65 85) !important;
+    /* slate-700 */
+    border-color: rgb(100 116 139) !important;
+    /* slate-500 */
+  }
+
+  [data-theme="dark"] .badge.status-cancelled {
+    background: rgb(15 23 42) !important;
+    /* slate-900 */
+    color: rgb(203 213 225) !important;
+    /* slate-300 */
+    border-color: rgb(100 116 139) !important;
+    /* slate-500 */
+  }
+
+  /* Processing - Yellow/Amber (same as on-hold) */
+  [data-theme="light"] .badge.status-processing {
+    background: rgb(255 251 235) !important;
+    /* amber-50 */
+    color: rgb(180 83 9) !important;
+    /* amber-700 */
+    border-color: rgb(245 158 11) !important;
+    /* amber-500 */
+  }
+
+  [data-theme="dark"] .badge.status-processing {
+    background: rgb(69 26 3) !important;
+    /* amber-900 */
+    color: rgb(252 211 77) !important;
+    /* amber-300 */
+    border-color: rgb(245 158 11) !important;
+    /* amber-500 */
+  }
+
+  /* New - Blue (same as completed) */
+  [data-theme="light"] .badge.status-new {
+    background: rgb(239 246 255) !important;
+    /* blue-50 */
+    color: rgb(29 78 216) !important;
+    /* blue-700 */
+    border-color: rgb(59 130 246) !important;
+    /* blue-500 */
+  }
+
+  [data-theme="dark"] .badge.status-new {
+    background: rgb(30 58 138) !important;
+    /* blue-900 */
+    color: rgb(147 197 253) !important;
+    /* blue-300 */
+    border-color: rgb(59 130 246) !important;
+    /* blue-500 */
+  }
+
+  /* Ready - Green (same as active) */
+  [data-theme="light"] .badge.status-ready {
+    background: rgb(220 252 231) !important;
+    /* emerald-100 */
+    color: rgb(21 128 61) !important;
+    /* emerald-700 */
+    border-color: rgb(16 185 129) !important;
+    /* emerald-500 */
+  }
+
+  [data-theme="dark"] .badge.status-ready {
+    background: rgb(6 78 59) !important;
+    /* emerald-900 */
+    color: rgb(110 231 183) !important;
+    /* emerald-300 */
+    border-color: rgb(16 185 129) !important;
+    /* emerald-500 */
+  }
+
+  /* Failed - Red */
+  [data-theme="light"] .badge.status-failed {
+    background: rgb(254 242 242) !important;
+    /* red-50 */
+    color: rgb(185 28 28) !important;
+    /* red-700 */
+    border-color: rgb(239 68 68) !important;
+    /* red-500 */
+  }
+
+  [data-theme="dark"] .badge.status-failed {
+    background: rgb(69 10 10) !important;
+    /* red-900 */
+    color: rgb(252 165 165) !important;
+    /* red-300 */
+    border-color: rgb(239 68 68) !important;
+    /* red-500 */
   }
 
   [data-theme="dark"] {

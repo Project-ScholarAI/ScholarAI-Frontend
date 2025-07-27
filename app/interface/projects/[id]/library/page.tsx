@@ -51,9 +51,9 @@ import {
     FolderOpen,
     Globe
 } from "lucide-react"
-import { cn } from "@/lib/utils"
+import { cn, isValidUUID } from "@/lib/utils"
 import { useWebSearch } from "@/hooks/useWebSearch"
-import { getProjectLibrary, getProjectLibraryStats } from "@/lib/api/library"
+import { getProjectLibrary, getProjectLibraryStats, getProjectLatestPapers } from "@/lib/api/library"
 import { SearchLoadingProgress } from "@/components/library/SearchLoadingProgress"
 import { PaperCard } from "@/components/library/PaperCard"
 import { StreamingPaperCard } from "@/components/library/StreamingPaperCard"
@@ -94,6 +94,8 @@ export default function ProjectLibraryPage({ params }: ProjectLibraryPageProps) 
     const [libraryStats, setLibraryStats] = useState<any>(null)
     const [isLoadingLibrary, setIsLoadingLibrary] = useState(false)
     const [libraryError, setLibraryError] = useState<string | null>(null)
+    const [latestPapers, setLatestPapers] = useState<Paper[]>([])
+    const [isLoadingLatestPapers, setIsLoadingLatestPapers] = useState(false)
 
     // Web search functionality
     const webSearch = useWebSearch()
@@ -102,12 +104,31 @@ export default function ProjectLibraryPage({ params }: ProjectLibraryPageProps) 
     useEffect(() => {
         const loadData = async () => {
             const resolvedParams = await params
-            setProjectId(resolvedParams.id)
 
-            // Load existing papers from library
-            await loadProjectLibrary(resolvedParams.id)
+                        // Validate project ID format
+            const projectId = resolvedParams.id
+            
+            if (!isValidUUID(projectId)) {
+                console.error('Invalid project ID format:', projectId)
+                setLibraryError('Invalid project ID format')
+                setIsLoading(false)
+                return
+            }
 
-            setIsLoading(false)
+            setProjectId(projectId)
+
+            try {
+                // Load existing papers from library and latest papers
+                await Promise.all([
+                    loadProjectLibrary(projectId),
+                    loadLatestPapers(projectId)
+                ])
+            } catch (error) {
+                console.error('Error loading project data:', error)
+                setLibraryError('Failed to load project data')
+            } finally {
+                setIsLoading(false)
+            }
         }
         loadData()
     }, [params])
@@ -120,6 +141,12 @@ export default function ProjectLibraryPage({ params }: ProjectLibraryPageProps) 
     }, [webSearch.papers])
 
     const loadProjectLibrary = async (projectId: string) => {
+        // Validate project ID before making API calls
+        if (!isValidUUID(projectId)) {
+            console.error('Invalid project ID in loadProjectLibrary:', projectId)
+            return
+        }
+
         try {
             setIsLoadingLibrary(true)
             setLibraryError(null)
@@ -150,11 +177,48 @@ export default function ProjectLibraryPage({ params }: ProjectLibraryPageProps) 
         }
     }
 
+    const loadLatestPapers = async (projectId: string) => {
+        // Validate project ID before making API calls
+        if (!isValidUUID(projectId)) {
+            console.error('Invalid project ID in loadLatestPapers:', projectId)
+            return
+        }
+
+        try {
+            setIsLoadingLatestPapers(true)
+            const response = await getProjectLatestPapers(projectId)
+
+            // Set latest papers, ensuring abstractText compatibility
+            if (response.data && response.data.papers) {
+                const processedPapers: Paper[] = (response.data.papers as any[]).map((p: any) => ({
+                    ...p,
+                    abstractText: p.abstractText ?? p.abstract ?? null,
+                }))
+                setLatestPapers(processedPapers)
+            } else if (response.data && Array.isArray(response.data)) {
+                // Handle case where response.data is directly an array
+                const processedPapers: Paper[] = (response.data as any[]).map((p: any) => ({
+                    ...p,
+                    abstractText: p.abstractText ?? p.abstract ?? null,
+                }))
+                setLatestPapers(processedPapers)
+            } else {
+                setLatestPapers([])
+            }
+        } catch (error) {
+            console.error('Error loading latest papers:', error)
+            setLatestPapers([])
+        } finally {
+            setIsLoadingLatestPapers(false)
+        }
+    }
+
     // Get the current papers based on active tab
     const getCurrentPapers = () => {
         switch (activeTab) {
             case 'current-search':
-                return currentWebSearchPapers
+                // Use latest papers if available, otherwise fall back to web search papers
+                return latestPapers.length > 0 ? latestPapers : currentWebSearchPapers
             case 'all-papers':
                 return allPapers
             case 'uploaded':
@@ -203,6 +267,16 @@ export default function ProjectLibraryPage({ params }: ProjectLibraryPageProps) 
 
     const handleRetrievePapers = () => {
         setShowSearchConfig(true)
+    }
+
+    const handleRefreshLatestPapers = async () => {
+        if (projectId) {
+            if (!isValidUUID(projectId)) {
+                console.error('Invalid project ID in handleRefreshLatestPapers:', projectId)
+                return
+            }
+            await loadLatestPapers(projectId)
+        }
     }
 
     const handleSearchSubmit = async (searchRequest: WebSearchRequest) => {
@@ -287,22 +361,22 @@ export default function ProjectLibraryPage({ params }: ProjectLibraryPageProps) 
                     className="w-full px-6 py-4"
                 >
                     <Tabs value={activeTab} onValueChange={(value) => setActiveTab(value as any)} className="w-full">
-                        <TabsList className="grid w-full grid-cols-3 bg-background/60 backdrop-blur-xl border border-primary/20" style={{ boxShadow: '0 0 12px rgba(99, 102, 241, 0.1), 0 0 25px rgba(139, 92, 246, 0.06)' }}>
+                        <TabsList className="grid w-full grid-cols-3 bg-background/60 backdrop-blur-xl border-2 border-primary/20" style={{ boxShadow: '0 0 12px rgba(99, 102, 241, 0.1), 0 0 25px rgba(139, 92, 246, 0.06)' }}>
                             <TabsTrigger
                                 value="current-search"
-                                className="flex items-center gap-2 data-[state=active]:bg-gradient-to-r data-[state=active]:from-primary/20 data-[state=active]:to-accent-2/20"
+                                className="flex items-center gap-2 data-[state=active]:bg-gradient-to-r data-[state=active]:from-primary/20 data-[state=active]:to-accent-2/20 border-r border-primary/10 last:border-r-0"
                             >
                                 <Globe className="h-4 w-4" />
                                 Current Web Search
-                                {currentWebSearchPapers.length > 0 && (
+                                {latestPapers.length > 0 && (
                                     <Badge variant="secondary" className="ml-1 text-xs">
-                                        {currentWebSearchPapers.length}
+                                        {latestPapers.length}
                                     </Badge>
                                 )}
                             </TabsTrigger>
                             <TabsTrigger
                                 value="all-papers"
-                                className="flex items-center gap-2 data-[state=active]:bg-gradient-to-r data-[state=active]:from-primary/20 data-[state=active]:to-accent-2/20"
+                                className="flex items-center gap-2 data-[state=active]:bg-gradient-to-r data-[state=active]:from-primary/20 data-[state=active]:to-accent-2/20 border-r border-primary/10 last:border-r-0"
                             >
                                 <BookOpen className="h-4 w-4" />
                                 All Papers
@@ -314,7 +388,7 @@ export default function ProjectLibraryPage({ params }: ProjectLibraryPageProps) 
                             </TabsTrigger>
                             <TabsTrigger
                                 value="uploaded"
-                                className="flex items-center gap-2 data-[state=active]:bg-gradient-to-r data-[state=active]:from-primary/20 data-[state=active]:to-accent-2/20"
+                                className="flex items-center gap-2 data-[state=active]:bg-gradient-to-r data-[state=active]:from-primary/20 data-[state=active]:to-accent-2/20 border-r border-primary/10 last:border-r-0"
                             >
                                 <FolderOpen className="h-4 w-4" />
                                 Uploaded Content
@@ -334,7 +408,7 @@ export default function ProjectLibraryPage({ params }: ProjectLibraryPageProps) 
 
                         {/* Current Web Search Tab */}
                         <TabsContent value="current-search" className="flex-1 m-0 p-0">
-                            <Card className="w-full h-full bg-transparent border-0 shadow-none rounded-none flex flex-col">
+                            <Card className="w-full h-full bg-transparent border-2 border-primary/10 shadow-lg shadow-primary/5 rounded-lg flex flex-col">
                                 <CardHeader className="px-6 pt-6 pb-4">
                                     <div className="flex items-center justify-between">
                                         <div>
@@ -343,22 +417,34 @@ export default function ProjectLibraryPage({ params }: ProjectLibraryPageProps) 
                                                 Current Web Search Results
                                             </CardTitle>
                                             <CardDescription>
-                                                Papers retrieved from your latest web search
+                                                Papers from the most recent search operation for this project
                                             </CardDescription>
                                         </div>
-                                        <Button
-                                            onClick={handleRetrievePapers}
-                                            disabled={webSearch.isSearching}
-                                            className="gradient-primary-to-accent hover:gradient-accent text-white border border-primary/30"
-                                            style={{ boxShadow: '0 0 15px hsl(var(--accent-1) / 0.4), 0 0 30px hsl(var(--accent-2) / 0.2), inset 0 1px 0 rgba(255, 255, 255, 0.1)' }}
-                                        >
-                                            {webSearch.isSearching ? (
-                                                <RefreshCw className="mr-2 h-4 w-4 animate-spin" />
-                                            ) : (
-                                                <Download className="mr-2 h-4 w-4" />
-                                            )}
-                                            {webSearch.isSearching ? "Searching..." : "Start New Search"}
-                                        </Button>
+                                        <div className="flex items-center gap-2">
+                                            <Button
+                                                onClick={handleRefreshLatestPapers}
+                                                disabled={isLoadingLatestPapers}
+                                                variant="outline"
+                                                size="sm"
+                                                className="bg-background/40 backdrop-blur-xl border-2 border-primary/20 hover:border-primary/40"
+                                                style={{ boxShadow: '0 0 8px rgba(99, 102, 241, 0.08), 0 0 16px rgba(139, 92, 246, 0.04)' }}
+                                            >
+                                                <RefreshCw className={`h-4 w-4 ${isLoadingLatestPapers ? 'animate-spin' : ''}`} />
+                                            </Button>
+                                            <Button
+                                                onClick={handleRetrievePapers}
+                                                disabled={webSearch.isSearching}
+                                                className="gradient-primary-to-accent hover:gradient-accent text-white border border-primary/30"
+                                                style={{ boxShadow: '0 0 15px hsl(var(--accent-1) / 0.4), 0 0 30px hsl(var(--accent-2) / 0.2), inset 0 1px 0 rgba(255, 255, 255, 0.1)' }}
+                                            >
+                                                {webSearch.isSearching ? (
+                                                    <RefreshCw className="mr-2 h-4 w-4 animate-spin" />
+                                                ) : (
+                                                    <Download className="mr-2 h-4 w-4" />
+                                                )}
+                                                {webSearch.isSearching ? "Searching..." : "Start New Search"}
+                                            </Button>
+                                        </div>
                                     </div>
                                 </CardHeader>
                                 <CardContent className="flex-1 flex flex-col px-6 pb-6">
@@ -567,7 +653,7 @@ export default function ProjectLibraryPage({ params }: ProjectLibraryPageProps) 
                                         </motion.div>
                                     )}
 
-                                    {!webSearch.isSearching && getCurrentPapers().length === 0 && (
+                                    {!webSearch.isSearching && !isLoadingLatestPapers && getCurrentPapers().length === 0 && (
                                         <div className="text-center py-12">
                                             <Globe className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
                                             <h3 className="text-lg font-medium text-muted-foreground mb-2">No papers found</h3>
@@ -578,13 +664,23 @@ export default function ProjectLibraryPage({ params }: ProjectLibraryPageProps) 
                                             </Button>
                                         </div>
                                     )}
+
+                                    {isLoadingLatestPapers && getCurrentPapers().length === 0 && (
+                                        <div className="text-center py-12">
+                                            <RefreshCw className="h-12 w-12 text-muted-foreground mx-auto mb-4 animate-spin" />
+                                            <h3 className="text-lg font-medium text-muted-foreground mb-2">Loading latest papers...</h3>
+                                            <p className="text-muted-foreground mb-4">Fetching the most recent search results for this project</p>
+                                        </div>
+                                    )}
+
+
                                 </CardContent>
                             </Card>
                         </TabsContent>
 
                         {/* All Papers Tab */}
                         <TabsContent value="all-papers" className="flex-1 m-0 p-0">
-                            <Card className="w-full h-full bg-transparent border-0 shadow-none rounded-none flex flex-col">
+                            <Card className="w-full h-full bg-transparent border-2 border-primary/10 shadow-lg shadow-primary/5 rounded-lg flex flex-col">
                                 <CardHeader className="px-6 pt-6 pb-4">
                                     <div className="flex items-center justify-between">
                                         <div>
@@ -601,7 +697,7 @@ export default function ProjectLibraryPage({ params }: ProjectLibraryPageProps) 
                                                 variant="outline"
                                                 size="sm"
                                                 onClick={() => setViewMode(viewMode === 'grid' ? 'list' : 'grid')}
-                                                className="bg-background/40 backdrop-blur-xl border-primary/20"
+                                                className="bg-background/40 backdrop-blur-xl border-2 border-primary/20 hover:border-primary/40"
                                                 style={{ boxShadow: '0 0 8px rgba(99, 102, 241, 0.08), 0 0 16px rgba(139, 92, 246, 0.04)' }}
                                             >
                                                 {viewMode === 'grid' ? <List className="h-4 w-4" /> : <Grid3X3 className="h-4 w-4" />}
@@ -610,7 +706,7 @@ export default function ProjectLibraryPage({ params }: ProjectLibraryPageProps) 
                                                 variant="outline"
                                                 size="sm"
                                                 onClick={() => setShowFilters(!showFilters)}
-                                                className="bg-background/40 backdrop-blur-xl border-primary/20"
+                                                className="bg-background/40 backdrop-blur-xl border-2 border-primary/20 hover:border-primary/40"
                                                 style={{ boxShadow: '0 0 8px rgba(99, 102, 241, 0.08), 0 0 16px rgba(139, 92, 246, 0.04)' }}
                                             >
                                                 <Filter className="h-4 w-4 mr-2" />
@@ -628,7 +724,7 @@ export default function ProjectLibraryPage({ params }: ProjectLibraryPageProps) 
                                                 placeholder="Search papers by title, author, venue, or content..."
                                                 value={searchQuery}
                                                 onChange={(e) => setSearchQuery(e.target.value)}
-                                                className="pl-10 bg-background/40 backdrop-blur-xl border-primary/20"
+                                                className="pl-10 bg-background/40 backdrop-blur-xl border-2 border-primary/20 hover:border-primary/40 focus:border-primary/60 transition-all duration-300"
                                                 style={{ boxShadow: '0 0 8px rgba(99, 102, 241, 0.06), 0 0 16px rgba(139, 92, 246, 0.03)' }}
                                             />
                                         </div>
@@ -648,7 +744,7 @@ export default function ProjectLibraryPage({ params }: ProjectLibraryPageProps) 
                                                     <div>
                                                         <label className="text-sm font-medium mb-2 block">Sort By</label>
                                                         <Select value={sortBy} onValueChange={(value: any) => setSortBy(value)}>
-                                                            <SelectTrigger className="bg-background/40 backdrop-blur-xl border-primary/20" style={{ boxShadow: '0 0 6px rgba(99, 102, 241, 0.06), 0 0 12px rgba(139, 92, 246, 0.03)' }}>
+                                                            <SelectTrigger className="bg-background/40 backdrop-blur-xl border-2 border-primary/20 hover:border-primary/40 transition-all duration-300" style={{ boxShadow: '0 0 6px rgba(99, 102, 241, 0.06), 0 0 12px rgba(139, 92, 246, 0.03)' }}>
                                                                 <SelectValue />
                                                             </SelectTrigger>
                                                             <SelectContent>
@@ -662,7 +758,7 @@ export default function ProjectLibraryPage({ params }: ProjectLibraryPageProps) 
                                                     <div>
                                                         <label className="text-sm font-medium mb-2 block">Source</label>
                                                         <Select value={filterSource} onValueChange={setFilterSource}>
-                                                            <SelectTrigger className="bg-background/40 backdrop-blur-xl border-primary/20" style={{ boxShadow: '0 0 6px rgba(99, 102, 241, 0.06), 0 0 12px rgba(139, 92, 246, 0.03)' }}>
+                                                            <SelectTrigger className="bg-background/40 backdrop-blur-xl border-2 border-primary/20 hover:border-primary/40 transition-all duration-300" style={{ boxShadow: '0 0 6px rgba(99, 102, 241, 0.06), 0 0 12px rgba(139, 92, 246, 0.03)' }}>
                                                                 <SelectValue />
                                                             </SelectTrigger>
                                                             <SelectContent>
@@ -677,7 +773,7 @@ export default function ProjectLibraryPage({ params }: ProjectLibraryPageProps) 
                                                     <div>
                                                         <label className="text-sm font-medium mb-2 block">Access</label>
                                                         <Select value={filterOpenAccess} onValueChange={setFilterOpenAccess}>
-                                                            <SelectTrigger className="bg-background/40 backdrop-blur-xl border-primary/20" style={{ boxShadow: '0 0 6px rgba(99, 102, 241, 0.06), 0 0 12px rgba(139, 92, 246, 0.03)' }}>
+                                                            <SelectTrigger className="bg-background/40 backdrop-blur-xl border-2 border-primary/20 hover:border-primary/40 transition-all duration-300" style={{ boxShadow: '0 0 6px rgba(99, 102, 241, 0.06), 0 0 12px rgba(139, 92, 246, 0.03)' }}>
                                                                 <SelectValue />
                                                             </SelectTrigger>
                                                             <SelectContent>
@@ -748,7 +844,7 @@ export default function ProjectLibraryPage({ params }: ProjectLibraryPageProps) 
 
                         {/* Uploaded Content Tab */}
                         <TabsContent value="uploaded" className="flex-1 m-0 p-0">
-                            <Card className="w-full h-full bg-transparent border-0 shadow-none rounded-none flex flex-col">
+                            <Card className="w-full h-full bg-transparent border-2 border-primary/10 shadow-lg shadow-primary/5 rounded-lg flex flex-col">
                                 <CardHeader className="px-6 pt-6 pb-4">
                                     <div className="flex items-center justify-between">
                                         <div>
@@ -801,6 +897,7 @@ export default function ProjectLibraryPage({ params }: ProjectLibraryPageProps) 
                 isOpen={!!selectedPaper}
                 onClose={() => setSelectedPaper(null)}
                 onViewPdf={handleViewPdf}
+                projectId={projectId}
             />
 
             {/* PDF Viewer Modal */}

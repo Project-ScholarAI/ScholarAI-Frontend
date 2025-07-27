@@ -184,21 +184,21 @@ export function ProjectWorkspace({ projectId }: ProjectWorkspaceProps) {
 
     const getStatusIcon = (status?: Paper['status']) => {
         switch (status || 'new') {
-            case 'new': return <PlusCircle className="h-4 w-4 text-blue-500" />
-            case 'processing': return <RefreshCw className="h-4 w-4 text-yellow-500 animate-spin" />
-            case 'ready': return <CheckCircle className="h-4 w-4 text-green-500" />
-            case 'failed': return <MoreVertical className="h-4 w-4 text-red-500" />
-            default: return <PlusCircle className="h-4 w-4 text-blue-500" />
+            case 'new': return <PlusCircle className="h-4 w-4 status-new" />
+            case 'processing': return <RefreshCw className="h-4 w-4 status-processing animate-spin" />
+            case 'ready': return <CheckCircle className="h-4 w-4 status-ready" />
+            case 'failed': return <MoreVertical className="h-4 w-4 status-failed" />
+            default: return <PlusCircle className="h-4 w-4 status-new" />
         }
     }
 
     const getStatusColor = (status?: Paper['status']) => {
         switch (status || 'new') {
-            case 'new': return 'bg-blue-500/10 text-blue-500 border-blue-500/20'
-            case 'processing': return 'bg-yellow-500/10 text-yellow-500 border-yellow-500/20'
-            case 'ready': return 'bg-green-500/10 text-green-500 border-green-500/20'
-            case 'failed': return 'bg-red-500/10 text-red-500 border-red-500/20'
-            default: return 'bg-blue-500/10 text-blue-500 border-blue-500/20'
+            case 'new': return 'badge border shadow-sm backdrop-blur-sm status-new'
+            case 'processing': return 'badge border shadow-sm backdrop-blur-sm status-processing'
+            case 'ready': return 'badge border shadow-sm backdrop-blur-sm status-ready'
+            case 'failed': return 'badge border shadow-sm backdrop-blur-sm status-failed'
+            default: return 'badge border shadow-sm backdrop-blur-sm status-new'
         }
     }
 
@@ -458,7 +458,7 @@ export function ProjectWorkspace({ projectId }: ProjectWorkspaceProps) {
                                                                 <div className="flex-1 min-w-0">
                                                                     <div className="flex items-center gap-2 mb-2">
                                                                         {getStatusIcon(paper.status)}
-                                                                        <Badge className={`${getStatusColor(paper.status)} text-xs`}>
+                                                                        <Badge variant="status" className={`${getStatusColor(paper.status)} text-xs`}>
                                                                             {paper.status || 'new'}
                                                                         </Badge>
                                                                         {(paper.hasBeenScored || false) && (paper.score || 0) > 0 && (

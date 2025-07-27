@@ -193,24 +193,24 @@ export function HomeGuide() {
             <div className="absolute bottom-0 left-0 w-96 h-96 bg-gradient-to-tr from-blue-500/10 via-purple-500/5 to-transparent rounded-full blur-3xl" />
 
             {/* Main Content */}
-            <div className="relative z-10 container mx-auto px-6 py-8">
+            <div className="relative z-10 container mx-auto px-4 sm:px-6 lg:px-8 py-6 sm:py-8">
                 {/* Welcome Header */}
                 <motion.div
                     initial={{ opacity: 0, y: -20 }}
                     animate={{ opacity: 1, y: 0 }}
                     transition={{ duration: 0.8 }}
-                    className="text-center mb-12"
+                    className="text-center mb-8 sm:mb-12"
                 >
-                    <div className="inline-flex items-center px-4 py-2 rounded-full bg-gradient-to-r from-primary/20 to-purple-500/20 border border-primary/30 mb-6">
-                        <Sparkles className="h-5 w-5 text-primary mr-2" />
-                        <span className="text-sm font-medium text-primary">Welcome to ScholarAI</span>
+                    <div className="inline-flex items-center px-3 sm:px-4 py-2 rounded-full bg-gradient-to-r from-primary/20 to-purple-500/20 border border-primary/30 mb-4 sm:mb-6">
+                        <Sparkles className="h-4 w-4 sm:h-5 sm:w-5 text-primary mr-2" />
+                        <span className="text-xs sm:text-sm font-medium text-primary">Welcome to ScholarAI</span>
                     </div>
 
-                    <h1 className="text-4xl md:text-5xl font-bold text-gradient-primary mb-4">
+                    <h1 className="text-2xl sm:text-3xl md:text-4xl lg:text-5xl font-bold text-gradient-primary mb-3 sm:mb-4">
                         Hi {getGreeting()}! 👋
                     </h1>
 
-                    <p className="text-xl text-muted-foreground max-w-2xl mx-auto">
+                    <p className="text-base sm:text-lg md:text-xl text-muted-foreground max-w-2xl mx-auto px-4">
                         Your intelligent research companion is ready to help you discover, analyze, and synthesize academic papers with AI.
                     </p>
                 </motion.div>
@@ -220,10 +220,10 @@ export function HomeGuide() {
                     initial={{ opacity: 0, y: 20 }}
                     animate={{ opacity: 1, y: 0 }}
                     transition={{ duration: 0.8, delay: 0.2 }}
-                    className="mb-12"
+                    className="mb-8 sm:mb-12"
                 >
-                    <h2 className="text-2xl font-semibold text-center mb-8">Research Workflow</h2>
-                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                    <h2 className="text-xl sm:text-2xl font-semibold text-center mb-6 sm:mb-8">Research Workflow</h2>
+                    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6">
                         {workflowSteps.map((step, index) => (
                             <motion.div
                                 key={step.id}
@@ -233,28 +233,28 @@ export function HomeGuide() {
                             >
                                 <Card className="bg-background/40 backdrop-blur-xl border border-primary/10 shadow-lg hover:shadow-xl transition-all duration-300 cursor-pointer group h-full"
                                     onClick={() => handleAction(step.href)}>
-                                    <CardContent className="p-6">
-                                        <div className="flex items-center gap-4 mb-4">
-                                            <div className={cn("w-12 h-12 rounded-lg flex items-center justify-center", step.bgColor)}>
-                                                <step.icon className={cn("h-6 w-6", step.color)} />
+                                    <CardContent className="p-4 sm:p-6">
+                                        <div className="flex items-center gap-3 sm:gap-4 mb-3 sm:mb-4">
+                                            <div className={cn("w-10 h-10 sm:w-12 sm:h-12 rounded-lg flex items-center justify-center", step.bgColor)}>
+                                                <step.icon className={cn("h-5 w-5 sm:h-6 sm:w-6", step.color)} />
                                             </div>
                                             <div className="flex-1">
                                                 <div className="flex items-center gap-2 mb-1">
                                                     <Badge variant="outline" className="text-xs">Step {step.id}</Badge>
                                                 </div>
-                                                <h3 className="text-lg font-semibold group-hover:text-primary transition-colors duration-300">{step.title}</h3>
+                                                <h3 className="text-base sm:text-lg font-semibold group-hover:text-primary transition-colors duration-300">{step.title}</h3>
                                             </div>
                                         </div>
-                                        <p className="text-sm text-muted-foreground mb-4">{step.description}</p>
+                                        <p className="text-xs sm:text-sm text-muted-foreground mb-3 sm:mb-4">{step.description}</p>
                                         <Button
-                                            className="w-full gradient-primary-to-accent text-white"
+                                            className="w-full gradient-primary-to-accent text-white text-xs sm:text-sm"
                                             onClick={(e) => {
                                                 e.stopPropagation()
                                                 handleAction(step.href)
                                             }}
                                         >
                                             {step.action}
-                                            <ArrowRight className="ml-2 h-4 w-4" />
+                                            <ArrowRight className="ml-2 h-3 w-3 sm:h-4 sm:w-4" />
                                         </Button>
                                     </CardContent>
                                 </Card>
@@ -269,8 +269,8 @@ export function HomeGuide() {
                     animate={{ opacity: 1, y: 0 }}
                     transition={{ duration: 0.8, delay: 0.6 }}
                 >
-                    <h2 className="text-2xl font-semibold text-center mb-8">Powerful Features</h2>
-                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                    <h2 className="text-xl sm:text-2xl font-semibold text-center mb-6 sm:mb-8">Powerful Features</h2>
+                    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6">
                         {features.map((feature, index) => (
                             <motion.div
                                 key={feature.title}
@@ -279,12 +279,12 @@ export function HomeGuide() {
                                 transition={{ duration: 0.6, delay: 0.7 + index * 0.1 }}
                             >
                                 <Card className="bg-background/40 backdrop-blur-xl border border-primary/10 shadow-lg hover:shadow-xl transition-all duration-300">
-                                    <CardContent className="p-6">
-                                        <div className="w-10 h-10 rounded-lg bg-primary/10 flex items-center justify-center mb-4">
-                                            <feature.icon className="h-5 w-5 text-primary" />
+                                    <CardContent className="p-4 sm:p-6">
+                                        <div className="w-8 h-8 sm:w-10 sm:h-10 rounded-lg bg-primary/10 flex items-center justify-center mb-3 sm:mb-4">
+                                            <feature.icon className="h-4 w-4 sm:h-5 sm:w-5 text-primary" />
                                         </div>
-                                        <h3 className="font-semibold mb-2">{feature.title}</h3>
-                                        <p className="text-sm text-muted-foreground">{feature.description}</p>
+                                        <h3 className="font-semibold mb-2 text-sm sm:text-base">{feature.title}</h3>
+                                        <p className="text-xs sm:text-sm text-muted-foreground">{feature.description}</p>
                                     </CardContent>
                                 </Card>
                             </motion.div>
@@ -292,31 +292,31 @@ export function HomeGuide() {
                     </div>
                 </motion.div>
 
-                        {/* Call to Action */}
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.8, delay: 0.8 }}
-          className="text-center mt-12"
-        >
-          <Card className="bg-gradient-to-r from-primary/10 to-purple-500/10 border border-primary/20 max-w-2xl mx-auto">
-            <CardContent className="p-8">
-              <Lightbulb className="h-12 w-12 text-primary mx-auto mb-4" />
-              <h3 className="text-xl font-semibold mb-2">Ready to Begin Your Research Journey?</h3>
-              <p className="text-muted-foreground mb-6">
-                Follow the workflow above to start exploring, analyzing, and discovering insights with AI-powered research tools.
-              </p>
-              <Button 
-                size="lg"
-                className="gradient-primary-to-accent text-white"
-                onClick={() => handleAction("/interface/projects")}
-              >
-                <Play className="mr-2 h-5 w-5" />
-                Start Research Workflow
-              </Button>
-            </CardContent>
-          </Card>
-        </motion.div>
+                {/* Call to Action */}
+                <motion.div
+                    initial={{ opacity: 0, y: 20 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ duration: 0.8, delay: 0.8 }}
+                    className="text-center mt-8 sm:mt-12"
+                >
+                    <Card className="bg-gradient-to-r from-primary/10 to-purple-500/10 border border-primary/20 max-w-2xl mx-auto">
+                        <CardContent className="p-6 sm:p-8">
+                            <Lightbulb className="h-8 w-8 sm:h-12 sm:w-12 text-primary mx-auto mb-3 sm:mb-4" />
+                            <h3 className="text-lg sm:text-xl font-semibold mb-2">Ready to Begin Your Research Journey?</h3>
+                            <p className="text-muted-foreground mb-4 sm:mb-6 text-sm sm:text-base">
+                                Follow the workflow above to start exploring, analyzing, and discovering insights with AI-powered research tools.
+                            </p>
+                            <Button
+                                size="lg"
+                                className="gradient-primary-to-accent text-white text-sm sm:text-base"
+                                onClick={() => handleAction("/interface/projects")}
+                            >
+                                <Play className="mr-2 h-4 w-4 sm:h-5 sm:w-5" />
+                                Start Research Workflow
+                            </Button>
+                        </CardContent>
+                    </Card>
+                </motion.div>
             </div>
         </div>
     )

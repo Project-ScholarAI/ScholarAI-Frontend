@@ -37,27 +37,29 @@ import {
     Loader2,
     AlertTriangle,
     Lightbulb,
-    ListChecks
+    ListChecks,
+    Target
 } from "lucide-react"
 import { cn } from "@/lib/utils"
 import { downloadPdfWithAuth } from "@/lib/api/pdf"
 import type { Paper } from "@/types/websearch"
 import { useState } from "react"
-import { extractPaper, getStructuredFacts, hasStructuredFacts } from "@/lib/api/extract"
+import { useRouter } from "next/navigation"
+
 
 interface PaperDetailModalProps {
     paper: Paper | null
     isOpen: boolean
     onClose: () => void
     onViewPdf?: (paper: Paper) => void
+    projectId?: string
 }
 
-export function PaperDetailModal({ paper, isOpen, onClose, onViewPdf }: PaperDetailModalProps) {
+export function PaperDetailModal({ paper, isOpen, onClose, onViewPdf, projectId }: PaperDetailModalProps) {
+    const router = useRouter()
     const [copiedField, setCopiedField] = useState<string | null>(null)
     const [isDownloading, setIsDownloading] = useState(false)
-    const [isSummarizing, setIsSummarizing] = useState(false)
-    const [summaryData, setSummaryData] = useState<any>(null)
-    const [summaryError, setSummaryError] = useState<string | null>(null)
+
 
     if (!isOpen || !paper) return null
 
@@ -130,40 +132,56 @@ export function PaperDetailModal({ paper, isOpen, onClose, onViewPdf }: PaperDet
         }
     }
 
-    const handleSummarize = async () => {
-        setIsSummarizing(true)
-        setSummaryError(null)
-        setSummaryData(null)
-        try {
-            await extractPaper(paper.id)
-            await new Promise(res => setTimeout(res, 2500)) // wait for extraction
-            const facts = await getStructuredFacts(paper.id)
-            setSummaryData(facts)
-        } catch (err: any) {
-            setSummaryError(err.message || 'Failed to summarize')
-        } finally {
-            setIsSummarizing(false)
+    const handleSummarize = () => {
+        // Navigate to the dedicated summary page with paper data in URL params
+        if (projectId && paper) {
+            const searchParams = new URLSearchParams({
+                title: paper.title,
+                authors: paper.authors?.map(a => a.name).join(', ') || '',
+                publicationDate: paper.publicationDate || '',
+                citationCount: (paper.citationCount || 0).toString(),
+                referenceCount: (paper.referenceCount || 0).toString(),
+                influentialCitationCount: (paper.influentialCitationCount || 0).toString(),
+                abstract: paper.abstractText || '',
+                source: paper.source || '',
+                venueName: paper.venueName || '',
+                publisher: paper.publisher || '',
+                doi: paper.doi || '',
+                pdfUrl: paper.pdfContentUrl || paper.pdfUrl || '',
+                isOpenAccess: (paper.isOpenAccess || false).toString()
+            })
+            router.push(`/interface/projects/${projectId}/library/${paper.id}/summary?${searchParams.toString()}`)
+        }
+    }
+
+    const handleGapAnalysis = () => {
+        // Navigate to the dedicated gap analysis page with paper data in URL params
+        if (projectId && paper) {
+            const searchParams = new URLSearchParams({
+                title: paper.title,
+                authors: paper.authors?.map(a => a.name).join(', ') || '',
+                publicationDate: paper.publicationDate || '',
+                citationCount: (paper.citationCount || 0).toString(),
+                referenceCount: (paper.referenceCount || 0).toString(),
+                influentialCitationCount: (paper.influentialCitationCount || 0).toString(),
+                abstract: paper.abstractText || '',
+                source: paper.source || '',
+                venueName: paper.venueName || '',
+                publisher: paper.publisher || '',
+                doi: paper.doi || '',
+                pdfUrl: paper.pdfContentUrl || paper.pdfUrl || '',
+                isOpenAccess: (paper.isOpenAccess || false).toString()
+            })
+            router.push(`/interface/projects/${projectId}/library/${paper.id}/gap-analysis?${searchParams.toString()}`)
         }
     }
 
     const handleViewPdf = async (paper: Paper) => {
-        // Start the structured facts check in the background
-        (async () => {
-            try {
-                const res = await hasStructuredFacts(paper.id);
-                if (!res.hasStructuredFacts) {
-                    await extractPaper(paper.id);
-                }
-            } catch (e) {
-                // Optionally log or ignore
-                // console.error('Background structured facts check failed', e);
-            }
-        })();
         // Continue with the original onViewPdf logic
         if (onViewPdf) onViewPdf(paper);
     }
 
-    const facts = summaryData?.structuredFacts?.facts || {}
+
 
     return (
         <div className="fixed inset-0 bg-background z-50 overflow-hidden">
@@ -310,10 +328,9 @@ export function PaperDetailModal({ paper, isOpen, onClose, onViewPdf }: PaperDet
                             size="lg"
                             className="bg-gradient-to-r from-green-500 to-blue-600 text-white hover:from-green-600/90 hover:to-blue-700/90 shadow-lg hover:shadow-xl transition-all duration-300 px-8 py-3"
                             onClick={handleSummarize}
-                            disabled={isSummarizing}
                         >
                             <Zap className="mr-3 h-5 w-5" />
-                            {isSummarizing ? 'Summarizing...' : 'Summarize'}
+                            View Summary
                         </Button>
 
                         {paper.pdfContentUrl && (
@@ -345,24 +362,18 @@ export function PaperDetailModal({ paper, isOpen, onClose, onViewPdf }: PaperDet
                             </Button>
                         )}
 
+                        {/* Gap Analysis Button */}
                         <Button
-                            variant="outline"
                             size="lg"
-                            className="border-primary/20 hover:bg-primary/5 hover:border-primary/40 shadow-lg hover:shadow-xl transition-all duration-300 px-8 py-3"
+                            className="bg-gradient-to-r from-orange-500 to-red-600 text-white hover:from-orange-600/90 hover:to-red-700/90 shadow-lg hover:shadow-xl transition-all duration-300 px-8 py-3"
+                            onClick={handleGapAnalysis}
                         >
-                            <Bookmark className="mr-3 h-5 w-5" />
-                            Save
-                        </Button>
-
-                        <Button
-                            variant="outline"
-                            size="lg"
-                            className="border-primary/20 hover:bg-primary/5 hover:border-primary/40 shadow-lg hover:shadow-xl transition-all duration-300 px-8 py-3"
-                        >
-                            <Share2 className="mr-3 h-5 w-5" />
-                            Share
+                            <Target className="mr-3 h-5 w-5" />
+                            Gap Analysis
                         </Button>
                     </motion.div>
+
+
 
                     {/* Three Column Layout */}
                     <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
@@ -676,146 +687,9 @@ export function PaperDetailModal({ paper, isOpen, onClose, onViewPdf }: PaperDet
                         </motion.div>
                     )}
 
-                    {/* Structured Summary Section - Inline */}
-                    {summaryData && (
-                        <motion.div
-                            initial={{ opacity: 0, y: 20 }}
-                            animate={{ opacity: 1, y: 0 }}
-                            transition={{ delay: 1.1 }}
-                            className="mt-12"
-                        >
-                            <Card className="border-none shadow-xl hover:shadow-2xl transition-all duration-300 hover:shadow-green-500/10 ring-1 ring-green-500/20 hover:ring-green-500/40 bg-gradient-to-br from-background via-background to-green-50/10 dark:to-green-950/10">
-                                <CardHeader className="pb-6">
-                                    <CardTitle className="text-2xl font-bold flex items-center gap-3">
-                                        <Zap className="h-7 w-7 text-green-500" />
-                                        Structured Summary
-                                    </CardTitle>
-                                </CardHeader>
-                                <CardContent className="pt-0">
-                                    <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-                                        {/* Authors */}
-                                        <section className="col-span-1 md:col-span-2">
-                                            <h3 className="flex items-center gap-2 text-xl font-semibold mb-2"><Users className="h-5 w-5 text-orange-500" /> Authors</h3>
-                                            <ul className="ml-4 list-disc text-base">
-                                                {(facts.authors || []).map((a: any, i: number) => (
-                                                    <li key={i}><span className="font-medium">{a.name}</span>{a.affiliation && ` (${a.affiliation})`}{a.email && ` - ${a.email}`}</li>
-                                                ))}
-                                            </ul>
-                                        </section>
-                                        {/* Abstract */}
-                                        <section>
-                                            <h3 className="flex items-center gap-2 text-xl font-semibold mb-2"><FileText className="h-5 w-5 text-primary" /> Abstract</h3>
-                                            <p className="bg-muted/40 rounded-lg p-4 text-base whitespace-pre-line">{facts.abstract}</p>
-                                        </section>
-                                        {/* Keywords */}
-                                        <section>
-                                            <h3 className="flex items-center gap-2 text-xl font-semibold mb-2"><Star className="h-5 w-5 text-yellow-500" /> Keywords</h3>
-                                            <div className="flex flex-wrap gap-2">
-                                                {(facts.keywords || []).map((k: string, i: number) => (
-                                                    <span key={i} className="bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-200 px-3 py-1 rounded-full text-sm">{k}</span>
-                                                ))}
-                                            </div>
-                                        </section>
-                                        {/* Methodology */}
-                                        <section className="md:col-span-2">
-                                            <h3 className="flex items-center gap-2 text-xl font-semibold mb-2"><BookOpen className="h-5 w-5 text-blue-500" /> Methodology</h3>
-                                            {facts.methodology && (
-                                                <div className="space-y-2">
-                                                    {facts.methodology.approach && <div><span className="font-semibold">Approach:</span> {facts.methodology.approach}</div>}
-                                                    {facts.methodology.datasets && <div><span className="font-semibold">Datasets:</span> {facts.methodology.datasets.join(", ")}</div>}
-                                                    {facts.methodology.experimental_setup && <div><span className="font-semibold">Experimental Setup:</span> {facts.methodology.experimental_setup}</div>}
-                                                    {facts.methodology.tools_technologies && <div><span className="font-semibold">Tools/Technologies:</span> {facts.methodology.tools_technologies.join(", ")}</div>}
-                                                </div>
-                                            )}
-                                        </section>
-                                        {/* Key Findings */}
-                                        <section className="md:col-span-2">
-                                            <h3 className="flex items-center gap-2 text-xl font-semibold mb-2"><Lightbulb className="h-5 w-5 text-green-500" /> Key Findings</h3>
-                                            <ul className="ml-4 list-disc">
-                                                {(facts.key_findings || []).map((f: string, i: number) => (
-                                                    <li key={i}>{f}</li>
-                                                ))}
-                                            </ul>
-                                        </section>
-                                        {/* Main Contributions */}
-                                        <section className="md:col-span-2">
-                                            <h3 className="flex items-center gap-2 text-xl font-semibold mb-2"><TrendingUp className="h-5 w-5 text-purple-500" /> Main Contributions</h3>
-                                            <ul className="ml-4 list-disc">
-                                                {(facts.main_contributions || []).map((c: string, i: number) => (
-                                                    <li key={i}>{c}</li>
-                                                ))}
-                                            </ul>
-                                        </section>
-                                        {/* Limitations */}
-                                        <section>
-                                            <h3 className="flex items-center gap-2 text-xl font-semibold mb-2"><AlertTriangle className="h-5 w-5 text-red-500" /> Limitations</h3>
-                                            <ul className="ml-4 list-disc">
-                                                {(facts.limitations || []).map((l: string, i: number) => (
-                                                    <li key={i}>{l}</li>
-                                                ))}
-                                            </ul>
-                                        </section>
-                                        {/* Future Work */}
-                                        <section>
-                                            <h3 className="flex items-center gap-2 text-xl font-semibold mb-2"><ListChecks className="h-5 w-5 text-cyan-500" /> Future Work</h3>
-                                            <p className="bg-muted/40 rounded-lg p-4 text-base whitespace-pre-line">{facts.future_work}</p>
-                                        </section>
-                                        {/* Technical Details */}
-                                        <section className="md:col-span-2">
-                                            <h3 className="flex items-center gap-2 text-xl font-semibold mb-2"><BookOpen className="h-5 w-5 text-indigo-500" /> Technical Details</h3>
-                                            {facts.technical_details && (
-                                                <div className="space-y-2">
-                                                    {facts.technical_details.model_architecture && <div><span className="font-semibold">Model Architecture:</span> {facts.technical_details.model_architecture}</div>}
-                                                    {facts.technical_details.implementation_details && <div><span className="font-semibold">Implementation:</span> {facts.technical_details.implementation_details}</div>}
-                                                    {facts.technical_details.computational_complexity && <div><span className="font-semibold">Computational Complexity:</span> {facts.technical_details.computational_complexity}</div>}
-                                                </div>
-                                            )}
-                                        </section>
-                                        {/* Results & Performance */}
-                                        <section className="md:col-span-2">
-                                            <h3 className="flex items-center gap-2 text-xl font-semibold mb-2"><Star className="h-5 w-5 text-yellow-500" /> Results & Performance</h3>
-                                            {facts.results_performance && (
-                                                <div className="space-y-2">
-                                                    {facts.results_performance.baseline_comparison && <div><span className="font-semibold">Baseline Comparison:</span> {facts.results_performance.baseline_comparison}</div>}
-                                                    {facts.results_performance.significance && <div><span className="font-semibold">Significance:</span> {facts.results_performance.significance}</div>}
-                                                </div>
-                                            )}
-                                        </section>
-                                        {/* Citations & References */}
-                                        <section className="md:col-span-2">
-                                            <h3 className="flex items-center gap-2 text-xl font-semibold mb-2"><Link className="h-5 w-5 text-blue-400" /> Citations & References</h3>
-                                            {facts.citations_references && (
-                                                <div className="space-y-2">
-                                                    {facts.citations_references.key_citations && <div><span className="font-semibold">Key Citations:</span> {facts.citations_references.key_citations.join(", ")}</div>}
-                                                    {facts.citations_references.total_references && <div><span className="font-semibold">Total References:</span> {facts.citations_references.total_references}</div>}
-                                                    {facts.citations_references.related_work_summary && <div><span className="font-semibold">Related Work:</span> {facts.citations_references.related_work_summary}</div>}
-                                                </div>
-                                            )}
-                                        </section>
-                                    </div>
-                                </CardContent>
-                            </Card>
-                        </motion.div>
-                    )}
 
-                    {/* Error State */}
-                    {summaryError && (
-                        <motion.div
-                            initial={{ opacity: 0, y: 20 }}
-                            animate={{ opacity: 1, y: 0 }}
-                            transition={{ delay: 1.1 }}
-                            className="mt-12"
-                        >
-                            <Card className="border-none shadow-xl bg-red-50 dark:bg-red-950/20 border-red-200 dark:border-red-800">
-                                <CardContent className="p-6">
-                                    <div className="flex items-center gap-3 text-red-600 dark:text-red-400">
-                                        <AlertTriangle className="h-5 w-5" />
-                                        <p className="font-medium">Error generating summary: {summaryError}</p>
-                                    </div>
-                                </CardContent>
-                            </Card>
-                        </motion.div>
-                    )}
+
+
                 </div>
             </ScrollArea>
         </div>

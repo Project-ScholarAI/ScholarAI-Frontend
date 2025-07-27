@@ -27,10 +27,15 @@ import {
     Brain,
     Users,
     Edit3,
-    Share2
+    Share2,
+    MessageSquare,
+    ListTodo
 } from "lucide-react"
 import { projectsApi } from "@/lib/api/projects"
+import { getProjectLibraryStats } from "@/lib/api/library"
+import { accountApi } from "@/lib/api/account"
 import { Project } from "@/types/project"
+import { UserAccount } from "@/types/account"
 
 interface ProjectOverviewPageProps {
     params: Promise<{
@@ -45,14 +50,32 @@ export default function ProjectOverviewPage({ params }: ProjectOverviewPageProps
     const [showShareDialog, setShowShareDialog] = useState(false)
     const [showEditDialog, setShowEditDialog] = useState(false)
 
+    // New state for accurate statistics
+    const [libraryStats, setLibraryStats] = useState<{ totalPapers: number } | null>(null)
+    const [readingListStats, setReadingListStats] = useState<{ totalItems: number } | null>(null)
+    const [notesCount, setNotesCount] = useState<number>(0)
+    const [userAccount, setUserAccount] = useState<UserAccount | null>(null)
+
     // Load project data
     useEffect(() => {
         const loadData = async () => {
             const resolvedParams = await params
             setProjectId(resolvedParams.id)
             try {
-                const projectData = await projectsApi.getProject(resolvedParams.id)
+                // Load all data in parallel
+                const [projectData, libraryStatsData, readingListStatsData, notesData, accountData] = await Promise.all([
+                    projectsApi.getProject(resolvedParams.id),
+                    getProjectLibraryStats(resolvedParams.id).catch(() => ({ data: { totalPapers: 0 } })),
+                    projectsApi.getReadingListStats(resolvedParams.id, 'all').catch(() => ({ totalItems: 0 })),
+                    projectsApi.getNotes(resolvedParams.id).catch(() => []),
+                    accountApi.getAccount()
+                ])
+
                 setProject(projectData)
+                setLibraryStats(libraryStatsData.data)
+                setReadingListStats(readingListStatsData)
+                setNotesCount(Array.isArray(notesData) ? notesData.length : 0)
+                setUserAccount(accountData)
             } catch (error) {
                 console.error('Error loading project:', error)
             } finally {
@@ -72,6 +95,17 @@ export default function ProjectOverviewPage({ params }: ProjectOverviewPageProps
 
     const handleEditProject = () => {
         setShowEditDialog(true)
+    }
+
+    // Get user display name
+    const getUserDisplayName = () => {
+        if (userAccount?.fullName) {
+            return userAccount.fullName
+        }
+        if (userAccount?.email) {
+            return userAccount.email
+        }
+        return "You"
     }
 
     if (isLoading) {
@@ -196,21 +230,21 @@ export default function ProjectOverviewPage({ params }: ProjectOverviewPageProps
                                                     <User className="h-4 w-4" />
                                                     Project Creator
                                                 </label>
-                                                <p className="text-foreground font-medium text-lg">You</p>
+                                                <p className="text-foreground font-medium text-lg">{getUserDisplayName()}</p>
                                             </div>
                                             <div>
                                                 <label className="text-sm font-semibold text-muted-foreground flex items-center gap-2 mb-3">
                                                     <Calendar className="h-4 w-4" />
                                                     Created Date
                                                 </label>
-                                                <p className="text-foreground text-lg">{new Date().toLocaleDateString()}</p>
+                                                <p className="text-foreground text-lg">{new Date(project.createdAt).toLocaleDateString()}</p>
                                             </div>
                                             <div>
                                                 <label className="text-sm font-semibold text-muted-foreground flex items-center gap-2 mb-3">
                                                     <Clock className="h-4 w-4" />
                                                     Last Updated
                                                 </label>
-                                                <p className="text-foreground text-lg">{new Date().toLocaleDateString()}</p>
+                                                <p className="text-foreground text-lg">{new Date(project.updatedAt).toLocaleDateString()}</p>
                                             </div>
                                         </div>
                                         <div className="space-y-6">
@@ -329,33 +363,33 @@ export default function ProjectOverviewPage({ params }: ProjectOverviewPageProps
                                         <div className="grid grid-cols-2 gap-4">
                                             <div className="text-center p-4 rounded-lg bg-background/30 border border-border">
                                                 <BookOpen className="h-8 w-8 text-blue-500 mx-auto mb-2" />
-                                                <div className="text-2xl font-bold text-foreground">0</div>
+                                                <div className="text-2xl font-bold text-foreground">{libraryStats?.totalPapers || 0}</div>
                                                 <div className="text-sm text-muted-foreground">Total Papers</div>
                                             </div>
                                             <div className="text-center p-4 rounded-lg bg-background/30 border border-border">
-                                                <Target className="h-8 w-8 text-yellow-500 mx-auto mb-2" />
-                                                <div className="text-2xl font-bold text-foreground">0</div>
-                                                <div className="text-sm text-muted-foreground">Active Tasks</div>
+                                                <ListTodo className="h-8 w-8 text-yellow-500 mx-auto mb-2" />
+                                                <div className="text-2xl font-bold text-foreground">{readingListStats?.totalItems || 0}</div>
+                                                <div className="text-sm text-muted-foreground">Reading List</div>
                                             </div>
                                         </div>
                                         <div className="space-y-3">
                                             <div className="flex items-center justify-between">
                                                 <span className="text-sm font-medium text-foreground">Progress</span>
-                                                <span className="text-sm text-muted-foreground">0%</span>
+                                                <span className="text-sm text-muted-foreground">{project.progress || 0}%</span>
                                             </div>
                                             <div className="flex items-center gap-2">
                                                 <TrendingUp className="h-4 w-4 text-green-500" />
-                                                <Progress value={0} className="flex-1" />
+                                                <Progress value={project.progress || 0} className="flex-1" />
                                             </div>
                                         </div>
                                         <div className="text-center p-4 rounded-lg bg-background/30 border border-border">
-                                            <Brain className="h-8 w-8 text-purple-500 mx-auto mb-2" />
-                                            <div className="text-2xl font-bold text-foreground">0</div>
-                                            <div className="text-sm text-muted-foreground">AI Insights</div>
+                                            <MessageSquare className="h-8 w-8 text-purple-500 mx-auto mb-2" />
+                                            <div className="text-2xl font-bold text-foreground">{notesCount}</div>
+                                            <div className="text-sm text-muted-foreground">Notes</div>
                                         </div>
                                         <Separator />
                                         <div className="text-center">
-                                            <div className="text-3xl font-bold text-gradient-primary">0%</div>
+                                            <div className="text-3xl font-bold text-gradient-primary">{project.progress || 0}%</div>
                                             <div className="text-sm text-muted-foreground">Overall Progress</div>
                                         </div>
                                     </div>

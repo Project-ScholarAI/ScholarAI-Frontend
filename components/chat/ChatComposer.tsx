@@ -19,9 +19,10 @@ type Props = {
   isLoading?: boolean
   externalContexts?: string[]
   onExternalContextsCleared?: () => void
+  disabled?: boolean
 }
 
-export function ChatComposer({ onSend, isLoading = false, externalContexts = [], onExternalContextsCleared }: Props) {
+export function ChatComposer({ onSend, isLoading = false, externalContexts = [], onExternalContextsCleared, disabled = false }: Props) {
   const [message, setMessage] = useState("")
   const [isFocused, setIsFocused] = useState(false)
   const [showMentions, setShowMentions] = useState(false)
@@ -33,7 +34,7 @@ export function ChatComposer({ onSend, isLoading = false, externalContexts = [],
   const { documents } = useDocument()
 
   const handleSend = () => {
-    if ((message.trim() || externalContexts.length > 0) && !isLoading) {
+    if ((message.trim() || externalContexts.length > 0) && !isLoading && !disabled) {
       const combinedContexts = [...externalContexts, ...selectedContexts]
       onSend(message, combinedContexts.length > 0 ? combinedContexts : undefined)
       setMessage("")
@@ -191,9 +192,10 @@ export function ChatComposer({ onSend, isLoading = false, externalContexts = [],
           onKeyDown={handleKeyDown}
           onFocus={() => setIsFocused(true)}
           onBlur={() => setIsFocused(false)}
-          placeholder="Plan, search, build anything"
-          className="w-full resize-none bg-transparent text-sm focus:outline-none min-h-[44px] max-h-[200px] py-1"
+          placeholder={disabled ? "Chat is being prepared..." : "Plan, search, build anything"}
+          className="w-full resize-none bg-transparent text-sm focus:outline-none min-h-[44px] max-h-[200px] py-1 disabled:opacity-50 disabled:cursor-not-allowed"
           rows={1}
+          disabled={disabled}
         />
       </div>
 
@@ -230,7 +232,7 @@ export function ChatComposer({ onSend, isLoading = false, externalContexts = [],
           <Button
             size="icon"
             onClick={handleSend}
-            disabled={(!message.trim() && selectedContexts.length === 0 && externalContexts.length === 0) || isLoading}
+            disabled={(!message.trim() && selectedContexts.length === 0 && externalContexts.length === 0) || isLoading || disabled}
             className="h-8 w-8 bg-primary text-primary-foreground hover:bg-primary/90 disabled:opacity-50"
           >
             <Send className="h-4 w-4" />

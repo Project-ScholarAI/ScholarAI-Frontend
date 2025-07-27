@@ -494,21 +494,21 @@ export default function ProjectReadingListPage({ params }: ProjectReadingListPag
 
     const getStatusColor = (status: string) => {
         switch (status) {
-            case 'COMPLETED': return 'text-green-500 bg-green-500/10 border-green-500/20'
-            case 'IN_PROGRESS': return 'text-blue-500 bg-blue-500/10 border-blue-500/20'
-            case 'PENDING': return 'text-yellow-500 bg-yellow-500/10 border-yellow-500/20'
-            case 'SKIPPED': return 'text-gray-500 bg-gray-500/10 border-gray-500/20'
-            default: return 'text-muted-foreground bg-muted/10 border-muted/20'
+            case 'COMPLETED': return 'bg-gradient-to-r from-emerald-500/20 to-emerald-600/20 text-emerald-300 border-emerald-400/40 shadow-sm shadow-emerald-500/30 backdrop-blur-sm'
+            case 'IN_PROGRESS': return 'bg-gradient-to-r from-blue-500/20 to-blue-600/20 text-blue-300 border-blue-400/40 shadow-sm shadow-blue-500/30 backdrop-blur-sm'
+            case 'PENDING': return 'bg-gradient-to-r from-amber-500/20 to-amber-600/20 text-amber-300 border-amber-400/40 shadow-sm shadow-amber-500/30 backdrop-blur-sm'
+            case 'SKIPPED': return 'bg-gradient-to-r from-slate-500/20 to-slate-600/20 text-slate-300 border-slate-400/40 shadow-sm shadow-slate-500/30 backdrop-blur-sm'
+            default: return 'bg-gradient-to-r from-slate-500/20 to-slate-600/20 text-slate-300 border-slate-400/40 shadow-sm shadow-slate-500/30 backdrop-blur-sm'
         }
     }
 
     const getDifficultyColor = (difficulty: string) => {
         switch (difficulty) {
-            case 'EXPERT': return 'text-purple-500 bg-purple-500/10 border-purple-500/20'
-            case 'HARD': return 'text-red-500 bg-red-500/10 border-red-500/20'
-            case 'MEDIUM': return 'text-yellow-500 bg-yellow-500/10 border-yellow-500/20'
-            case 'EASY': return 'text-green-500 bg-green-500/10 border-green-500/20'
-            default: return 'text-muted-foreground bg-muted/10 border-muted/20'
+            case 'EXPERT': return 'bg-gradient-to-r from-purple-500/20 to-purple-600/20 text-purple-300 border-purple-400/40 shadow-sm shadow-purple-500/30 backdrop-blur-sm'
+            case 'HARD': return 'bg-gradient-to-r from-red-500/20 to-red-600/20 text-red-300 border-red-400/40 shadow-sm shadow-red-500/30 backdrop-blur-sm'
+            case 'MEDIUM': return 'bg-gradient-to-r from-amber-500/20 to-amber-600/20 text-amber-300 border-amber-400/40 shadow-sm shadow-amber-500/30 backdrop-blur-sm'
+            case 'EASY': return 'bg-gradient-to-r from-emerald-500/20 to-emerald-600/20 text-emerald-300 border-emerald-400/40 shadow-sm shadow-emerald-500/30 backdrop-blur-sm'
+            default: return 'bg-gradient-to-r from-slate-500/20 to-slate-600/20 text-slate-300 border-slate-400/40 shadow-sm shadow-slate-500/30 backdrop-blur-sm'
         }
     }
 
@@ -826,7 +826,7 @@ export default function ProjectReadingListPage({ params }: ProjectReadingListPag
                                                                                                 {item.priority}
                                                                                             </Badge>
                                                                                             <Badge
-                                                                                                variant="outline"
+                                                                                                variant="status"
                                                                                                 className={cn("text-xs", getStatusColor(item.status))}
                                                                                             >
                                                                                                 {item.status}
@@ -841,7 +841,7 @@ export default function ProjectReadingListPage({ params }: ProjectReadingListPag
                                                                                             )}
                                                                                             {item.difficulty && (
                                                                                                 <Badge
-                                                                                                    variant="outline"
+                                                                                                    variant="status"
                                                                                                     className={cn("text-xs", getDifficultyColor(item.difficulty))}
                                                                                                 >
                                                                                                     {item.difficulty}

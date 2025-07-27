@@ -25,6 +25,7 @@ import {
     GraduationCap
 } from "lucide-react"
 import { cn } from "@/lib/utils/cn"
+import { isValidUUID } from "@/lib/utils"
 import { Button } from "@/components/ui/button"
 import { EnhancedTooltip } from "@/components/ui/enhanced-tooltip"
 import { Badge } from "@/components/ui/badge"
@@ -36,6 +37,7 @@ type Props = {
     projectId: string
     collapsed: boolean
     onToggle: () => void
+    className?: string
 }
 
 const PROJECT_NAV_ITEMS = [
@@ -78,7 +80,7 @@ const PROJECT_NAV_ITEMS = [
 
 const PROJECT_BOTTOM_ITEMS = []
 
-export function ProjectSidebar({ projectId, collapsed, onToggle }: Props) {
+export function ProjectSidebar({ projectId, collapsed, onToggle, className }: Props) {
     const pathname = usePathname()
     const router = useRouter()
     const [project, setProject] = useState<Project | null>(null)
@@ -91,6 +93,12 @@ export function ProjectSidebar({ projectId, collapsed, onToggle }: Props) {
     }, [projectId])
 
     const loadProject = async () => {
+        // Validate project ID before making API calls
+        if (!isValidUUID(projectId)) {
+            console.error('Invalid project ID in ProjectSidebar:', projectId)
+            return
+        }
+
         try {
             setIsLoading(true)
             const projectData = await projectsApi.getProject(projectId)
@@ -221,7 +229,8 @@ export function ProjectSidebar({ projectId, collapsed, onToggle }: Props) {
     return (
         <div className={cn(
             "flex h-screen flex-col bg-background/60 backdrop-blur-xl border-r border-primary/15 transition-all duration-300 relative overflow-hidden",
-            collapsed ? "w-16" : "w-72"
+            collapsed ? "w-16" : "w-72",
+            className
         )}
             style={{
                 boxShadow: `
