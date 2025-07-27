@@ -58,19 +58,19 @@ const NAV_ITEMS = [
     loadingMessage: "Loading task management..."
   },
   {
-    name: "PaperCall",
+    name: "Call4Papper",
     href: "/interface/papercall",
     icon: GraduationCap,
     description: "Academic deadlines and research opportunities",
     loadingMessage: "Loading academic notifications..."
   },
-  {
-    name: "Notifications",
-    href: "/interface/notifications",
-    icon: Bell,
-    description: "System notifications and alerts",
-    loadingMessage: "Loading notifications..."
-  },
+  // {
+  //   name: "Notifications",
+  //   href: "/interface/notifications",
+  //   icon: Bell,
+  //   description: "System notifications and alerts",
+  //   loadingMessage: "Loading notifications..."
+  // },
   {
     name: "Settings",
     href: "/interface/settings",
