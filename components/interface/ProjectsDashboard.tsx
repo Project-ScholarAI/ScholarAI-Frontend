@@ -196,21 +196,21 @@ export function ProjectsDashboard() {
 
     const getStatusIcon = (status: ProjectStatus) => {
         switch (status) {
-            case 'active': return <PlayCircle className="h-4 w-4 text-emerald-300" />
-            case 'on-hold': return <PauseCircle className="h-4 w-4 text-amber-300" />
-            case 'completed': return <CheckCircle className="h-4 w-4 text-blue-300" />
-            case 'cancelled': return <MoreVertical className="h-4 w-4 text-slate-300" />
+            case 'active': return <PlayCircle className="h-4 w-4 status-active" />
+            case 'on-hold': return <PauseCircle className="h-4 w-4 status-on-hold" />
+            case 'completed': return <CheckCircle className="h-4 w-4 status-completed" />
+            case 'cancelled': return <MoreVertical className="h-4 w-4 status-cancelled" />
             default: return null
         }
     }
 
     const getStatusColor = (status: ProjectStatus) => {
         switch (status) {
-            case 'active': return 'bg-gradient-to-r from-emerald-500/20 to-emerald-600/20 text-emerald-300 border-emerald-400/40 shadow-sm shadow-emerald-500/30 backdrop-blur-sm'
-            case 'on-hold': return 'bg-gradient-to-r from-amber-500/20 to-amber-600/20 text-amber-300 border-amber-400/40 shadow-sm shadow-amber-500/30 backdrop-blur-sm'
-            case 'completed': return 'bg-gradient-to-r from-blue-500/20 to-blue-600/20 text-blue-300 border-blue-400/40 shadow-sm shadow-blue-500/30 backdrop-blur-sm'
-            case 'cancelled': return 'bg-gradient-to-r from-slate-500/20 to-slate-600/20 text-slate-300 border-slate-400/40 shadow-sm shadow-slate-500/30 backdrop-blur-sm'
-            default: return 'bg-gradient-to-r from-slate-500/20 to-slate-600/20 text-slate-300 border-slate-400/40 shadow-sm shadow-slate-500/30 backdrop-blur-sm'
+            case 'active': return 'badge border shadow-sm backdrop-blur-sm status-active'
+            case 'on-hold': return 'badge border shadow-sm backdrop-blur-sm status-on-hold'
+            case 'completed': return 'badge border shadow-sm backdrop-blur-sm status-completed'
+            case 'cancelled': return 'badge border shadow-sm backdrop-blur-sm status-cancelled'
+            default: return 'badge border shadow-sm backdrop-blur-sm status-cancelled'
         }
     }
 

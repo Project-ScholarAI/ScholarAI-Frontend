@@ -42,7 +42,6 @@ export function HeroSection() {
                         transition={{ delay: 0.2, duration: 0.6 }}
                     >
                         <div className="inline-flex items-center px-3 sm:px-5 py-2 rounded-full relative overflow-hidden shadow-lg backdrop-blur-md border border-primary/30 bg-gradient-to-r from-primary/20 via-background/40 to-purple-500/20">
-                            <span className="absolute inset-0 rounded-full pointer-events-none z-0 animate-shimmer bg-gradient-to-r from-primary/30 via-purple-500/30 to-primary/30 opacity-40" style={{ backgroundSize: '200% 100%' }} />
                             <span className="relative z-10 flex items-center justify-center mr-2">
                                 <Sparkles className="h-4 w-4 sm:h-5 sm:w-5 text-primary drop-shadow-glow" />
                             </span>
@@ -131,7 +130,7 @@ export function HeroSection() {
                                 }}
                                 className="relative text-center p-4 sm:p-6 rounded-2xl bg-background/30 backdrop-blur-xl border border-primary/15 shadow-lg transition-all duration-300 group overflow-hidden"
                             >
-                                <span className="pointer-events-none absolute inset-0 rounded-2xl border-2 border-transparent group-hover:border-primary/40 group-hover:shadow-primary/20 group-hover:shadow-2xl animate-shimmer bg-gradient-to-r from-primary/10 via-purple-500/10 to-primary/10 opacity-40" style={{ backgroundSize: '200% 100%' }} />
+
                                 <span className="relative z-10 flex justify-center mb-2 opacity-80 group-hover:opacity-100 transition-opacity duration-300">
                                     {metric.icon}
                                 </span>

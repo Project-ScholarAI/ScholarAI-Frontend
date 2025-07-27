@@ -2,7 +2,7 @@
 
 import { Button } from "@/components/ui/button"
 import Link from "next/link"
-import { Brain, ArrowRight, Menu, X, Sparkles } from "lucide-react"
+import { Brain, ArrowRight, Menu, X } from "lucide-react"
 import { motion, AnimatePresence } from "framer-motion"
 import { useState, useEffect } from "react"
 import { useNavigationWithLoading } from "@/components/ui/RouteTransition"
@@ -61,8 +61,8 @@ export function Navigation() {
             animate={{ y: 0 }}
             transition={{ duration: 0.6 }}
             className={`fixed top-0 left-0 right-0 z-50 transition-all duration-300 ${isScrolled
-                    ? "bg-background/80 backdrop-blur-xl border-b border-primary/20 shadow-lg"
-                    : "bg-transparent"
+                    ? "bg-background/95 backdrop-blur-xl border-b border-primary/30 shadow-xl"
+                    : "bg-background/90 backdrop-blur-lg border-b border-primary/20 shadow-lg"
                 }`}
         >
             <div className="container mx-auto px-4 sm:px-6 lg:px-8">
@@ -73,14 +73,21 @@ export function Navigation() {
                         className="flex items-center gap-2 sm:gap-3 group cursor-pointer"
                         onClick={() => navigateWithLoading("/")}
                     >
-                        <div className="flex items-center justify-center w-8 h-8 sm:w-10 sm:h-10 gradient-radial-accent rounded-lg sm:rounded-xl shadow-lg shadow-primary/30 group-hover:shadow-primary/50 transition-all duration-300 group-hover:scale-105">
-                            <Sparkles className="h-4 w-4 sm:h-5 sm:w-5 text-white drop-shadow-glow" />
-                        </div>
-                        <div className="flex flex-col">
-                            <span className="font-bold text-lg sm:text-xl text-gradient-primary">
-                                ScholarAI
-                            </span>
-                            <span className="text-xs sm:text-sm text-muted-foreground hidden sm:block">Research Assistant</span>
+                        <div className="flex items-center space-x-3">
+                            <div className="relative">
+                                <Brain className="h-8 w-8 sm:h-10 sm:w-10 text-primary" />
+                                <motion.div
+                                    className="absolute inset-0 h-8 w-8 sm:h-10 sm:w-10 bg-primary/20 rounded-full blur-md"
+                                    animate={{ scale: [1, 1.2, 1] }}
+                                    transition={{ duration: 2, repeat: Infinity }}
+                                />
+                            </div>
+                            <div className="flex flex-col">
+                                <span className="text-lg sm:text-xl font-bold bg-gradient-to-r from-primary to-purple-600 bg-clip-text text-transparent">
+                                    ScholarAI
+                                </span>
+                                <span className="text-xs sm:text-sm text-muted-foreground hidden sm:block">Research Assistant</span>
+                            </div>
                         </div>
                     </motion.div>
 
