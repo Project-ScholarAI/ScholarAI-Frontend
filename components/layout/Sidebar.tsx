@@ -20,7 +20,8 @@ import {
   Brain,
   Sparkles,
   LogOut,
-  CheckSquare
+  CheckSquare,
+  GraduationCap
 } from "lucide-react"
 import { cn } from "@/lib/utils/cn"
 import { Button } from "@/components/ui/button"
@@ -56,10 +57,17 @@ const NAV_ITEMS = [
     loadingMessage: "Loading task management..."
   },
   {
+    name: "PaperCall",
+    href: "/interface/papercall",
+    icon: GraduationCap,
+    description: "Academic deadlines and research opportunities",
+    loadingMessage: "Loading academic notifications..."
+  },
+  {
     name: "Notifications",
     href: "/interface/notifications",
     icon: Bell,
-    description: "Recent notifications and alerts",
+    description: "System notifications and alerts",
     loadingMessage: "Loading notifications..."
   },
   {
