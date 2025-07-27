@@ -304,6 +304,7 @@ export function PaperCallContent() {
                   <option value="wikicfp">WikiCFP</option>
                   <option value="mdpi">MDPI</option>
                   <option value="springer">Springer</option>
+                  <option value="crossref">CrossRef</option>
                 </select>
               </div>
             )}
