@@ -30,7 +30,7 @@ import {
 } from "lucide-react"
 import { cn } from "@/lib/utils/cn"
 import { format, formatDistance, parseISO } from "date-fns"
-import { authenticatedFetch } from "@/lib/api/auth"
+import { getAllPaperCalls, syncPaperCalls } from "@/lib/api/papercall"
 
 interface PaperCall {
   title: string
@@ -68,23 +68,23 @@ export function PaperCallContent() {
     const loadDataWithDelay = async () => {
       // Wait for authentication to be ready
       await new Promise(resolve => setTimeout(resolve, 1000))
-      
+
       // Check if user is authenticated
       if (isAuthenticated()) {
         console.log("✅ User is authenticated, loading paper calls")
-        await getAllPaperCalls()
+        await handleGetAllPaperCalls()
       } else {
         console.log("❌ User not authenticated, skipping data load")
       }
     }
-    
+
     loadDataWithDelay()
   }, [])
 
   // Filter paper calls based on search and filters
   const filteredPaperCalls = useMemo(() => {
     return paperCalls.filter(call => {
-      const matchesSearch = searchTerm === "" || 
+      const matchesSearch = searchTerm === "" ||
         call.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
         (call.description && call.description.toLowerCase().includes(searchTerm.toLowerCase())) ||
         call.source.toLowerCase().includes(searchTerm.toLowerCase())
@@ -107,33 +107,19 @@ export function PaperCallContent() {
 
   // Sync paper calls from backend
   // Get all paper calls (load on page load)
-  const getAllPaperCalls = async () => {
+  const handleGetAllPaperCalls = async () => {
     setIsLoading(true)
     try {
       console.log("🔄 Getting all paper calls")
-      
-      // Use exactly the same authentication pattern as sync endpoint
-      const response = await authenticatedFetch(`/api/v1/papercall/all`, {
-        method: 'POST'
-      })
-      
-      console.log("📡 Response status:", response.status)
-      
-      if (!response.ok) {
-        if (response.status === 401) {
-          throw new Error('Unauthorized - Please log in')
-        }
-        throw new Error(`API failed: ${response.status}`)
-      }
 
-      const data = await response.json()
+      const data = await getAllPaperCalls()
       console.log("📊 API Response:", data)
-      
+
       // Handle direct array response
       const paperCallsArray = Array.isArray(data) ? data : []
       setPaperCalls(paperCallsArray)
       console.log("✅ Data set to state:", paperCallsArray)
-      
+
     } catch (error) {
       console.error("❌ Error:", error)
       toast.error("Failed to fetch all paper calls")
@@ -143,7 +129,7 @@ export function PaperCallContent() {
   }
 
   // Sync paper calls from backend
-  const syncPaperCalls = async () => {
+  const handleSyncPaperCalls = async () => {
     if (!domain.trim()) {
       toast.error("Please enter a domain")
       return
@@ -152,25 +138,15 @@ export function PaperCallContent() {
     setIsSyncing(true)
     try {
       console.log("🔄 Calling sync API for domain:", domain)
-      
-      const response = await authenticatedFetch(`/api/v1/papercall/sync?domain=${encodeURIComponent(domain)}`, {
-        method: 'POST'
-      })
-      
-      console.log("📡 Response status:", response.status)
-      
-      if (!response.ok) {
-        throw new Error(`API failed: ${response.status}`)
-      }
 
-      const data = await response.json()
+      const data = await syncPaperCalls(domain)
       console.log("📊 API Response:", data)
-      
+
       // Ensure we always set an array
       const paperCallsArray = Array.isArray(data) ? data : []
       setPaperCalls(paperCallsArray)
       console.log("✅ Data set to state:", paperCallsArray)
-      
+
     } catch (error) {
       console.error("❌ Error:", error)
       toast.error("Failed to fetch data")
@@ -210,11 +186,11 @@ export function PaperCallContent() {
   // Get deadline status
   const getDeadlineStatus = (deadline: string) => {
     if (!deadline) return { status: 'no-deadline', color: 'text-gray-500', label: 'No Deadline' }
-    
+
     const deadlineDate = new Date(deadline)
     const now = new Date()
     const diffDays = Math.ceil((deadlineDate.getTime() - now.getTime()) / (1000 * 60 * 60 * 24))
-    
+
     if (diffDays < 0) {
       return { status: 'expired', color: 'text-red-500', label: 'Expired' }
     } else if (diffDays <= 7) {
@@ -272,8 +248,8 @@ export function PaperCallContent() {
                   className="w-full"
                 />
               </div>
-              <Button 
-                onClick={syncPaperCalls}
+              <Button
+                onClick={handleSyncPaperCalls}
                 disabled={isSyncing || !domain.trim()}
                 className="bg-gradient-to-r from-primary to-purple-600 text-white hover:from-primary/90 hover:to-purple-600/90"
               >
@@ -284,8 +260,8 @@ export function PaperCallContent() {
                 )}
                 {isSyncing ? 'Syncing...' : 'Search'}
               </Button>
-              <Button 
-                onClick={getAllPaperCalls}
+              <Button
+                onClick={handleGetAllPaperCalls}
                 disabled={isLoading}
                 variant="outline"
                 className="border-primary text-primary hover:bg-primary hover:text-white"
@@ -359,7 +335,7 @@ export function PaperCallContent() {
                     {paperCalls.length === 0 ? "No Paper Calls Found" : "No Matching Results"}
                   </h3>
                   <p className="text-muted-foreground">
-                    {paperCalls.length === 0 
+                    {paperCalls.length === 0
                       ? "Enter a domain and click search to find paper calls."
                       : "Try adjusting your search criteria."
                     }
