@@ -50,6 +50,7 @@ import {
 import { cn } from "@/lib/utils"
 import { downloadPdfWithAuth } from "@/lib/api/pdf"
 import { gapAnalysisApi, type GapAnalysisJob, type GapAnalysisResult, type ValidatedGap } from "@/lib/api/gap-analysis"
+import { areUrlsEquivalent, debugUrlComparison } from "@/lib/utils/url"
 import type { Paper } from "@/types/websearch"
 
 interface PaperGapAnalysisPageProps {
@@ -130,9 +131,22 @@ export default function PaperGapAnalysisPage({ params }: PaperGapAnalysisPagePro
             const recentJobs = await gapAnalysisApi.listRecentJobs(jobLimit)
 
             // Filter jobs to only show those for the current paper
+            // CRITICAL FIX: Use flexible URL matching instead of strict equality
+            // This fixes the issue where jobs weren't showing due to URL format differences
             const filteredJobs = recentJobs.filter(job => {
-                // Only show jobs that match the current paper's PDF URL
-                return job.url === paper?.pdfContentUrl
+                if (!paper?.pdfContentUrl || !job.url) {
+                    return false;
+                }
+                
+                // Use flexible URL comparison that handles encoding, protocols, etc.
+                const isMatch = areUrlsEquivalent(job.url, paper.pdfContentUrl);
+                
+                // Debug URL comparison for troubleshooting (only in development)
+                if (process.env.NODE_ENV === 'development' && !isMatch) {
+                    debugUrlComparison(job.url, paper.pdfContentUrl, 'job filtering');
+                }
+                
+                return isMatch;
             })
 
             setJobs(filteredJobs)
