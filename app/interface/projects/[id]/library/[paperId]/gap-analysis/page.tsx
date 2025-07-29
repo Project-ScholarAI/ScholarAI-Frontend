@@ -82,7 +82,8 @@ export default function PaperGapAnalysisPage({ params }: PaperGapAnalysisPagePro
     const [isConfigDialogOpen, setIsConfigDialogOpen] = useState(false)
     const [configForm, setConfigForm] = useState({
         max_papers: 6,
-        validation_threshold: 1
+        validation_threshold: 1,
+        analysis_mode: 'deep' as 'light' | 'deep'
     })
     const [isSubmitting, setIsSubmitting] = useState(false)
 
@@ -203,7 +204,8 @@ export default function PaperGapAnalysisPage({ params }: PaperGapAnalysisPagePro
             const job = await gapAnalysisApi.submitGapAnalysis({
                 url: paper.pdfContentUrl,
                 max_papers: configForm.max_papers,
-                validation_threshold: configForm.validation_threshold
+                validation_threshold: configForm.validation_threshold,
+                analysis_mode: configForm.analysis_mode
             })
 
             // Add new job to the list
@@ -217,7 +219,7 @@ export default function PaperGapAnalysisPage({ params }: PaperGapAnalysisPagePro
 
             // Close dialog and reset form
             setIsConfigDialogOpen(false)
-            setConfigForm({ max_papers: 6, validation_threshold: 1 })
+            setConfigForm({ max_papers: 6, validation_threshold: 1, analysis_mode: 'deep' })
         } catch (error) {
             console.error('Error submitting gap analysis:', error)
         } finally {
@@ -457,6 +459,64 @@ export default function PaperGapAnalysisPage({ params }: PaperGapAnalysisPagePro
                                         />
                                         <p className="text-xs text-muted-foreground">
                                             Default: 1 validation per gap
+                                        </p>
+                                    </div>
+
+                                    <div className="space-y-3">
+                                        <div className="flex items-center justify-between">
+                                            <Label htmlFor="analysis_mode" className="text-sm font-medium">
+                                                Analysis Mode
+                                            </Label>
+                                            <TooltipProvider>
+                                                <Tooltip>
+                                                    <TooltipTrigger asChild>
+                                                        <Button variant="ghost" size="sm" className="h-6 w-6 p-0">
+                                                            <Info className="h-4 w-4 text-muted-foreground" />
+                                                        </Button>
+                                                    </TooltipTrigger>
+                                                    <TooltipContent side="top" className="max-w-xs">
+                                                        <p className="text-sm">Light: Fast 2-3 min analysis with basic validation. Deep: Comprehensive 10-15 min analysis with thorough validation.</p>
+                                                    </TooltipContent>
+                                                </Tooltip>
+                                            </TooltipProvider>
+                                        </div>
+                                        <div className="flex gap-2">
+                                            <Button
+                                                type="button"
+                                                variant={configForm.analysis_mode === 'light' ? 'default' : 'outline'}
+                                                size="sm"
+                                                onClick={() => setConfigForm(prev => ({ ...prev, analysis_mode: 'light' }))}
+                                                className={cn(
+                                                    "flex-1 h-10",
+                                                    configForm.analysis_mode === 'light' 
+                                                        ? "bg-green-500 hover:bg-green-600 text-white" 
+                                                        : "border-green-200 text-green-700 hover:bg-green-50"
+                                                )}
+                                            >
+                                                <Zap className="mr-2 h-4 w-4" />
+                                                Light (2-3 min)
+                                            </Button>
+                                            <Button
+                                                type="button"
+                                                variant={configForm.analysis_mode === 'deep' ? 'default' : 'outline'}
+                                                size="sm"
+                                                onClick={() => setConfigForm(prev => ({ ...prev, analysis_mode: 'deep' }))}
+                                                className={cn(
+                                                    "flex-1 h-10",
+                                                    configForm.analysis_mode === 'deep' 
+                                                        ? "bg-blue-500 hover:bg-blue-600 text-white" 
+                                                        : "border-blue-200 text-blue-700 hover:bg-blue-50"
+                                                )}
+                                            >
+                                                <Brain className="mr-2 h-4 w-4" />
+                                                Deep (10-15 min)
+                                            </Button>
+                                        </div>
+                                        <p className="text-xs text-muted-foreground">
+                                            {configForm.analysis_mode === 'light' 
+                                                ? "Fast analysis with minimal validation for quick results" 
+                                                : "Comprehensive analysis with thorough validation for detailed insights"
+                                            }
                                         </p>
                                     </div>
                                 </div>

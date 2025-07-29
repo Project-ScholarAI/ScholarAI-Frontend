@@ -2,9 +2,10 @@ import { getAiApiUrl } from "@/lib/config/ai-api-config";
 
 // Types for gap analysis API
 export interface GapAnalysisRequest {
-    url: string;
-    max_papers?: number;
-    validation_threshold?: number;
+  url: string
+  max_papers?: number
+  validation_threshold?: number
+  analysis_mode?: 'light' | 'deep'
 }
 
 export interface GapAnalysisJob {
